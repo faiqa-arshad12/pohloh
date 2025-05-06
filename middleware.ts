@@ -2,6 +2,7 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { UserStatus } from './types/enum';
 import { getUserDetails } from './actions/auth';
+import { users } from './utils/constant';
 
 // Matchers
 const isPublicPageRoute = createRouteMatcher([
@@ -55,11 +56,28 @@ export default clerkMiddleware(async (auth, req) => {
     try {
       // const user = await getUserDetails(userId!);
 
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/${users}/${userId}`, {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                credentials: "include",
+              });
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(
+                  `Failed to create user: ${response.status} - ${errorText}`
+                );
+              }
+
+              const result = await response.json();
+              // console.log("User created:", result);
+              // if (result.user.role) setRoleAccess(result.user.role as Role);
+
       // Get user details
-      // const isApproved = user.status === UserStatus.approved;
-      // const isOwner = user.role === 'owner';
-       const isApproved = UserStatus.approved;
-      const isOwner = 'owner';
+      const isApproved = result.user.status === UserStatus.approved;
+      const isOwner = result.user.role === 'owner';
 
       // IMPORTANT: If authenticated user is trying to access a public route,
       // redirect them to the appropriate page based on their status
