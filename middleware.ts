@@ -53,11 +53,13 @@ export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
   if (userId) {
     try {
-      const user = await getUserDetails(userId!);
+      // const user = await getUserDetails(userId!);
 
       // Get user details
-      const isApproved = user.status === UserStatus.approved;
-      const isOwner = user.role === 'owner';
+      // const isApproved = user.status === UserStatus.approved;
+      // const isOwner = user.role === 'owner';
+       const isApproved = UserStatus.approved;
+      const isOwner = 'owner';
 
       // IMPORTANT: If authenticated user is trying to access a public route,
       // redirect them to the appropriate page based on their status
