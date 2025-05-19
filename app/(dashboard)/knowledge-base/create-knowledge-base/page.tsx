@@ -1,6 +1,6 @@
 "use client";
 
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import Image from "next/image";
 
 import CreateCard from "@/components/Knowledge-Base/create-card";
@@ -8,10 +8,17 @@ import AIChat from "@/components/shared/AI-chat";
 
 export default function KnowledgeBasePage() {
   const [showChat, setShowChat] = useState(false);
+  const searchParams = new URLSearchParams();
 
+  const [cardId, setCardId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setCardId(params.get("cardId"));
+  }, []);
   return (
     <div className="relative">
-      <CreateCard />
+      <CreateCard cardId={cardId||undefined} />
       <div
         className="fixed bottom-4 right-4 z-50 cursor-pointer hover:scale-105 transition-transform"
         onClick={() => setShowChat((prev) => !prev)}

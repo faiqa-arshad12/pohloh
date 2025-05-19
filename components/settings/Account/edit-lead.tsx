@@ -1,6 +1,13 @@
 import {useEffect, useState} from "react";
 import {useForm} from "react-hook-form";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import Tag from "@/components/ui/tags";
 import Image from "next/image";
 import {Input} from "@/components/ui/input";
@@ -34,14 +41,17 @@ type FormValues = {
 type EditLeadModalContentProps = {
   open: boolean;
   onClose: (open: boolean) => void;
+  userDetails: any;
 };
-export default function EditLeadModal({ open, onClose }: EditLeadModalContentProps) {
+export default function EditLeadModal({
+  open,
+  onClose,
+}: EditLeadModalContentProps) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>();
   const [teamMembers, setTeamMembers] = useState<TagType[]>([
     {name: "Sara", image: "https://i.pravatar.cc/40?img=1"},
     {name: "Maaz", image: "https://i.pravatar.cc/40?img=2"},
   ]);
-
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -51,23 +61,29 @@ export default function EditLeadModal({ open, onClose }: EditLeadModalContentPro
       currentTeam: "Amjad",
       role: "designer",
       teamMembers: teamMembers,
-    }
+    },
   });
 
-  const handleClose = () => {onClose(false); setIsModalOpen(false)};
+  const handleClose = () => {
+    onClose(false);
+    setIsModalOpen(false);
+  };
 
   const handleSave = (data: FormValues) => {
     alert(JSON.stringify(data, null, 2));
     onClose(false);
-    setIsModalOpen(false)
+    setIsModalOpen(false);
   };
   useEffect(() => {
     setIsModalOpen(open);
-  },[open]);
+  }, [open]);
 
   return (
     <Dialog open={isModalOpen} onOpenChange={handleClose}>
-      <DialogContent className="overflow-y-auto w-full max-w-[864px]  h-auto text-white border-none bg-[#0E0F11]">
+      <DialogContent
+        className="overflow-y-auto w-full max-w-[864px]  h-auto text-white border-none bg-[#0E0F11] "
+        style={{borderRadius: "30px"}}
+      >
         <DialogHeader>
           <DialogTitle className="text-[32px]">Edit Lead</DialogTitle>
         </DialogHeader>
@@ -75,7 +91,10 @@ export default function EditLeadModal({ open, onClose }: EditLeadModalContentPro
         <div className="bg-[#828282] h-[1px]" />
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSave)} className="py-5 space-y-8">
+          <form
+            onSubmit={form.handleSubmit(handleSave)}
+            className="py-5 space-y-8"
+          >
             {/* Lead Name */}
             <FormField
               control={form.control}
@@ -105,11 +124,12 @@ export default function EditLeadModal({ open, onClose }: EditLeadModalContentPro
                   <FormLabel className="text-white font-urbanist text-[16px]">
                     Select the Seat Type
                   </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
-                      <SelectTrigger
-                        className="w-full bg-[#FFFFFF14] border-none hover:bg-[#FFFFFF14] text-[#FFFFFF52] rounded-md p-2 h-[44px]"
-                      >
+                      <SelectTrigger className="w-full bg-[#FFFFFF14] border-none hover:bg-[#FFFFFF14] text-[#FFFFFF52] rounded-md p-2 h-[44px]">
                         <SelectValue placeholder="Select seat type" />
                       </SelectTrigger>
                     </FormControl>
@@ -133,11 +153,12 @@ export default function EditLeadModal({ open, onClose }: EditLeadModalContentPro
                   <FormLabel className="text-white font-urbanist text-[16px]">
                     Select the Team
                   </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
-                      <SelectTrigger
-                        className="w-full bg-[#FFFFFF14] border-none hover:bg-[#FFFFFF14] text-[#FFFFFF52] rounded-md p-2 h-[44px]"
-                      >
+                      <SelectTrigger className="w-full bg-[#FFFFFF14] border-none hover:bg-[#FFFFFF14] text-[#FFFFFF52] rounded-md p-2 h-[44px]">
                         <SelectValue placeholder="Select team" />
                       </SelectTrigger>
                     </FormControl>
@@ -180,11 +201,12 @@ export default function EditLeadModal({ open, onClose }: EditLeadModalContentPro
                   <FormLabel className="text-white font-urbanist text-[16px]">
                     Select Role
                   </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
-                      <SelectTrigger
-                        className="w-full bg-[#FFFFFF14] border-none hover:bg-[#FFFFFF14] text-[#FFFFFF52] rounded-md p-2 h-[44px]"
-                      >
+                      <SelectTrigger className="w-full bg-[#FFFFFF14] border-none hover:bg-[#FFFFFF14] text-[#FFFFFF52] rounded-md p-2 h-[44px]">
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                     </FormControl>
@@ -217,9 +239,8 @@ export default function EditLeadModal({ open, onClose }: EditLeadModalContentPro
                         className="w-full"
                         classNameTag="bg-[#F9DB6F] h-[34px] text-black px-3 rounded-sm flex items-center text-sm gap-2 max-w-[calc(100%-32px)]"
                         classNameTagRemove="text-lg font-bold leading-none focus:outline-none bg-transparent hover:bg-transparent text-black"
-                       //@ts-expect-error: have some error with types
+                        //@ts-expect-error: have some error with types
                         ClassNameAddtag="h-[34px] text-white p-3 rounded-sm flex items-center text-sm max-w-[calc(100%-32px)] gap-2 bg-[#00000033] hover:bg-[#00000033]"
-
                         renderTag={(tag: TagType) => (
                           <div className="flex items-center gap-2">
                             <Image

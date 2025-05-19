@@ -132,7 +132,7 @@ export default function LearningPaths() {
 
                                 <div className="flex flex-col items-center justify-center h-full p-4 space-y-2 ">
                                     <Button className="w-[200px] h-[48px]   border border-gray-600 hover:bg-transparent bg-transparent rounded-md text-sm text-white font-urbanist font-medium text-[14px] leading-[100%]"
-                                        onClick={() => router.push('/tutor/explore-learning-Path')}
+                                        onClick={() => router.push('/tutor/explore-learning-path')}
                                     >
                                         Explore more learning paths
                                     </Button>

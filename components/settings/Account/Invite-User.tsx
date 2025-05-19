@@ -84,6 +84,7 @@ export function InviteUserModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={`overflow-y-auto w-full max-w-[864px] h-auto bg-[#222222] text-white border-none ${className} bg-[#0E0F11] !rounded-xl`}
+        style={{borderRadius: "30px"}}
       >
         <DialogHeader>
           <DialogTitle className="text-[32px]">Invite User</DialogTitle>
@@ -114,7 +115,7 @@ export function InviteUserModal({
                     defaultValue={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger className="bg-[#2A2A2C] w-full border-none text-white placeholder:text-gray-400 h-[44px]">
+                      <SelectTrigger className="bg-[#2A2A2C] w-full border-none text-white placeholder:text-gray-400 h-[44px] cursor-pointer">
                         <SelectValue placeholder="Select seat type" />
                       </SelectTrigger>
                     </FormControl>
@@ -155,13 +156,13 @@ export function InviteUserModal({
               <Button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="w-full sm:w-1/2 border border-[#828282] text-white hover:bg-[#2A2A2C] bg-transparent h-[48px]"
+                className="w-full sm:w-1/2 border border-[#828282] text-white hover:bg-[#2A2A2C] bg-transparent h-[48px] cursor-pointer"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="w-full sm:w-1/2 bg-[#F9E36C] text-black hover:bg-[#f8d84e] h-[48px]"
+                className="w-full sm:w-1/2 bg-[#F9E36C] text-black h-[48px] cursor-pointer"
               >
                 {isLoading ? <Loader /> : " Invite user"}
               </Button>

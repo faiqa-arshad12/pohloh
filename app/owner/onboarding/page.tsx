@@ -20,32 +20,52 @@ import {
   CURRENT_STEP_KEY,
   ONBOARDING_DATA_KEY,
   organizations,
-  users,
 } from "@/utils/constant";
 import {UserStatus} from "@/types/enum";
 import {clearOnboardingData} from "@/lib/local-storage";
+
 const OnboardingPage = () => {
+  // No error state needed for toast-only approach
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [onboardingData, setOnboardingData] = useState<UserOnboardingData>({});
   const [priceId, setPriceId] = useState<string | null>(null);
   const [isloading, setloading] = useState(true);
   const [userOnboarding, setUserOnboarding] = useState(false);
-
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [userDetails, setUserDetails] = useState<User | null>(null);
   const router = useRouter();
   const {user, isLoaded} = useUser();
+
+  const handleError = (error: unknown) => {
+    console.error("Onboarding error:", error);
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : typeof error === "string"
+        ? error
+        : "An unknown error occurred";
+
+    ShowToast(errorMessage, "error");
+  };
+
   const updateOnboardingData = (newData: Partial<UserOnboardingData>) => {
-    setOnboardingData((prev) => {
-      const updatedData = {...prev, ...newData};
-      if (user?.id) {
-        localStorage.setItem(
-          `${ONBOARDING_DATA_KEY}_${user.id}`,
-          JSON.stringify(updatedData)
-        );
-      }
-      return updatedData;
-    });
+    try {
+      setOnboardingData((prev) => {
+        const updatedData = {...prev, ...newData};
+        if (user?.id) {
+          localStorage.setItem(
+            `${ONBOARDING_DATA_KEY}_${user.id}`,
+            JSON.stringify(updatedData)
+          );
+        }
+        return updatedData;
+      });
+    } catch (error) {
+      handleError(
+        "Failed to update onboarding data: " +
+          (error instanceof Error ? error.message : String(error))
+      );
+    }
   };
 
   const updateOrganization = (
@@ -60,9 +80,16 @@ const OnboardingPage = () => {
 
   // Save current step to localStorage
   const saveCurrentStep = (step: number) => {
-    setCurrentStep(step);
-    if (user?.id) {
-      localStorage.setItem(`${CURRENT_STEP_KEY}_${user.id}`, step.toString());
+    try {
+      setCurrentStep(step);
+      if (user?.id) {
+        localStorage.setItem(`${CURRENT_STEP_KEY}_${user.id}`, step.toString());
+      }
+    } catch (error) {
+      handleError(
+        "Failed to save current step: " +
+          (error instanceof Error ? error.message : String(error))
+      );
     }
   };
 
@@ -85,7 +112,10 @@ const OnboardingPage = () => {
               setUserDetails(parsedData.user);
             }
           }
-        } catch (err) {}
+        } catch (err) {
+          console.error("Error loading onboarding data:", err);
+          ShowToast("Failed to load saved onboarding data", "error");
+        }
       }
     };
 
@@ -119,104 +149,154 @@ const OnboardingPage = () => {
 
   const createPaymentIntent = async () => {
     if (!priceId) {
-      return ShowToast("Select Payment Plan");
+      ShowToast("Please select a payment plan", "error");
+      return false;
     }
+
     try {
       setLoading(true);
-      const response = await fetch(
-        `${window.location.origin}/api/stripe/payment-intent`,
-        {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({
-            price_id: priceId,
-            email: user?.primaryEmailAddress?.emailAddress,
-            quantity: organization?.num_of_seat || "",
-          }),
-        }
+
+      if (!user?.id) {
+        throw new Error("User not authenticated");
+      }
+
+      const savedData = localStorage.getItem(
+        `${ONBOARDING_DATA_KEY}_${user.id}`
       );
 
-      if (!response.ok) throw new Error("Failed to create payment intent");
+      if (!savedData) {
+        throw new Error("No onboarding data found");
+      }
+
+      const parsedData = JSON.parse(savedData);
+
+      if (!parsedData.organization?.num_of_seat) {
+        throw new Error("Number of seats is required");
+      }
+
+      if (!user?.primaryEmailAddress?.emailAddress) {
+        throw new Error("User email is required");
+      }
+
+      const response = await fetch(`${window.location.origin}/api/stripe`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          priceId: priceId,
+          email: user.primaryEmailAddress.emailAddress,
+          quantity: parsedData.organization.num_of_seat,
+          // productId: "prod_SDJXRzkYd0KnUL",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.error ||
+            `Payment request failed with status ${response.status}`
+        );
+      }
 
       const data = await response.json();
-      // setPaymentIDs(data);
+
+      if (!data.customerId || !data.subscriptionId || !data.clientSecret) {
+        throw new Error("Invalid payment response data");
+      }
+
       const subscriptionData = {
         customer_id: data.customerId,
         plan_type: `${paymentPlan?.plan}_${paymentPlan?.billingCycle}`,
         org_id: organization?.id || "",
-        subscription_id: data.subscription.id,
+        subscription_id: data.subscriptionId,
         is_subscribed: false,
         client_secret: data.clientSecret,
         amount: data.amount,
         quantity: data.quantity,
-
-        // priceId:
       };
+
       updateOnboardingData({subscription: subscriptionData});
       saveCurrentStep(currentStep + 1);
+      return true;
     } catch (err) {
-      ShowToast(err instanceof Error ? err.message : "Unknown error", "error");
+      const errorMessage =
+        err instanceof Error ? err.message : "Unknown payment error";
+      handleError(errorMessage);
+      return false;
     } finally {
       setLoading(false);
     }
   };
+
   const handleNext = async () => {
-    if (currentStep < steps.length - 1) {
-      if (currentStep === 2) {
-        createPaymentIntent();
-        return;
-      }
-      if (!isStepComplete(currentStep)) {
-        ShowToast("Please complete all required fields", "error");
-        return;
-      }
-      // sumbitOnboardingData();
-
-      saveCurrentStep(currentStep + 1);
-      return;
-    }
-  };
-  const sumbitOnboardingData = async () => {
     try {
-      if (user) {
-        try {
-          const data = {
-            ...onboardingData,
-            user_id: user.id,
-          };
-          const checkUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/${organizations}`;
-          const checkResponse = await fetch(checkUrl, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-
-            body: JSON.stringify(data),
-          });
-
-          if (!checkResponse.ok) {
-            ShowToast("Error occured while onboarding", "error");
+      if (currentStep < steps.length - 1) {
+        if (currentStep === 2) {
+          const success = await createPaymentIntent();
+          if (!success) return;
+        } else {
+          if (!isStepComplete(currentStep)) {
+            ShowToast("Please complete all required fields", "error");
+            return;
           }
-
-          // Clear localStorage after successful completion
-          if (user?.id) {
-            ShowToast("User has been onboarded successfully!");
-
-            router.push("/dashboard");
-          }
-        } catch (metaError) {
-          console.error("Failed to update user metadata:", metaError);
-          ShowToast("User update failed", "error");
+          saveCurrentStep(currentStep + 1);
         }
-      } else {
-        console.warn(
-          "User is undefined – make sure the user is authenticated."
-        );
       }
     } catch (error) {
-      console.error("submitOnboardingData failed:", error);
-      ShowToast("Error completing onboarding", "error");
-    } finally {
+      handleError(error);
     }
   };
+
+  const sumbitOnboardingData = async () => {
+    try {
+      if (!user) {
+        throw new Error("User is not authenticated");
+      }
+
+      if (!onboardingData.organization || !onboardingData.user) {
+        throw new Error("Missing required onboarding data");
+      }
+
+      const data = {
+        ...onboardingData,
+        user_id: user.id,
+      };
+
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/${organizations}`;
+
+      if (!apiUrl) {
+        throw new Error("API URL is not configured");
+      }
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message ||
+            `Failed to save onboarding data with status ${response.status}`
+        );
+      }
+      await user.update({
+        unsafeMetadata: {
+          ...user.unsafeMetadata,
+          is_subscribed: true,
+        },
+      });
+      ShowToast("Onboarding data has been saved successfully!");
+      return true;
+    } catch (error) {
+      handleError(
+        "Failed to submit onboarding data: " +
+          (error instanceof Error ? error.message : String(error))
+      );
+      return false;
+    }
+  };
+
   const handleCompleteOnboarding = async () => {
     try {
       setUserOnboarding(true);
@@ -225,11 +305,37 @@ const OnboardingPage = () => {
         throw new Error("User ID is missing");
       }
 
+      // First submit the onboarding data
+      const submitSuccess = await sumbitOnboardingData();
+      if (!submitSuccess) {
+        throw new Error("Failed to save onboarding data");
+      }
+
+      // Then update user status
       const userData = {
         status: UserStatus.approved,
       };
 
+      try {
+        await user.update({
+          unsafeMetadata: {
+            ...user.unsafeMetadata,
+            status: UserStatus.approved,
+            isProfileComplete: true,
+          },
+        });
+      } catch (clerkError) {
+        console.error("Failed to update Clerk user metadata:", clerkError);
+        throw new Error(
+          "Failed to update user status in authentication provider"
+        );
+      }
+
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${user.id}`;
+
+      if (!apiUrl) {
+        throw new Error("API URL is not configured");
+      }
 
       const response = await fetch(apiUrl, {
         method: "PUT",
@@ -245,24 +351,17 @@ const OnboardingPage = () => {
           errorData.message || `Request failed with status ${response.status}`
         );
       }
-      router.push("/dashboard");
+
+      // Clear onboarding data before redirecting
+      clearOnboardingData(user.id);
 
       ShowToast("Onboarding completed successfully!");
-      clearOnboardingData(user.id);
+      router.push("/dashboard");
     } catch (error) {
-      console.error("Onboarding completion failed:", error);
-
-      let errorMessage = "Failed to complete onboarding";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === "string") {
-        errorMessage = error;
-      }
-
-      ShowToast(errorMessage, "error");
-
-      // Optional: Track the error with your error monitoring service
-      // trackError('onboarding_completion_error', error);
+      handleError(
+        "Onboarding completion failed: " +
+          (error instanceof Error ? error.message : String(error))
+      );
     } finally {
       setUserOnboarding(false);
     }
@@ -319,11 +418,13 @@ const OnboardingPage = () => {
       ),
     },
   ];
-  useEffect(() => {
-    setloading(true);
 
+  useEffect(() => {
     const loadOnboardingState = async () => {
       if (!user || !isLoaded) return;
+
+      setloading(true);
+      // No need to reset error state
 
       try {
         // First check localStorage for saved step
@@ -337,105 +438,143 @@ const OnboardingPage = () => {
 
           if (savedStep !== null) {
             // If we have a saved step, use it
-            setCurrentStep(Number.parseInt(savedStep, 10));
-            setloading(false);
+            const parsedStep = Number.parseInt(savedStep, 10);
+            if (isNaN(parsedStep)) {
+              throw new Error("Invalid saved step value");
+            }
+
+            setCurrentStep(parsedStep);
 
             if (savedData) {
-              const parsedData = JSON.parse(savedData);
-              setOnboardingData(parsedData);
+              try {
+                const parsedData = JSON.parse(savedData);
+                setOnboardingData(parsedData);
 
-              if (parsedData.organization) {
-                setOrganization(parsedData.organization);
+                if (parsedData.organization) {
+                  setOrganization(parsedData.organization);
+                }
+
+                if (parsedData.user) {
+                  setUserDetails(parsedData.user);
+                }
+
+                // We have everything we need from localStorage
+                setloading(false);
+                return;
+              } catch (parseError) {
+                console.error(
+                  "Error parsing saved onboarding data:",
+                  parseError
+                );
+                // Continue to API fallback if localStorage data is corrupted
               }
-
-              if (parsedData.user) {
-                setUserDetails(parsedData.user);
-              }
-
-              // We have everything we need from localStorage
-              return;
             }
           }
         }
 
         // If no localStorage data or incomplete, fall back to API
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/users/onboarding-data/${user?.id}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            redirect: "follow",
-          }
-        );
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/onboarding-data/${user?.id}`;
 
-        if (response) {
-          const responseData = await response.json();
-          setOrganization(responseData?.data.organizations);
-          setUserDetails(responseData?.data);
-
-          // Determine step based on status
-          let stepToSet = 0;
-
-          if (responseData?.data?.datastatus === UserStatus.Pending) {
-            stepToSet = 0;
-          } else if (
-            responseData?.data?.status === UserStatus.OrganizationDetails
-          ) {
-            stepToSet = 1;
-          } else if (responseData?.data?.status === UserStatus.SetupProfile) {
-            stepToSet = 2;
-          } else if (
-            responseData?.data?.status === UserStatus.PlanSelected ||
-            responseData?.data?.status === UserStatus.complete ||
-            responseData?.data?.status === UserStatus.approved
-          ) {
-            stepToSet = 3;
-          }
-
-          // Save to localStorage for future visits
-          if (user.id) {
-            localStorage.setItem(
-              `${CURRENT_STEP_KEY}_${user.id}`,
-              stepToSet.toString()
-            );
-
-            // Also save the onboarding data
-            const dataToSave: UserOnboardingData = {};
-
-            if (responseData?.data) {
-              dataToSave.user = {
-                firstName: responseData.data.first_name,
-                lastName: responseData.data.last_name,
-                username: responseData.data.user_name,
-                user_role: responseData.data.user_role,
-                profile_picture: responseData.data.profile?.picture,
-                location: responseData.data.location,
-                status: responseData.data.status,
-              };
-            }
-
-            if (responseData?.data.organizations) {
-              dataToSave.organization = {
-                name: responseData.data.organizations.name || "",
-                departments: responseData.data.organizations
-                  .departments as Department[],
-                num_of_seat: responseData.data.organizations.num_of_seat,
-                id: responseData.data.organizations.id,
-              };
-            }
-
-            // localStorage.setItem(
-            //   `${ONBOARDING_DATA_KEY}_${user.id}`,
-            //   JSON.stringify(dataToSave)
-            // );
-          }
-
-          saveCurrentStep(stepToSet);
+        if (!apiUrl) {
+          throw new Error("API URL is not configured");
         }
+
+        const response = await fetch(apiUrl, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          redirect: "follow",
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.message ||
+              `API request failed with status ${response.status}`
+          );
+        }
+
+        const responseData = await response.json();
+
+        if (!responseData || !responseData.data) {
+          throw new Error("Invalid response data from API");
+        }
+
+        setOrganization(responseData?.data.organizations);
+        setUserDetails(responseData?.data);
+
+        // Determine step based on status
+        let stepToSet = 0;
+
+        if (responseData?.data?.status === UserStatus.Pending) {
+          stepToSet = 0;
+        } else if (
+          responseData?.data?.status === UserStatus.OrganizationDetails
+        ) {
+          stepToSet = 1;
+        } else if (responseData?.data?.status === UserStatus.SetupProfile) {
+          stepToSet = 2;
+        } else if (
+          responseData?.data?.status === UserStatus.PlanSelected ||
+          responseData?.data?.status === UserStatus.complete ||
+          responseData?.data?.status === UserStatus.approved
+        ) {
+          stepToSet = 3;
+        }
+
+        // Save to localStorage for future visits
+        if (user.id) {
+          localStorage.setItem(
+            `${CURRENT_STEP_KEY}_${user.id}`,
+            stepToSet.toString()
+          );
+
+          // Also save the onboarding data
+          const dataToSave: UserOnboardingData = {};
+
+          if (responseData?.data) {
+            dataToSave.user = {
+              first_name: responseData.data.first_name,
+              last_name: responseData.data.last_name,
+              user_name: responseData.data.user_name,
+              user_role: responseData.data.user_role,
+              profile_picture: responseData.data.profile?.picture,
+              location: responseData.data.location,
+              status: responseData.data.status,
+            };
+          }
+
+          if (responseData?.data.organizations) {
+            dataToSave.organization = {
+              name: responseData.data.organizations.name || "",
+              departments: responseData.data.organizations
+                .departments as Department[],
+              num_of_seat: responseData.data.organizations.num_of_seat,
+              id: responseData.data.organizations.id,
+            };
+          }
+
+          // Uncomment if you want to save the data to localStorage
+          // localStorage.setItem(
+          //   `${ONBOARDING_DATA_KEY}_${user.id}`,
+          //   JSON.stringify(dataToSave)
+          // )
+        }
+
+        saveCurrentStep(stepToSet);
       } catch (error) {
         console.error("Error loading onboarding state:", error);
+        ShowToast(
+          "Failed to load onboarding state: " +
+            (error instanceof Error ? error.message : String(error)),
+          "error"
+        );
+
+        // Set default values to allow user to continue
+        if (!userDetails) {
+          setUserDetails({} as User);
+        }
       } finally {
         setloading(false);
       }
@@ -443,6 +582,8 @@ const OnboardingPage = () => {
 
     loadOnboardingState();
   }, [user, isLoaded]);
+
+  // No retry function needed for toast-only approach
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -463,9 +604,19 @@ const OnboardingPage = () => {
       <div className={currentStep !== 3 ? "h-[128px]" : "h-0"} />
 
       <main className="flex-1">
-        {isloading || !isLoaded || !userDetails ? (
-          <div className="flex flex-row justify-center items-center">
-            <Loader size={50} />{" "}
+        {isloading || !isLoaded ? (
+          <div className="flex flex-col justify-center items-center h-full">
+            <Loader size={50} />
+            <p className="mt-4 text-gray-500">
+              Loading your onboarding data...
+            </p>
+          </div>
+        ) : !userDetails ? (
+          <div className="flex flex-col justify-center items-center h-full">
+            <Loader size={50} />
+            <p className="mt-4 text-gray-500">
+              Unable to load user data. Please refresh the page.
+            </p>
           </div>
         ) : (
           steps[currentStep].component
@@ -475,8 +626,8 @@ const OnboardingPage = () => {
       <footer className="flex justify-between items-center px-16 pb-8 mt-auto">
         <Button
           onClick={handleBack}
-          disabled={currentStep === 0}
-          className="w-[185px] h-[48px] rounded-[8px] border border-gray-300 px-3 py-[12px] gap-4 bg-[#2C2D2E] hover:bg-[#2C2D2E] disabled:opacity-50"
+          disabled={currentStep === 0 || isloading}
+          className="w-[185px] h-[48px] rounded-[8px] border border-gray-300 px-3 py-[12px] gap-4 bg-[#2C2D2E] hover:bg-[#2C2D2E] disabled:opacity-50 cursor-pointer"
         >
           Back
         </Button>
@@ -489,10 +640,11 @@ const OnboardingPage = () => {
             }
           }}
           disabled={
-            currentStep === steps.length - 1 &&
-            !onboardingData.subscription?.is_subscribed
+            isloading ||
+            (currentStep === steps.length - 1 &&
+              !onboardingData.subscription?.is_subscribed)
           }
-          className="w-[185px] h-[48px] rounded-[8px] text-black border border-gray-300 px-3 py-[12px] gap-4 bg-[#F9DB6F] hover:bg-[#F9DB6F]"
+          className="w-[185px] h-[48px] rounded-[8px] text-black border border-gray-300 px-3 py-[12px] gap-4 bg-[#F9DB6F] hover:bg-[#F9DB6F] disabled:opacity-50 cursor-pointer"
         >
           {currentStep === 2 && loading ? (
             <Loader />

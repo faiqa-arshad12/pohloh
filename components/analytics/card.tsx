@@ -1,19 +1,9 @@
 import React, {useEffect, useState} from "react";
 import Table from "../ui/table";
-import UnverifiedCards from "../dashboard/unverfied-card";
+import {UnverifiedCards} from "../dashboard/unverfied-card";
 import Image from "next/image";
 import {Button} from "../ui/button";
-import {
-  ArrowLeft,
-  ArrowRight,
-  ChartNoAxesCombined,
-  ChevronLeft,
-  ChevronRight,
-  CircleAlert,
-  FileText,
-  HeadsetIcon,
-  Users,
-} from "lucide-react";
+import {ChevronLeft, ChevronRight, CircleAlert, FileText} from "lucide-react";
 
 import {
   Select,
@@ -137,10 +127,7 @@ const opportunities = [
 export default function Card() {
   const [interval, setInterval] = useState("monthly");
   const {roleAccess} = useRole();
-  const [rowsPerPageUnanswered, setRowsPerPageUnanswered] = useState(4);
-  const [currentPageUnanswered, setCurrentPageUnanswered] = useState(1);
-  const [rowsPerPageLeaderboard, setRowsPerPageLeaderboard] = useState(4);
-  const [currentPageLeaderboard, setCurrentPageLeaderboard] = useState(1);
+
   const [currentPage, setCurrentPage] = useState(0);
   const [currentPageStrength, setCurrentPageStrength] = useState(0);
   const [currentPageOppurtinity, setCurrentPageOppurtinity] = useState(0);
@@ -218,22 +205,7 @@ export default function Card() {
       return newSet;
     });
   };
-  const isExpanded = (itemId: number) => expandedItems.has(itemId);
-  // Pagination logic
-  const paginatedUnansweredData = dataUnansweredSearch.slice(
-    (currentPageUnanswered - 1) * rowsPerPageUnanswered,
-    currentPageUnanswered * rowsPerPageUnanswered
-  );
-  const paginatedLeaderboardData = dataLeaderboardEntry.slice(
-    (currentPageLeaderboard - 1) * rowsPerPageLeaderboard,
-    currentPageLeaderboard * rowsPerPageLeaderboard
-  );
-  const totalUnansweredPages = Math.ceil(
-    dataUnansweredSearch.length / rowsPerPageUnanswered
-  );
-  const totalLeaderboardPages = Math.ceil(
-    dataLeaderboardEntry.length / rowsPerPageLeaderboard
-  );
+
   return (
     <div className="">
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
@@ -268,7 +240,7 @@ export default function Card() {
         </div>
 
         <div className="w-full lg:w-1/3">
-          <UnverifiedCards />
+          <UnverifiedCards cards={[]} />
         </div>
       </div>
 
@@ -288,7 +260,7 @@ export default function Card() {
               <div className="w-full">
                 <Table
                   columns={columnsUnansweredSearch}
-                  data={paginatedUnansweredData}
+                  data={dataUnansweredSearch}
                   renderActions={() => (
                     <button className="text-[#F9DB6F] font-medium hover:text-[#F9DB6F] transition-colors px-3 py-1.5">
                       + Create Card
@@ -299,52 +271,6 @@ export default function Card() {
                   bodyClassName="divide-y divide-gray-700 w-[171px] h-[68px]"
                   cellClassName="py-2 px-4 border-t border-[#E0EAF5] relative w-[171px] h-[68px] overflow-visible font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0]"
                 />
-              </div>
-            </div>
-
-            <div className="flex flex-col md:flex-row justify-end items-center gap-4 mt-6 text-sm text-gray-400">
-              <div className="flex items-center gap-2">
-                <span>Rows per page:</span>
-                <Select
-                  value={String(rowsPerPageUnanswered)}
-                  onValueChange={(value) => {
-                    setRowsPerPageUnanswered(Number(value));
-                    setCurrentPageUnanswered(1);
-                  }}
-                >
-                  <SelectTrigger className="bg-black text-white w-[70px] rounded-[80px] border-0 py-1 px-2 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-black text-white">
-                    {[4, 6, 8, 10, 20].map((size) => (
-                      <SelectItem key={size} value={String(size)}>
-                        {size}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <span className="text-xs text-gray-400">
-                Page {currentPageUnanswered} of {totalUnansweredPages}
-              </span>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <Button
-                  onClick={() => setCurrentPageUnanswered((prev) => prev - 1)}
-                  disabled={currentPageUnanswered === 1}
-                  className="bg-[#333435] hover:bg-[#333435] border-[#CDCDCD] border py-1 px-3 rounded-[8px] flex items-center gap-1"
-                >
-                  <ArrowLeft size={14} />
-                  Previous
-                </Button>
-                <Button
-                  onClick={() => setCurrentPageUnanswered((prev) => prev + 1)}
-                  disabled={currentPageUnanswered === totalUnansweredPages}
-                  className="bg-[#F9DB6F] hover:bg-[#F9DB6F] text-black py-1 px-3 rounded-[8px] flex items-center gap-1"
-                >
-                  Next
-                  <ArrowRight size={14} />
-                </Button>
               </div>
             </div>
           </div>
@@ -363,7 +289,7 @@ export default function Card() {
               <div className="w-full">
                 <Table
                   columns={columnsLeaderboardEntry}
-                  data={paginatedLeaderboardData}
+                  data={dataLeaderboardEntry}
                   renderCell={(column, row) => {
                     if (column === "rankIcon")
                       return (
@@ -394,52 +320,6 @@ export default function Card() {
                   bodyClassName="divide-y divide-gray-700 w-[171px] h-[68px]"
                   cellClassName="py-2 px-4 relative w-[171px] h-[68px] overflow-visible font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0] border-t border-[#E0EAF5]"
                 />
-              </div>
-            </div>
-
-            <div className="flex flex-col md:flex-row justify-end items-center gap-4 mt-6 text-sm text-gray-400">
-              <div className="flex items-center gap-2">
-                <span>Rows per page:</span>
-                <Select
-                  value={String(rowsPerPageLeaderboard)}
-                  onValueChange={(value) => {
-                    setRowsPerPageLeaderboard(Number(value));
-                    setCurrentPageLeaderboard(1);
-                  }}
-                >
-                  <SelectTrigger className="bg-black text-white w-[70px] rounded-[80px] border-0 py-1 px-2 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-black text-white">
-                    {[4, 6, 8, 10, 20].map((size) => (
-                      <SelectItem key={size} value={String(size)}>
-                        {size}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <span className="text-xs text-gray-400">
-                Page {currentPageLeaderboard} of {totalLeaderboardPages}
-              </span>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Button
-                  onClick={() => setCurrentPageLeaderboard((prev) => prev - 1)}
-                  disabled={currentPageLeaderboard === 1}
-                  className="bg-[#333435] hover:bg-[#333435] border-[#CDCDCD] border py-1 px-3 rounded-[8px] flex items-center gap-1"
-                >
-                  <ArrowLeft size={14} />
-                  Previous
-                </Button>
-                <Button
-                  onClick={() => setCurrentPageLeaderboard((prev) => prev + 1)}
-                  disabled={currentPageLeaderboard === totalLeaderboardPages}
-                  className="bg-[#F9DB6F] hover:bg-[#F9DB6F] text-black py-1 px-3 rounded-[8px] flex items-center gap-1"
-                >
-                  Next
-                  <ArrowRight size={14} />
-                </Button>
               </div>
             </div>
           </div>

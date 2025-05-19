@@ -1,8 +1,13 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&family=Raleway:wght@400;700&family=Roboto:wght@400;700&family=Merriweather:wght@400;700&family=Source+Code+Pro:wght@400;700&family=Playfair+Display:wght@400;700&family=Dancing+Script:wght@400;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&family=Raleway:wght@400;700&family=Roboto:wght@400;700&family=Merriweather:wght@400;700&family=Source+Code+Pro:wght@400;700&family=Playfair+Display:wght@400;700&family=Dancing+Script:wght@400;700&display=swap");
 
-
+body {
+  @apply !min-w-full;
+}
+html {
+  overflow-x: hidden;
+}
 
 @custom-variant dark (&:is(.dark *));
 
@@ -36,8 +41,8 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-primary: #F9DB6F;
-  --color-secondary: #8996A9;
+  --color-primary: #f9db6f;
+  --color-secondary: #8996a9;
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -48,13 +53,10 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-
 * {
-
   /* -ms-overflow-style: none; /* IE/Edge */
   /* scrollbar-width: none; Firefox  */
 }
-
 
 /* Optional: put this in styles/globals.css or in your layout */
 .custom-ant-modal .ant-modal-content {
@@ -79,7 +81,6 @@
   top: 20px;
   right: 20px;
 }
-
 
 :root {
   --radius: 0.625rem;
@@ -171,7 +172,7 @@
 }
 
 .gradient-background-image {
-  background-image: url('/Frame.png');
+  background-image: url("/Frame.png");
 }
 
 .main-content {
@@ -179,7 +180,6 @@
   z-index: 1;
   /* background-color: rgba(0, 0, 0, 0.7); */
   min-height: 100vh;
-
 }
 
 .scroll-hide {
@@ -187,9 +187,7 @@
   scrollbar-width: none;
 }
 
-
 @layer utilities {
-
   /* Hide scrollbar for Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -204,13 +202,8 @@
   }
 }
 
-
-
-
-
-
 .custom-modal .ant-modal-content {
-  background-color: #1A1A1C !important;
+  background-color: #1a1a1c !important;
   border-radius: 12px;
   padding: 0;
 }
@@ -270,13 +263,12 @@
 
 .rbc-month-row,
 .rbc-month-header {
-
   border-bottom: none !important;
 }
 
 .rbc-day-bg,
 .rbc-off-range-bg {
-  background-color: #1A1A1C !important;
+  background-color: #1a1a1c !important;
   color: #fff !important;
   border: none !important;
   margin-bottom: 2px;
@@ -302,7 +294,6 @@
 .rbc-off-range-bg {
   border: none !important;
 }
-
 
 .rbc-row.rbc-month-header {
   margin-bottom: 15px;
@@ -339,7 +330,9 @@
   height: 12px;
 }
 
-
 .white-yellow-icon {
-  filter: invert(100%) sepia(100%) saturate(10000%) hue-rotate(20deg) brightness(100%);
+  filter: invert(100%) sepia(100%) saturate(10000%) hue-rotate(20deg)
+    brightness(100%);
 }
+
+

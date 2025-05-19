@@ -16,7 +16,7 @@ async function calculatePrice(priceId: string, quantity: number) {
         }
 
         const totalAmount = price.unit_amount * quantity;
-        
+
         return {
             unitAmount: price.unit_amount,
             totalAmount,
@@ -32,7 +32,7 @@ async function createSubscription(priceId: string, email: string, quantity: numb
     try {
         // Calculate price first
         const { totalAmount, currency } = await calculatePrice(priceId, quantity);
-        
+
         const customers = await stripe.customers.search({
             query: `email:'${email}'`,
         });
@@ -87,11 +87,11 @@ async function createPaymentIntent(amount: number, customerId: string, currency:
 export async function POST(req: Request) {
     const { price_id, email, quantity } = await req.json();
     console.log("quantity", quantity);
-    
+
     try {
         // Use default quantity of 1 if not provided
         const actualQuantity = quantity || 1;
-        
+
         // First calculate the price to validate and show to user
         const priceInfo = await calculatePrice(price_id, actualQuantity);
         console.log("Calculated price details:", {
@@ -100,16 +100,16 @@ export async function POST(req: Request) {
             totalAmount: priceInfo.totalAmount / 100, // Convert cents to dollars/currency units for logging
             currency: priceInfo.currency
         });
-        
+
         const { customerId, amount, currency, subscription } = await createSubscription(
-            price_id, 
-            email, 
+            price_id,
+            email,
             actualQuantity
         );
-        
+
         const { clientSecret } = await createPaymentIntent(amount, customerId, currency);
-        
-        return NextResponse.json({ 
+
+        return NextResponse.json({
             clientSecret,
             amount,
             currency,

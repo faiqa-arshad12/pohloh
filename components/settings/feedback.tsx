@@ -78,7 +78,7 @@ const Feedback: React.FC = () => {
           />
           <Button
             type="submit"
-            className="absolute bottom-3 right-3 w-9 h-9 bg-[#F9E36C] rounded-[9px] flex items-center justify-center hover:bg-[#f8d84e] transition-colors"
+            className="absolute bottom-3 right-3 w-9 h-9 bg-[#F9E36C] rounded-[9px] flex items-center justify-center hover:bg-[#f8d84e] transition-colors cursor-pointer"
           >
             <Send className="w-4 h-4 text-black" />
           </Button>

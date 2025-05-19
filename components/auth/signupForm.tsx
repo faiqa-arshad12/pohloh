@@ -25,6 +25,7 @@ import {ShowToast} from "../shared/show-toast";
 import Loader from "../shared/loader";
 import {Role} from "@/types/types";
 import {nameRegex, usernameRegex, users} from "@/utils/constant";
+import { UserStatus } from "@/types/enum";
 
 // const formSchema = z.object({
 
@@ -93,7 +94,6 @@ export function SignupForm() {
         role: role,
       };
 
-      console.log("Sending user data:", userData);
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/${users}`,
@@ -138,6 +138,7 @@ export function SignupForm() {
         unsafeMetadata: {
           role: role,
           isProfileComplete: false,
+          status:UserStatus.Pending
           // add other metadata fields here
         },
         // username: values.username,
@@ -199,7 +200,7 @@ export function SignupForm() {
         <div className="flex  flex-col md:flex-row  justify-center gap-2 mb-3 w-full">
           <Button
             variant="outline"
-            className="flex-1 flex h-[44px] items-center justify-center gap-2 py-2.5 px-8 rounded-[8px] bg-[#FFFFFF14] border border-[#FFFFFF14] text-white hover:bg-[#FFFFFF14] hover:border-[#FFFFFF14] hover:text-[white]"
+            className="flex-1 flex h-[44px] items-center justify-center gap-2 py-2.5 px-8 rounded-[8px] bg-[#FFFFFF14] border border-[#FFFFFF14] text-white hover:bg-[#FFFFFF14] hover:border-[#FFFFFF14] hover:text-[white] cursor-pointer"
             onClick={() => handleSocialSignup("oauth_google")}
             disabled={isLoading || !isLoaded}
           >
@@ -220,7 +221,7 @@ export function SignupForm() {
 
           <Button
             variant="outline"
-            className="flex-1 flex h-[44px] items-center justify-center gap-2 py-2.5 px-8 rounded-[8px] bg-[#FFFFFF14] border border-[#FFFFFF14] text-white hover:bg-[#FFFFFF14] hover:border-[#FFFFFF14] hover:text-[white]"
+            className="flex-1 flex h-[44px] items-center justify-center gap-2 py-2.5 px-8 rounded-[8px] bg-[#FFFFFF14] border border-[#FFFFFF14] text-white hover:bg-[#FFFFFF14] hover:border-[#FFFFFF14] hover:text-[white] cursor-pointer"
             onClick={() => handleSocialSignup("oauth_linkedin_oidc")}
             type="button"
             disabled={isLoading || !isLoaded}
@@ -242,7 +243,7 @@ export function SignupForm() {
 
           <Button
             variant="outline"
-            className="flex-1 flex h-[44px] items-center justify-center gap-2 py-2.5 px-8 rounded-[8px] bg-[#FFFFFF14] border border-[#FFFFFF14] text-white hover:bg-[#FFFFFF14] hover:border-[#FFFFFF14] hover:text-[white]"
+            className="flex-1 flex h-[44px] items-center justify-center gap-2 py-2.5 px-8 rounded-[8px] bg-[#FFFFFF14] border border-[#FFFFFF14] text-white hover:bg-[#FFFFFF14] hover:border-[#FFFFFF14] hover:text-[white] cursor-pointer"
             onClick={() => handleSocialSignup("oauth_facebook")}
             type="button"
             disabled={isLoading || !isLoaded}
@@ -394,9 +395,9 @@ export function SignupForm() {
                           className="absolute right-4 top-1/2 transform -translate-y-1/2"
                         >
                           {showPassword ? (
-                            <EyeOff className="h-5 w-5 text-gray-400" />
+                            <EyeOff className="h-5 w-5 text-gray-400 cursor-pointer" />
                           ) : (
-                            <Eye className="h-5 w-5 text-gray-400" />
+                            <Eye className="h-5 w-5 text-gray-400 cursor-pointer" />
                           )}
                         </button>
                       </div>
@@ -411,7 +412,7 @@ export function SignupForm() {
             />
             <Button
               type="submit"
-              className="w-full text-black"
+              className="w-full text-black cursor-pointer"
               disabled={isLoading || socialLoading !== null}
             >
               {isLoading ? <Loader /> : "Sign Up"}

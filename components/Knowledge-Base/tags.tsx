@@ -10,8 +10,8 @@ interface TagProps {
   className?: string;
 }
 
-const Tag: React.FC<TagProps> = ({ 
-  initialTags = ['Software Engineering', 'Design'], 
+const Tag: React.FC<TagProps> = ({
+  initialTags = ['Software Engineering', 'Design'],
   onTagsChange,
   className = ''
 }) => {
@@ -33,8 +33,8 @@ const Tag: React.FC<TagProps> = ({
   };
 
   return (
-    <div className={`w-full max-w-[368px] relative ${className}`}>
-      <div className="flex flex-wrap items-start border border-white/20 rounded-[6px] px-3 py-2 bg-[#FFFFFF0F] gap-2">
+    <div className={`w-full max-w-[368px] relative h-[24px] cursor-pointer${className}`}>
+      <div className="flex flex-wrap items-start rounded-[6px] px-3 py-2 bg-[#FFFFFF0F] gap-2">
         {tags.map((tag, index) => (
           <div
             key={index}
@@ -45,7 +45,7 @@ const Tag: React.FC<TagProps> = ({
               type="button"
               variant="ghost"
               size="icon"
-              className="w-4 h-4 ml-1 p-0 text-black text-right hover:bg-black/10 hover:text-black focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="w-4 h-4 ml-1 p-0 text-black text-right hover:bg-black/10 hover:text-black focus-visible:ring-0 focus-visible:ring-offset-0 cursor-pointer"
               onClick={() => removeTag(index)}
             >
               <X className="w-3 h-3" />
@@ -57,7 +57,7 @@ const Tag: React.FC<TagProps> = ({
           type="button"
           onClick={addTag}
           variant="ghost"
-          className="h-[24px] w-[92px] text-white/80 hover:text-white px-2 sm:px-3 py-1 rounded-sm flex items-center text-xs sm:text-sm gap-1 bg-[#00000033] hover:bg-white/10"
+          className="h-[24px] w-[92px] text-white/80 hover:text-white px-2 sm:px-3 py-1 rounded-sm flex items-center text-xs sm:text-sm gap-1 bg-[#00000033] hover:bg-white/10 cursor-pointer"
         >
           <span className="font-urbanist font-normal text-[10.44px] leading-6 align-middle">Add Tag</span>
           <Plus className="w-3 h-3 sm:w-4 sm:h-4" />

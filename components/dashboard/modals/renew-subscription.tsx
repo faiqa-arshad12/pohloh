@@ -1,6 +1,5 @@
 import {useState} from "react";
-import {useRouter, useSearchParams} from "next/navigation";
-import {X} from "lucide-react";
+import {useRouter} from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +27,7 @@ function RenewSubscription({open}: RenewSubscriptionProps) {
         <div>
           <div className="flex flex-col items-center text-white justify-center font-urbanist font-medium text-[24px] leading-[32px] tracking-[0] align-middle">
             Your current subscription plan has expired. Please renew to regain
-            access to all features.
+            access to Pohloh.
           </div>
 
           <div className="flex gap-4 mt-6">

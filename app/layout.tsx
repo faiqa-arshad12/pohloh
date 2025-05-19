@@ -5,7 +5,7 @@ import {Urbanist} from "next/font/google";
 import "./globals.css";
 import Image from "next/image";
 import {Toaster} from "@/components/ui/sonner";
-import { UserProvider } from '@/components/ui/Context/UserContext';
+import {UserProvider} from "@/components/ui/Context/UserContext";
 const urbanist = Urbanist({
   variable: "--font-urbanist",
   subsets: ["latin"],
@@ -25,21 +25,21 @@ export default function RootLayout({
     <html lang="en">
       <ClerkProvider>
         <UserProvider>
-        {/* <GoogleOneTap /> */}
-        <body className={`${urbanist.variable} antialiased`}>
-          <div className="relative gradient-background">
-            <Image
-              src="/Gradient.png"
-              alt="Gradient background"
-              fill
-              style={{objectFit: "cover"}}
-              quality={100}
-              priority
-            />
-          </div>
-          <div className="main-content">{children}</div>
-          <Toaster />
-        </body>
+          {/* <GoogleOneTap /> */}
+          <body className={`${urbanist.variable} antialiased`}>
+            <div className="relative gradient-background">
+              <Image
+                src="/Gradient.png"
+                alt="Gradient background"
+                fill
+                style={{objectFit: "cover"}}
+                quality={100}
+                priority
+              />
+            </div>
+            <div className="main-content">{children}</div>
+            <Toaster />
+          </body>
         </UserProvider>
       </ClerkProvider>
     </html>

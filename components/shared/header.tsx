@@ -1,19 +1,28 @@
 "use client";
 
-import { Bell, Plus, Menu, X, ChevronDown, FileText, FolderOpen } from "lucide-react";
+import {
+  Bell,
+  Plus,
+  Menu,
+  X,
+  ChevronDown,
+  FileText,
+  FolderOpen,
+} from "lucide-react";
 import Image from "next/image";
 import NavList from "./nav-list";
 import SearchInput from "./search-input";
-import TopBarIcons from "./settings-dropdown";
-import { usePathname} from "next/navigation";
-import { Button } from "../ui/button";
+import {TopBarIcons} from "./settings-dropdown";
+import {usePathname} from "next/navigation";
+import {Button} from "../ui/button";
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import {useState, useEffect, useRef} from "react";
 import CreateCardDropdown from "./dropdown-button";
 
 type HeaderProps = {
   setShowAllNotifications: React.Dispatch<React.SetStateAction<boolean>>;
   showAllNotifications: boolean;
+  userData: any;
 };
 
 interface DropdownItemProps {
@@ -27,16 +36,17 @@ interface DropdownItemProps {
 export function Header({
   setShowAllNotifications,
   showAllNotifications,
+  userData,
 }: HeaderProps) {
   const pathname = usePathname();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [filter, setFilter] = useState("")
+  const [filter, setFilter] = useState("");
   const [open, setOpen] = useState<boolean>(false);
   const [selectedItem, setSelectedItem] = useState<string>("");
-  const notificationRef = useRef(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
 
   const toggleDropdown = () => setOpen((prev) => !prev);
 
@@ -44,7 +54,6 @@ export function Header({
     setSelectedItem(item);
     setOpen(false); // optional: close dropdown on selection
   };
-
 
   useEffect(() => {
     const handleResize = () => {
@@ -57,8 +66,10 @@ export function Header({
 
     // Handle clicks outside notification dropdown
     const handleClickOutside = (event: MouseEvent) => {
-      //@ts-expect-error: Ignoring type error due to possible null reference in `notificationRef`
-      if (notificationRef.current && !notificationRef?.current?.contains(event.target)) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target as Node)
+      ) {
         setIsNotificationsOpen(false);
       }
     };
@@ -125,7 +136,7 @@ export function Header({
                 src="/logo/pohloh.svg"
                 height={40}
                 width={40}
-                style={{ cursor: "pointer" }}
+                style={{cursor: "pointer"}}
               />
             </div>
             <span className="text-white font-bold text-xl md:text-[25.33px]">
@@ -144,8 +155,7 @@ export function Header({
 
         {/* Right side */}
         <div className="flex items-center gap-2 md:gap-4">
-
-           <CreateCardDropdown />
+          <CreateCardDropdown />
 
           <div className="hidden md:block">
             <SearchInput onChange={(value) => setFilter(value)} />
@@ -176,7 +186,10 @@ export function Header({
                   <div className="flex items-center text-xs text-[#F9DB6F]">
                     <Button
                       className="hover:underline bg-transparent text-[#F9DB6F] hover:bg-transparent"
-                      onClick={() =>{ setShowAllNotifications(false); setIsNotificationsOpen(false);}}
+                      onClick={() => {
+                        setShowAllNotifications(false);
+                        setIsNotificationsOpen(false);
+                      }}
                     >
                       Show All
                     </Button>
@@ -223,7 +236,7 @@ export function Header({
           </div>
 
           {/* Avatar with dropdown */}
-          <TopBarIcons />
+          <TopBarIcons userData={userData} />
         </div>
       </header>
 

@@ -15,6 +15,10 @@ export type Department =
   | string;
 
 export type Role = "admin" | "owner" | "user";
+export type USER_Role = "user";
+export type ADMIN_ROLE = "admin" | "user";
+
+
 
 export type Status =
   | "pending"
@@ -112,9 +116,9 @@ export interface UserOnboardingData {
     user_role: string;
     location: string;
     profile_picture: string;
-    firstName?: string;
-    lastName?: string;
-    username?: string;
+    first_name?: string;
+    last_name?: string;
+    user_name?: string;
     org_id?: string;
     status?: UserStatus
   };
@@ -149,3 +153,56 @@ export const defaultWorkDays: WorkDaysState = {
   saturday: false,
   sunday: false,
 };
+
+export type IconName =
+  | "BarChart2"
+  | "BarChart"
+  | "Users"
+  | "Briefcase"
+  | "ClipboardList"
+  | "FileText"
+  | "Search"
+  | "Plus"
+  | "X"
+  | "MoreHorizontal"
+  | "Trash2"
+  | "Edit"
+  | "Zap"
+  | "Coffee"
+  | "Mail"
+  | "Bell"
+  | "Calendar"
+  | "Scissors"
+  | "Headphones"
+  | "Map"
+  | "Flag"
+  | "Database"
+  | "Book"
+  | "Code"
+  | "CheckCircle2"
+  | "AlertCircle"
+  | "Info"
+  | "Globe"
+  | "Settings"
+  | "ShieldCheck"
+  | "Lock"
+  | "Unlock"
+  | "Loader2"
+  | "Download"
+  | "Upload"
+  | "Image"
+  | "Video"
+  | "Star"
+  | "Home"
+  | "Menu"
+  | "Moon"
+  | "Sun"
+  | "Eye"
+  | "EyeOff"
+  | string;
+
+// Icon categories for better organization
+export type IconCategory = {
+  name: string;
+  icons: string[];
+}

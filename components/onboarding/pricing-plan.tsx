@@ -251,17 +251,17 @@ export default function PricingPlan({
                     className={`w-[194px] h-[56px] flex items-center justify-center text-center ${
                       billingCycle === "year"
                         ? "bg-[#F9DB6F] text-black rounded-[8px] font-urbanist font-medium text-[22.27px]"
-                        : "text-white font-urbanist font-medium text-[22.27px]"
+                        : "text-white font-urbanist font-medium text-[22.27px] cursor-pointer"
                     } transition-all`}
                     onClick={() => handleBillingCycleChange("year")}
                   >
                     Yearly
                   </button>
                   <button
-                    className={`w-[194px] h-[56px] flex items-center justify-center text-center ${
+                    className={`w-[194px] h-[56px] flex items-center justify-center text-center cursor-pointer  ${
                       billingCycle === "month"
                         ? "bg-[#F9DB6F] text-black rounded-[8px] font-urbanist font-medium text-[22.27px]"
-                        : "text-white font-urbanist font-medium text-[22.27px]"
+                        : "text-white font-urbanist font-medium text-[22.27px] "
                     } transition-all`}
                     onClick={() => handleBillingCycleChange("month")}
                   >

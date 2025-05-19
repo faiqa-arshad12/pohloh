@@ -1,64 +1,149 @@
 "use client";
-
-import { useEffect, useRef, useState } from "react";
+import {useEffect, useRef, useState} from "react";
 import {
   ChevronUp,
   ChevronDown,
   Edit,
-  Headset,
   Trash2,
-  Save,
-  BarChart2,
-  Users,
-  Palette,
-  Megaphone,
-  PieChart,
   FileText,
   Copy,
   Ellipsis,
   ArchiveIcon,
   CopyCheck,
+  BadgeX,
+  Save,
+  TicketIcon,
+  Check,
+  Pencil,
+  Import,
 } from "lucide-react";
-
-import {
-  BarChartIcon,
-  CategoryItem,
-  NavItem,
-  SubcategoryItem,
-} from "./buttons";
-import { Button } from "../ui/button";
-import { ReassignUser } from "./reassign-user";
-// import { useRouter } from "next/navigation"
+import {CategoryItem, NavItem, SubcategoryItem} from "./buttons";
+import {Button} from "../ui/button";
+import {ReassignUserModal} from "./reassign-user";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
+import {useUser} from "@clerk/nextjs";
+import Tag from "./tags";
+import {Skeleton} from "@/components/ui/skeleton";
+import {useRouter} from "next/navigation";
+import {ShowToast} from "../shared/show-toast";
+import {stripHtml} from "@/lib/stripeHtml";
+import {renderIcon} from "@/lib/renderIcon";
+import DeleteConfirmationModal from "../shared/delete-modal";
+import {CardStatus} from "@/utils/constant";
 
-export default function AnalyticsCard() {
-  const [activeCategory, setActiveCategory] = useState("Analytics");
-  const [activeCategoryFloder, setActiveCategoryFloder] = useState("Policies");
-  const [activeSubcategory, setActiveSubcategory] = useState("Warranty");
-  const [isPoliciesExpanded, setPoliciesExpanded] = useState(true);
+interface Team {
+  id: string;
+  name: string;
+  icon?: string;
+  iconAttachment?: string;
+  subcategories?: Subcategory[];
+}
+
+interface Subcategory {
+  id: string;
+  name: string;
+  knowledge_card?: KnowledgeCard[];
+}
+
+interface KnowledgeCard {
+  id: string;
+  title: string;
+  content: string;
+  is_verified: boolean;
+  card_owner_id: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    profile_picture: string;
+  };
+  tags?: string[];
+  created_at: string;
+  type: string;
+  subcategory_id?: string;
+}
+
+interface AnalyticsCardProps {
+  cardId?: string;
+}
+
+export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
+  const {user, isLoaded: isUserLoaded} = useUser();
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [activeTeam, setActiveTeam] = useState<Team | null>(null);
+  const [activeSubcategory, setActiveSubcategory] =
+    useState<Subcategory | null>(null);
+  const [activeItem, setActiveItem] = useState<KnowledgeCard | null>(null);
+  const [expandedSubcategories, setExpandedSubcategories] = useState<
+    Record<string, boolean>
+  >({});
   const [showFloating, setShowFloating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(false);
   const floatingRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const handleAssignUser = (userId: string) => {
-    console.log(`Assigned user with ID: ${userId}`);
-    setIsModalOpen(false);
-  };
+  const [card, setCard] = useState<string | null>(null);
+  const [announcemnetCard, setAnnouncementCard] = useState<string | null>(null);
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [isCardDeleteLoading, setIsCardDeleting] = useState(false);
+  const [selectedCardId, setSelectedCardId] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setCard(params.get("selectForLearningPath"));
+  }, []);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setAnnouncementCard(params.get("selectForAnnouncement"));
+  }, []);
+  const [userDetails, setUserDetails] = useState<any>();
+
   const checkScroll = () => {
     const el = scrollRef.current;
     if (el) {
       setAtTop(el.scrollTop === 0);
-      // Check if scrolled to bottom (with 1px threshold)
       setAtBottom(el.scrollHeight - el.scrollTop <= el.clientHeight + 1);
     }
   };
+  const handleSaveCard = async (id: string, is_verified?: boolean) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
+    if (!id) {
+      ShowToast("Invalid card ID", "error");
+      return;
+    }
+    const cardData = is_verified
+      ? {is_verified: true}
+      : {card_status: CardStatus.SAVED};
+
+    try {
+      const res = await fetch(`${apiUrl}/api/cards/${id}`, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+        body: JSON.stringify({
+          cardData,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save card");
+      }
+
+      ShowToast("Card saved successfully");
+    } catch (err) {
+      console.error("Error saving card:", err);
+      ShowToast("Something went wrong while saving the card", "error");
+    } finally {
+      setShowFloating(false);
+    }
+  };
   const handleScroll = (direction: "up" | "down") => {
     const el = scrollRef.current;
     if (!el) return;
@@ -69,7 +154,6 @@ export default function AnalyticsCard() {
       behavior: "smooth",
     });
 
-    // Delay to allow scroll to finish before checking position
     setTimeout(checkScroll, 200);
   };
 
@@ -77,10 +161,7 @@ export default function AnalyticsCard() {
     const el = scrollRef.current;
     if (!el) return;
 
-    // Check initial position
     checkScroll();
-
-    // Attach scroll listener
     el.addEventListener("scroll", checkScroll);
     return () => el.removeEventListener("scroll", checkScroll);
   }, []);
@@ -89,12 +170,8 @@ export default function AnalyticsCard() {
     navigator.clipboard
       .writeText(text)
       .then(() => {
-        console.log("Text copied to clipboard:", text);
-        // You can add a toast/alert here if needed
         setIsCopied(true);
-        console.log("Copied", isCopied);
-        // Reset after 2 seconds
-        // setTimeout(() => setIsCopied(false), 1000);
+        setTimeout(() => setIsCopied(false), 2000);
       })
       .catch((err) => {
         console.error("Failed to copy text:", err);
@@ -121,38 +198,359 @@ export default function AnalyticsCard() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showFloating]);
+  const handleDeleteCard = async (id: string) => {
+    try {
+      setIsCardDeleting(true);
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/cards/${id}`,
+        {
+          method: "DELETE",
+          headers: {"Content-Type": "application/json"},
+          credentials: "include",
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(res.statusText || "Failed to delete card");
+      }
+
+      ShowToast("Card deleted successfully", "success");
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Delete card error:", error);
+      ShowToast(
+        error instanceof Error ? error.message : "Failed to delete card",
+        "error"
+      );
+    } finally {
+      setIsCardDeleting(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        if (user) {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/users/${user?.id}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to fetch user details");
+          }
+
+          const userData = await response.json();
+          setUserDetails(userData);
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/teams/organizations/categories/${userData.user.organizations?.id}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+            }
+          );
+
+          if (!res.ok) {
+            throw new Error("Failed to fetch teams");
+          }
+
+          const mockData = await res.json();
+          setTeams(mockData.teams || []);
+
+          const initialExpandedState: Record<string, boolean> = {};
+          mockData.teams?.forEach((team: Team) => {
+            team.subcategories?.forEach((subcategory: Subcategory) => {
+              initialExpandedState[subcategory.id] = false;
+            });
+          });
+          setExpandedSubcategories(initialExpandedState);
+        }
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isUserLoaded) {
+      fetchData();
+    }
+  }, [user, isUserLoaded]);
+
+  useEffect(() => {
+    const loadCardById = async (id: string) => {
+      try {
+        // Find the card in the existing data structure
+        for (const team of teams) {
+          if (!team.subcategories) continue;
+
+          for (const subcategory of team.subcategories) {
+            if (!subcategory.knowledge_card) continue;
+
+            const card = subcategory.knowledge_card.find(
+              (card) => card.id === id
+            );
+            if (card) {
+              // Set the active states to display this card
+              setActiveTeam(team);
+              setActiveSubcategory(subcategory);
+              setActiveItem(card);
+
+              // Expand the subcategory containing this card
+              setExpandedSubcategories((prev) => ({
+                ...prev,
+                [subcategory.id]: true,
+              }));
+
+              return;
+            }
+          }
+        }
+
+        // If card not found in existing data, fetch it directly
+        if (userDetails?.user?.organizations?.id) {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/knowledge-cards/${id}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to fetch card details");
+          }
+
+          const cardData = await response.json();
+
+          // Now fetch the team and subcategory this card belongs to
+          if (cardData.subcategory_id) {
+            const subcategoryResponse = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/api/subcategories/${cardData.subcategory_id}`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                credentials: "include",
+              }
+            );
+
+            if (subcategoryResponse.ok) {
+              const subcategoryData = await subcategoryResponse.json();
+
+              // Find the team this subcategory belongs to
+              const teamResponse = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/teams/${subcategoryData.team_id}`,
+                {
+                  method: "GET",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  credentials: "include",
+                }
+              );
+
+              if (teamResponse.ok) {
+                const teamData = await teamResponse.json();
+
+                // Update the active states
+                setActiveTeam(teamData);
+                setActiveSubcategory(subcategoryData);
+                setActiveItem(cardData);
+
+                // Expand the subcategory
+                setExpandedSubcategories((prev) => ({
+                  ...prev,
+                  [subcategoryData.id]: true,
+                }));
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading card by ID:", error);
+      }
+    };
+
+    if (cardId && teams.length > 0 && userDetails) {
+      loadCardById(cardId);
+    }
+  }, [cardId, teams, userDetails]);
+
+  const toggleSubcategoryExpanded = (subcategoryId: string) => {
+    setExpandedSubcategories((prev) => ({
+      ...prev,
+      [subcategoryId]: !prev[subcategoryId],
+    }));
+  };
+
+  const handleTeamClick = (team: Team) => {
+    setActiveTeam(team);
+    setActiveSubcategory(team.subcategories?.[0] || null);
+    setActiveItem(team.subcategories?.[0]?.knowledge_card?.[0] || null);
+  };
+
+  const handleSubcategoryClick = (subcategory: Subcategory) => {
+    setActiveSubcategory(subcategory);
+    toggleSubcategoryExpanded(subcategory.id);
+    setActiveItem(subcategory.knowledge_card?.[0] || null);
+  };
+
+  const handleItemClick = (item: KnowledgeCard) => {
+    setActiveItem(item);
+    if (card) {
+      localStorage.setItem(
+        "selectedLearningPathCard",
+        JSON.stringify({
+          card: item,
+          // title: card.title,
+        })
+      );
+    }
+    if (announcemnetCard) {
+      localStorage.setItem(
+        "selectedAnnouncementCard",
+        JSON.stringify({
+          card: item,
+          // title: card.title,
+        })
+      );
+    }
+  };
+
+  if (!isUserLoaded || isLoading) {
+    return (
+      <div className="text-white flex flex-col">
+        {/* Header Skeleton */}
+        <div className="py-4 lg:py-6">
+          <Skeleton className="h-[36px] w-[250px] rounded-lg" />
+        </div>
+
+        <div className="h-full flex flex-1 gap-[32px]">
+          {/* Left Sidebar Skeleton */}
+          <div className="w-auto h-[633px] flex flex-col">
+            {/* Top Button Skeleton */}
+            <div className="py-2">
+              <Skeleton className="w-full h-[46px] rounded-full" />
+            </div>
+
+            {/* Nav Items Skeleton */}
+            <div className="w-full min-h-0 overflow-y-auto scrollbar-hide space-y-4 py-2">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="w-[100px] h-[60px] rounded-lg" />
+              ))}
+            </div>
+
+            {/* Bottom Button Skeleton */}
+            <div className="py-2">
+              <Skeleton className="w-full h-[46px] rounded-full" />
+            </div>
+          </div>
+
+          {/* Middle Sidebar Skeleton */}
+          <div className="w-full max-w-sm h-[625px] rounded-[20px] bg-[#191919] p-6">
+            <div className="pt-[20px] space-y-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton className="h-10 w-full rounded-lg" />
+                  {i === 0 && (
+                    <div className="mx-5 mt-5 space-y-5">
+                      {[...Array(2)].map((_, j) => (
+                        <Skeleton key={j} className="h-10 w-full rounded-lg" />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Main Content Skeleton */}
+          <div className="w-full max-h-[80vh] rounded-[20px] bg-[#191919] p-6">
+            <div className="space-y-6">
+              {/* Header with title and actions */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-[40px] w-[200px] rounded-lg" />
+                  <div className="flex gap-4">
+                    <Skeleton className="h-[28px] w-[28px] rounded-md" />
+                    <Skeleton className="h-[28px] w-[28px] rounded-md" />
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="bg-[#FFFFFF14] rounded-full p-2">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="flex flex-col">
+                        <Skeleton className="h-4 w-20 rounded-md" />
+                        <Skeleton className="h-3 w-16 rounded-md mt-1" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Subcategory name */}
+              <Skeleton className="h-[28px] w-[150px] rounded-lg" />
+
+              {/* Content */}
+              <Skeleton className="h-[200px] w-full rounded-lg" />
+
+              {/* Footer with file and tags */}
+              <div className="mt-2 flex items-center justify-between">
+                <div className="flex items-center">
+                  <Skeleton className="h-[40px] w-[40px] rounded-md" />
+                  <Skeleton className="h-5 w-[150px] rounded-md ml-2" />
+                </div>
+                <Skeleton className="h-8 w-[200px] rounded-lg" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className=" text-white flex flex-col">
+    <div className="text-white flex flex-col">
       {/* Header */}
       <div className="py-4 lg:py-6 justify-between flex">
         <h1 className="text-white text-[36px] font-semibold">Knowledge Base</h1>
-
-        {/* { <Button
-                    type="button"
-                    // onClick={}
-                    variant="outline"
-                    className="w-[132px] bg-[#2C2D2E] border border-[##FFFFFF] hover:bg-[#3A3B3C] text-white hover:text-white"
-                    onClick={() => router.push('/knowledge-base/Access-draft')}
-                >
-                    Access Drafts
-                </Button>} */}
       </div>
 
-      <div className=" h-full flex flex-1 gap-[32px] ">
+      <div className="h-full flex flex-1 gap-[32px]">
         {/* Left Sidebar */}
-        <div className="w-auto  h-[633px] flex flex-col">
+        <div className="w-auto h-[633px] flex flex-col">
           {/* Top Button */}
           <div className="py-2">
             <button
               onClick={() => handleScroll("up")}
               disabled={atTop}
-              className={`w-full h-[46px] p-[12px] rounded-full border border-[#F9DB6F] flex items-center justify-center gap-[10px]
-                                ${
-                                  atTop ? "opacity-50 cursor-not-allowed" : ""
-                                }`}
+              className={`w-full h-[46px] p-[12px] rounded-full border border-[#F9DB6F] flex items-center justify-center gap-[10px] cursor-pointer
+                ${atTop ? "cursor-not-allowed" : ""}`}
+              style={{borderRadius: "12px"}}
             >
-              <ChevronUp className="h-5 w-5 text-white" />
+              <ChevronUp
+                className={`h-5 w-5  ${
+                  atTop ? "text-[#F9DB6F]" : "text-[white]"
+                }`}
+              />
             </button>
           </div>
 
@@ -161,141 +559,27 @@ export default function AnalyticsCard() {
             ref={scrollRef}
             style={{
               overflowY: "auto",
-              scrollbarWidth: "none", // Firefox
-              msOverflowStyle: "none", // IE 10+
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
             }}
             className="w-full min-h-0 overflow-y-auto scrollbar-hide"
           >
-            <NavItem
-              icon={
-                <Image
-                  alt="Chevron Down"
-                  src="/icons/arrow-growth-20-filled.svg"
-                  height={24}
-                  width={24}
-                  className={cn(
-                    activeCategory === "Sales"
-                      ? "white-yellow-icon"
-                      : "invert-0"
+            {teams.map((team) => (
+              <div key={team.id} className="min-w-50">
+                <NavItem
+                  icon={renderIcon(
+                    team.icon || "",
+                    activeTeam?.id === team.id
+                      ? "text-[black] h-5 w-5"
+                      : "invert-0 h-5 w-5"
                   )}
+                  label={team.name}
+                  active={activeTeam?.id === team.id}
+                  highlight={activeTeam?.id === team.id}
+                  onClick={() => handleTeamClick(team)}
                 />
-              }
-              label="Sales"
-              active={activeCategory === "Sales"}
-              highlight={activeCategory === "Sales"}
-              onClick={() => setActiveCategory("Sales")}
-            />
-            <NavItem
-              icon={
-                <Image
-                  alt="Chevron Down"
-                  src="/icons/bi_people.svg"
-                  height={24}
-                  width={24}
-                  className={cn(
-                    activeCategory === "HR" ? "white-yellow-icon" : "invert-0"
-                  )}
-                />
-              }
-              label="HR"
-              active={activeCategory === "HR"}
-              highlight={activeCategory === "HR"}
-              onClick={() => setActiveCategory("HR")}
-            />
-            <NavItem
-              icon={
-                <Image
-                  alt="Chevron Down"
-                  src="/icons/customer-support.svg"
-                  height={24}
-                  width={24}
-                  className={cn(
-                    activeCategory === "CX" ? "white-yellow-icon" : "invert-0"
-                  )}
-                />
-              }
-              label="CX"
-              active={activeCategory === "CX"}
-              highlight={activeCategory === "CX"}
-              onClick={() => setActiveCategory("CX")}
-            />
-            <NavItem
-              icon={
-                <Image
-                  alt="Analytics"
-                  src="/icons/anaylitcs.svg"
-                  height={24}
-                  width={24}
-                  className={cn(
-                    "",
-                    activeCategory === "Analytics"
-                      ? "           "
-                      : "invert-[100%]" // Makes icon white
-                  )}
-                />
-              }
-              label="Analytics"
-              active={activeCategory === "Analytics"}
-              highlight={activeCategory === "Analytics"}
-              onClick={() => setActiveCategory("Analytics")}
-            />
-            <NavItem
-              icon={
-                <Image
-                  alt="Chevron Down"
-                  src="/icons/arrow-growth-20-filled.svg"
-                  height={24}
-                  width={24}
-                  className={cn(
-                    activeCategory === "Finance"
-                      ? "white-yellow-icon"
-                      : "invert-0"
-                  )}
-                />
-              }
-              label="Finance"
-              active={activeCategory === "Finance"}
-              highlight={activeCategory === "Finance"}
-              onClick={() => setActiveCategory("Finance")}
-            />
-            <NavItem
-              icon={
-                <Image
-                  alt="Chevron Down"
-                  src="/icons/design-ideas-28-regular.svg"
-                  height={24}
-                  width={24}
-                  className={cn(
-                    activeCategory === "Design"
-                      ? "white-yellow-icon"
-                      : "invert-0"
-                  )}
-                />
-              }
-              label="Design Marketing"
-              active={activeCategory === "Design"}
-              highlight={activeCategory === "Design"}
-              onClick={() => setActiveCategory("Design")}
-            />
-            <NavItem
-              icon={
-                <Image
-                  alt="Chevron Down"
-                  src="/icons/marketing.svg"
-                  height={24}
-                  width={24}
-                  className={cn(
-                    activeCategory === "Marketing"
-                      ? "white-yellow-icon"
-                      : "invert-0"
-                  )}
-                />
-              }
-              label="Marketing"
-              active={activeCategory === "Marketing"}
-              highlight={activeCategory === "Marketing"}
-              onClick={() => setActiveCategory("Marketing")}
-            />
+              </div>
+            ))}
           </div>
 
           {/* Bottom Button */}
@@ -303,85 +587,84 @@ export default function AnalyticsCard() {
             <button
               onClick={() => handleScroll("down")}
               disabled={atBottom}
-              className={`w-full h-[46px] p-[12px] rounded-full border border-[#F9DB6F]  flex items-center justify-center gap-[10px] ${
-                atBottom ? "opacity-50 cursor-not-allowed " : "]"
+              className={`w-full h-[46px] p-[12px] rounded-full border border-[#F9DB6F] flex items-center justify-center gap-[10px] cursor-pointer ${
+                atBottom ? "cursor-not-allowed" : ""
               }`}
+              style={{borderRadius: "12px"}}
             >
-              <ChevronDown className="h-5 w-5 text-white" />
+              <ChevronDown
+                className={`h-5 w-5  ${
+                  atBottom ? "text-[#F9DB6F]" : "text-[white]"
+                }`}
+              />
             </button>
           </div>
         </div>
 
         {/* Middle Sidebar */}
-        {activeCategory ? (
-          <div className="w-full md:w-[1034px] h-full max-h-[625px] rounded-[20px] gap-[10px] pt-[54px] pr-[36px] pb-[54px] pl-[36px] bg-[#191919] ">
-            <CategoryItem
-              label="Training"
-              active={activeCategoryFloder === "Training"}
-              onClick={() => setActiveCategoryFloder("Training")}
-            />
-            <CategoryItem
-              label="Troubleshooting"
-              active={activeCategoryFloder === "Troubleshooting"}
-              onClick={() => setActiveCategoryFloder("Troubleshooting")}
-            />
-            <CategoryItem
-              label="Tools/Software"
-              active={activeCategoryFloder === "Tools/Software"}
-              onClick={() => setActiveCategoryFloder("Tools/Software")}
-            />
+        {activeTeam ? (
+          <div className="w-full max-w-xs  rounded-[20px] gap-[24px] pt-[30px] pb-[54px] px-[24px] bg-[#191919] justify-center items-center max-h-[80vh] overflow-auto">
+            {activeTeam.subcategories && activeTeam.subcategories.length > 0 ? (
+              activeTeam.subcategories.map((subcategory) => (
+                <div key={subcategory.id} className="flex flex-col gap-1">
+                  <CategoryItem
+                    label={subcategory.name}
+                    expanded={expandedSubcategories[subcategory.id]}
+                    active={activeSubcategory?.id === subcategory.id}
+                    onClick={() => handleSubcategoryClick(subcategory)}
+                  />
 
-            <div className="mt-4">
-              <CategoryItem
-                label="Policies"
-                expanded={isPoliciesExpanded}
-                active={activeCategoryFloder === "Policies"}
-                onClick={() => {
-                  setActiveCategoryFloder("Policies");
-                  setPoliciesExpanded((prev) => !prev);
-                }}
-              />
-
-              {isPoliciesExpanded && (
-                <div className="mx-5 mt-5 space-y-5">
-                  {["Warranty", "Return Policy", "Cancellation"].map(
-                    (label) => (
-                      <SubcategoryItem
-                        key={label}
-                        label={label}
-                        active={activeSubcategory === label}
-                        highlight={activeSubcategory === label}
-                        onClick={() => setActiveSubcategory(label)}
-                      />
-                    )
-                  )}
+                  {expandedSubcategories[subcategory.id] &&
+                    subcategory.knowledge_card &&
+                    subcategory.knowledge_card.length > 0 && (
+                      <div className="mx-5 mt-2 space-y-3 max-h-[450px] overflow-auto pr-2">
+                        {subcategory.knowledge_card.map((item) => (
+                          <SubcategoryItem
+                            key={item.id}
+                            label={item.title}
+                            active={activeItem?.id === item.id}
+                            highlight={activeItem?.id === item.id}
+                            onClick={() => handleItemClick(item)}
+                          />
+                        ))}
+                      </div>
+                    )}
                 </div>
-              )}
-            </div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center h-full !pt-[-30px]">
+                <h1 className="text-[20px] font-weight-[500] text-center">
+                  No subcategories available
+                </h1>
+                <p className="text-[20px] font-weight-[500]">
+                  Select a different category
+                </p>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="w-[334px] h-[90vh]  rounded-[20px] gap-[10px] pt-[54px] pr-[36px] pb-[54px] pl-[36px] bg-[#191919]">
-            <h1 className="text-xl font-medium">
+          <div className="max-w-lg max-h-[80vh] rounded-[20px] gap-[10px] p-5 bg-[#191919] flex flex-col items-center pt-10 ">
+            <h1 className="text-[20px] font-weight-[500] text-center">
               To select the folder, please choose category first
             </h1>
           </div>
         )}
 
         {/* Main Content */}
-        {activeCategory ? (
-          <div className=" h-full rounded-[20px] gap-[10px] pt-[24px] pr-[13px] pb-[24px] pl-[13px] bg-[#191919]">
-            <div className="p-6">
+        {activeTeam && activeItem ? (
+          <div className="w-full max-h-[80vh] rounded-[20px] gap-[10px] pt-[24px] pr-[13px] pb-[24px] pl-[13px] bg-[#191919]">
+            <div className="p-6 flex flex-col h-full">
               {/* Header */}
-              <div className="flex items-center justify-between ">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <h2 className="font-urbanist font-semibold text-[40px] leading-[20px] align-middle mr-3 ">
-                    Warranty
+                  <h2 className="font-urbanist font-semibold text-[40px] leading-[20px] align-middle mr-3">
+                    {activeItem.title}
                   </h2>
                   <div className="ml-2 flex items-center cursor-pointer gap-4">
                     <div className="relative inline-block">
                       {!isCopied ? (
                         <Copy
-                          onClick={() => copyToClipboard("Your text to copy")}
+                          onClick={() => copyToClipboard(activeItem.title)}
                           className="h-[28px] w-[28px] cursor-pointer text-white hover:text-white transition-colors"
                         />
                       ) : (
@@ -390,7 +673,6 @@ export default function AnalyticsCard() {
                     </div>
 
                     <div className="relative inline-block">
-                      {/* Trigger Button */}
                       <Button
                         ref={triggerRef}
                         className="h-[28px] w-[28px] flex items-center justify-center text-lg cursor-pointer bg-transparent hover:bg-transparent"
@@ -399,71 +681,107 @@ export default function AnalyticsCard() {
                         <Ellipsis className="h-5 w-5 text-white" />
                       </Button>
 
-                      {/* Floating Menu */}
                       {showFloating && (
                         <div
                           ref={floatingRef}
-                          className="absolute right-0 top-10 w-[199px] h-[220px] bg-[#2C2D2E] border border-[#3A3B3C] rounded-[10px] shadow-lg z-10 p-[14px] flex flex-col gap-[10px] text-left"
+                          className="absolute right-0 top-10 w-[199px]  bg-[#2C2D2E] border border-[#3A3B3C] rounded-[10px] shadow-lg z-10 p-[14px] flex flex-col gap-[10px] text-left"
                         >
                           <div
-                            className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F]  rounded-[4px] cursor-pointer"
-                            onClick={() => setShowFloating((prev) => !prev)}
+                            className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] rounded-[4px] cursor-pointer"
+                            onClick={() => {
+                              router.push(
+                                `knowledge-base/create-knowledge-base?cardId=${activeItem.id}`
+                              );
+                              setShowFloating(false);
+                            }}
                           >
-                            <Edit className="h-4 w-4 hover:text-[#F9DB6F] " />
+                            <Pencil className="h-4 w-4 hover:text-[#F9DB6F]" />
                             <span>Edit</span>
                           </div>
                           <div
                             className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] rounded-[4px] cursor-pointer"
-                            onClick={() => setShowFloating((prev) => !prev)}
+                            onClick={() => {
+                              // handleDeleteCard(activeItem.id);
+                              setShowFloating(false);
+                              setIsOpen(true);
+                              setSelectedCardId(activeItem.id);
+                            }}
                           >
                             <Trash2 className="h-4 w-4 hover:text-[#F9DB6F]" />
-                            <span className=" font-urbanist font-medium text-sm leading-6 tracking-normal  text-white rounded">
+                            <span className="font-urbanist font-medium text-sm leading-6 tracking-normal text-white rounded">
                               Delete
                             </span>
                           </div>
                           <div
                             className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] rounded-[4px] cursor-pointer"
-                            onClick={() => setShowFloating((prev) => !prev)}
+                            onClick={() => {
+                              handleSaveCard(activeItem.id);
+                            }}
                           >
-                            <Save className="h-4 w-4 hover:text-[#F9DB6F]" />
+                            <Import className="h-4 w-4 hover:text-[#F9DB6F]" />
                             <span>Save Card</span>
                           </div>
-                          <div
+
+                          {/* <div
                             className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] rounded-[4px] cursor-pointer"
-                            onClick={() => setShowFloating((prev) => !prev)}
+                            onClick={() => setShowFloating(false)}
                           >
                             <ArchiveIcon className="h-4 w-4 hover:text-[#F9DB6F]" />
                             <span>Archive Card</span>
-                          </div>
+                          </div> */}
+                          {!activeItem.is_verified && (
+                            <div
+                              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] rounded-[4px] cursor-pointer"
+                              onClick={() => {
+                                handleSaveCard(activeItem.id, true);
+                              }}
+                            >
+                              <Check />
+                              <span>Verify Card</span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Right side user info */}
                 <div className="flex items-center space-x-4">
-                  <div className="h-10 w-10 rounded-full  flex items-center justify-center">
-                    <Image
-                      src="/CheckMark.png"
-                      width={47.67}
-                      height={47.67}
-                      alt="checkmark"
-                    />
+                  <div className="h-10 w-10 rounded-full flex items-center justify-center">
+                    {activeItem.is_verified ? (
+                      <Image
+                        src="/CheckMark.png"
+                        width={47.67}
+                        height={47.67}
+                        alt="checkmark"
+                      />
+                    ) : (
+                      <Image
+                        src="/unverified.png"
+                        width={47.67}
+                        height={47.67}
+                        alt="checkmark"
+                      />
+                      // <BadgeX color="#EA2D30" size={"medium"} />
+                    )}
                   </div>
                   <div className="flex w-full items-end bg-[#FFFFFF14] rounded-full p-2 gap-3">
-                    <div className="h-10 w-10 ">
+                    <div className="h-10 w-10">
                       <Image
-                        src="/Pic1.png"
+                        src={
+                          activeItem.card_owner_id.profile_picture ||
+                          "/pic1.png" ||
+                          "/placeholder.svg"
+                        }
                         alt="User"
                         className="rounded-full"
                         width={60}
                         height={60}
                       />
                     </div>
-                    <div className="flex flex-col text-[20] ">
-                      <span className="font-urbanist font-medium  leading-[100%]">
-                        John Doe
+                    <div className="flex flex-col text-[20]">
+                      <span className="font-urbanist font-medium leading-[100%]">
+                        {`${activeItem.card_owner_id.first_name} ${activeItem.card_owner_id.last_name}`}
                       </span>
                       <span
                         className="text-xs text-[#F9DB6F] underline cursor-pointer"
@@ -471,83 +789,71 @@ export default function AnalyticsCard() {
                       >
                         Reassign
                       </span>
-                      <ReassignUser
+                      <ReassignUserModal
                         isOpen={isModalOpen}
                         onClose={() => setIsModalOpen(false)}
-                        onAssign={handleAssignUser}
+                        orgId={userDetails?.user?.organizations?.id}
+                        cardId={activeItem.id}
+                        currentAssigneeId={activeItem.card_owner_id.id}
                       />
+                      {/* <KnowledgeManagementWithRealData/> */}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Subheading */}
-              <h3 className="font-urbanist font-semibold text-[28px] leading-[20px] align-middle text-[#828282] mb-4">
-                Policies
+              <h3 className="font-urbanist font-semibold text-[28px] leading-[20px] align-middle text-[#828282] mb-4 mt-3">
+                {activeSubcategory?.name}
               </h3>
 
-              {/* Text Content */}
-              <div className="font-urbanist font-medium text-[20px] leading-[40px] align-middle ">
-                <p className=" mb-4">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-                  do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                  Ut enim ad minim veniam, quis nostrud exercitation ullamco
-                  laboris nisi ut aliquip ex ea commodo consequat. Duis aute
-                  irure dolor in reprehenderit in voluptate velit esse cillum
-                  dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-                  cupidatat non proident, sunt in culpa qui officia deserunt
-                  mollit anim id est laborum.
-                </p>
-                <p className="mb-4">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-                  do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                  Ut enim ad minim veniam. Lorem ipsum dolor sit amet,
-                  consectetur adipiscing elit, sed do eiusmod tempor incididunt
-                  ut labore et dolore magna aliqua.
-                </p>
+              <div className="font-urbanist font-medium text-[20px] leading-[40px] align-middle flex-grow overflow-auto">
+                <p className="mb-4">{stripHtml(activeItem.content)}</p>
               </div>
 
-              {/* File & Tags */}
-              <div className="mt-8">
+              <div className="mt-auto pt-4 ">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <FileText className="h-[40px] w-[40px]" />
                     <span className="ml-2 font-urbanist font-medium text-[20px] leading-[100%]">
-                      Warranty.pdf
+                      {activeItem.title}.pdf
                     </span>
                   </div>
-                  <div>
-                    {/* <div className="font-urbanist font-medium text-[16px] leading-[20px] align-middle">Tags:</div> */}
-                    <div className="flex gap-2 mt-1 flex-wrap">
-                      <div className="bg-[#F9DB6F] w-[113px] h-[24px] text-black text-xs px-2 py-1 rounded-[4px] flex items-center">
-                        Software Rights{" "}
-                        <span className="ml-1 cursor-pointer   h-[16px]">
-                          ×
-                        </span>
-                      </div>
-                      <div className="bg-[#3A3B3C] text-white text-xs px-2 py-1 rounded-[4px]">
-                        Design
-                      </div>
-                      <div className="bg-[#F9DB6F] text-black text-xs px-2 py-1 rounded-[4px] flex items-center">
-                        Product Rules{" "}
-                        <span className="ml-1 cursor-pointer w-[16px] h-[16px]">
-                          ×
-                        </span>
-                      </div>
-                    </div>
+                  <div className="p-2">
+                    <Tag
+                      initialTags={activeItem.tags || []}
+                      onTagsChange={() => {}}
+                      className="w-full"
+                    />
                   </div>
                 </div>
               </div>
             </div>
           </div>
+        ) : activeTeam ? (
+          <div className="w-full h-[625px] rounded-[20px] gap-[10px]  bg-[#191919] flex  p-10">
+            <div className="text-center">
+              <p className="text-[20px] font-weight-[500]">
+                Select an item to view details
+              </p>
+            </div>
+          </div>
         ) : (
-          <div className="w-full h-[90vh] rounded-[20px] gap-[10px] pt-[24px] pr-[13px] pb-[24px] pl-[13px] bg-[#191919]">
-            <h1 className="text-xl font-medium">
-              To select the folder, please choose category first
-            </h1>
+          <div className="w-full h-[625px] rounded-[20px] gap-[10px]  bg-[#191919] flex p-10">
+            <div className="text-center">
+              <h1 className="text-[20px] font-weight-[500]">
+                To select the folder, please choose category first
+              </h1>
+            </div>
           </div>
         )}
       </div>
+      <DeleteConfirmationModal
+        onConfirm={() => handleDeleteCard(selectedCardId)}
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        title="Knowledge Card"
+        isLoading={isCardDeleteLoading}
+      />
     </div>
   );
 }

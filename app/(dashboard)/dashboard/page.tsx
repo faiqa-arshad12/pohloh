@@ -1,13 +1,11 @@
 "use client";
 import {AnnouncementCard} from "@/components/dashboard/announcments";
 import {SavedCards} from "@/components/dashboard/saved-card";
-import UnverifiedCards from "@/components/dashboard/unverfied-card";
+import {UnverifiedCards} from "@/components/dashboard/unverfied-card";
 import React, {useEffect, useState} from "react";
 import Image from "next/image";
 import {Calendar, dateFnsLocalizer, Event} from "react-big-calendar";
 import {format, parse, startOfWeek, getDay} from "date-fns";
-import {useSearchParams} from "next/navigation";
-
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import {
   Select,
@@ -17,12 +15,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {enUS, fr, de} from "date-fns/locale";
-import {Button} from "@/components/ui/button";
-import {useAuth, useUser} from "@clerk/nextjs";
 import {addMonths, startOfMonth, endOfMonth} from "date-fns";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import RenewSubscription from "@/components/dashboard/modals/renew-subscription";
-import {useRole} from "@/components/ui/Context/UserContext";
+import {toast} from "sonner";
+import {useUser} from "@clerk/nextjs";
+import {Skeleton} from "@/components/ui/skeleton";
+
 type ViewMode = "Monthly" | "Weekly" | "Daily";
 type Interval = "monthly" | "weekly" | "daily";
 
@@ -39,7 +38,9 @@ const localizer = dateFnsLocalizer({
   getDay,
   locales,
 });
+
 type DayStatus = "active" | "urgent" | "inactive";
+
 interface CustomToolbarProps {
   label: string;
   onNavigate: (direction: "PREV" | "NEXT") => void;
@@ -68,16 +69,89 @@ const Page = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>(
     new Date().toISOString()
   );
+  const {user, isLoaded: isUserLoaded} = useUser();
+  const [cardsData, setCards] = useState<any[]>([]);
+  const [userInfo, setUserInfo] = useState<any[]>([]);
 
-  const [dateStatuses, setDateStatuses] = useState<
-    Record<string, "active" | "urgent" | "inactive">
-  >({
+  const [isLoading, setIsLoading] = useState(true);
+  const [dateStatuses] = useState<Record<string, DayStatus>>({
     "2025-04-15": "active",
     "2025-04-20": "urgent",
     "2025-04-25": "active",
     "2025-04-08": "urgent",
     "2025-04-30": "inactive",
   });
+
+  useEffect(() => {
+    const fetchCards = async () => {
+      if (!isUserLoaded || !user?.id) return;
+
+      try {
+        setIsLoading(true);
+
+        // Get user details
+        const userRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/users/${user.id}`,
+          {
+            method: "GET",
+            headers: {"Content-Type": "application/json"},
+            credentials: "include",
+          }
+        );
+
+        if (!userRes.ok) throw new Error("Failed to fetch user");
+        const userData = await userRes.json();
+        const orgId = userData?.user?.organizations?.id;
+        const userRole = userData?.user?.role;
+        setUserInfo(userData.user);
+
+        if (!orgId) {
+          setCards([]);
+          return;
+        }
+
+        // Get all cards for the organization
+        const cardsRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/cards/organizations/${orgId}`,
+          {
+            method: "GET",
+            headers: {"Content-Type": "application/json"},
+            credentials: "include",
+          }
+        );
+
+        if (!cardsRes.ok) throw new Error("Failed to fetch cards");
+        const {cards} = await cardsRes.json();
+
+        if (userRole === "owner") {
+          setCards(cards || []);
+        } else if (userRole === "user") {
+          const filteredCards = (cards || []).filter((card: any) => {
+            return card.card_owner_id?.id === userData.user.id;
+          });
+
+          setCards(filteredCards);
+        } else {
+          const filteredCards = (cards || []).filter((card: any) => {
+            return (
+              card.card_owner_id?.id === userData.user.id ||
+              card.category_id.id == userData.user.team_id
+            );
+          });
+
+          setCards(filteredCards);
+        }
+      } catch (err) {
+        console.error("Error fetching cards:", err);
+        toast.error("Failed to load cards");
+        setCards([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCards();
+  }, [user, isUserLoaded]);
 
   const generateMonths = (count: number) => {
     const months = [];
@@ -97,13 +171,6 @@ const Page = () => {
   const CustomDayCell = ({date}: CustomDayCellProps) => {
     const dateKey = date.toISOString().split("T")[0];
     const status = dateStatuses[dateKey] || "inactive";
-
-    const handleStatusChange = (newStatus: DayStatus) => {
-      setDateStatuses((prev) => ({
-        ...prev,
-        [dateKey]: newStatus,
-      }));
-    };
 
     const getStatusColor = (status: string) => {
       switch (status) {
@@ -149,16 +216,6 @@ const Page = () => {
                 )}
                   w-[38px] h-[38px] rounded-full cursor-pointer transition-all
                   duration-200 hover:scale-105`}
-                onClick={() => {
-                  const statuses: DayStatus[] = [
-                    "active",
-                    "urgent",
-                    "inactive",
-                  ];
-                  const nextStatus =
-                    statuses[(statuses.indexOf(status) + 1) % statuses.length];
-                  handleStatusChange(nextStatus);
-                }}
               >
                 {date.getDate()}
               </div>
@@ -222,6 +279,7 @@ const Page = () => {
       const end = format(endOfMonth(date), "d MMM, yyyy");
       return `${start} - ${end}`;
     };
+
     return (
       <div className="flex flex-col w-full text-white">
         <div className="flex justify-between items-center p-4">
@@ -243,9 +301,9 @@ const Page = () => {
           </div>
         </div>
 
-        <div className="  p-2 mx-4 mb-5 rounded-md inline-block">
+        <div className="py-2 mx-4 mb-5 rounded-md inline-block">
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="bg-[#232323] w-[114px] h-[41px] text-gray-400 p-2 rounded-[80px] border-none cursor-pointer">
+            <SelectTrigger className="bg-[#232323] w-[full] h-[41px] text-[#FFFFFF] p-4  border-none cursor-pointer" style={{borderRadius:'8px'}}>
               <SelectValue>{formatDateRange(selectedMonth)}</SelectValue>
             </SelectTrigger>
 
@@ -266,6 +324,44 @@ const Page = () => {
     );
   };
 
+  if (!isUserLoaded || isLoading) {
+    return (
+      <div className="flex flex-col gap-6 py-4">
+        <Skeleton className="h-[44px] w-[300px] rounded-lg" />
+
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
+          {[1, 2, 3].map((item) => (
+            <div
+              key={item}
+              className="h-full space-y-4 bg-[#191919] p-6 rounded-2xl"
+            >
+              <Skeleton className="h-6 w-1/2 rounded-lg" />
+              <Skeleton className="h-24 rounded-lg" />
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-16 rounded-lg" />
+                <Skeleton className="h-4 w-16 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </section>
+
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-4 bg-[#191919] p-6 rounded-2xl">
+            <div className="flex justify-between items-center">
+              <Skeleton className="h-6 w-1/3 rounded-lg" />
+              <Skeleton className="h-10 w-[114px] rounded-full" />
+            </div>
+            <Skeleton className="h-64 rounded-lg" />
+          </div>
+          <div className="space-y-4 bg-[#191919] p-6 rounded-2xl">
+            <Skeleton className="h-6 w-1/3 rounded-lg" />
+            <Skeleton className="h-64 rounded-lg" />
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6 py-4">
       <h1 className="text-white text-[36px] font-semibold">
@@ -273,20 +369,20 @@ const Page = () => {
       </h1>
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
         <div className="h-full">
-          <SavedCards />
+          <SavedCards cards={cardsData} />
         </div>
         <div className="h-full">
-          <UnverifiedCards />
+          <UnverifiedCards cards={cardsData} />
         </div>
         <div className="h-full">
-          <AnnouncementCard />
+          <AnnouncementCard userData={userInfo} />
         </div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6" style={{borderRadius:'30px'}}>
-        <div className="lg:col-span-2 bg-[#191919] rounded-lg p-4 h-full" style={{borderRadius:'30px'}}>
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-[#191919] rounded-2xl p-6 h-full">
           <div className="flex flex-col sm:flex-row justify-between mb-4">
-            <h3 className="text-xl font-medium mb-2 sm:mb-0 text-white p-4">
+            <h3 className="text-xl font-medium mb-2 sm:mb-0 text-white">
               Tutor Analytics
             </h3>
             <div className="flex items-center gap-2 cursor-pointer">
@@ -298,44 +394,28 @@ const Page = () => {
                   <SelectValue placeholder="Monthly" />
                 </SelectTrigger>
                 <SelectContent className="bg-black text-white">
-                  <SelectItem
-                    value="monthly"
-                    className="cursor-pointer px-4 py-2 hover:bg-neutral-800 rounded-md focus:bg-white focus:outline-none"
-                  >
-                    Monthly
-                  </SelectItem>
-                  <SelectItem
-                    value="weekly"
-                    className="cursor-pointer px-4 py-2 hover:bg-neutral-800 rounded-md focus:bg-white focus:outline-none"
-                  >
-                    Weekly
-                  </SelectItem>
-                  <SelectItem
-                    value="daily"
-                    className="cursor-pointer px-4 py-2 hover:bg-neutral-800 rounded-md focus:bg-white focus:outline-none"
-                  >
-                    Daily
-                  </SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="daily">Daily</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <div className="relative h-48 sm:h-56 lg:h-64 w-full" >
+          <div className="relative h-48 sm:h-56 lg:h-64 w-full">
             <Image
               src="/Frame 5.png"
               alt="Analytics Chart"
               fill
               className="rounded-xl object-contain"
               quality={100}
-
               priority
             />
           </div>
         </div>
-        <div className="h-full w-full  bg-[#191919] p-4 " style={{borderRadius:'30px'}}>
+        <div className="h-full w-full bg-[#191919] p-6 rounded-2xl">
           <Calendar
             localizer={localizer}
-            defaultDate={new Date(selectedMonth)} // Ensure selectedMonth is a Date object here
+            defaultDate={new Date(selectedMonth)}
             views={["month"]}
             style={{
               height: 400,
@@ -361,7 +441,7 @@ const Page = () => {
               },
             }}
             className="custom-calendar [&_.rbc-row]:gap-1"
-            key={selectedMonth} // Add key to force re-render when selectedMonth changes
+            key={selectedMonth}
           />
         </div>
       </section>

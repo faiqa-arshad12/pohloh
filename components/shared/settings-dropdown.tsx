@@ -3,8 +3,19 @@ import {useClerk} from "@clerk/nextjs";
 import {useRouter} from "next/navigation";
 import {useState, useRef, useEffect} from "react";
 import Image from "next/image"; // Added Next.js Image component
+type TopBarProps = {
+  userData: any;
+};
 
-export default function TopBarIcons() {
+interface DropdownItemProps {
+  icon: React.ReactNode;
+  text: string;
+  className?: string;
+  onClick: () => void;
+  isSelected?: boolean;
+}
+
+export function TopBarIcons({userData}: TopBarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const {signOut} = useClerk();
@@ -41,7 +52,7 @@ export default function TopBarIcons() {
           className="rounded-full w-14 h-14 overflow-hidden border-1 border-zinc-700 relative"
         >
           <Image
-            src="/placeholder-profile.svg"
+            src={userData?.profile_picture || "/placeholder-profile.svg"}
             alt="Avatar"
             fill
             sizes="(max-width: 768px) 100vw, 50vw"

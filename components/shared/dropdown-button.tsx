@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {
   ChevronDown,
   BookOpen,
@@ -7,10 +7,10 @@ import {
   FileSearch,
   FolderOpen,
 } from "lucide-react";
-import { Button } from "../ui/button";
-import { useRouter } from "next/navigation";
+import {Button} from "../ui/button";
+import {useRouter} from "next/navigation";
 import CreateAnnouncement from "../dashboard/modals/create-announcemnet";
-import { cn } from "@/lib/utils";
+import {cn} from "@/lib/utils";
 import Image from "next/image";
 
 interface DropdownItemProps {
@@ -100,17 +100,14 @@ const CreateCardDropdown: React.FC = () => {
           <div className="py-1  mx-[10px]">
             <DropdownItem
               icon={
-              <Image
-              alt="Chevron Down"
-              src="/icons/card-plus.svg"
-              height={16}
-              width={16}
-              className={cn(
-                "ml-1 transition-transform duration-200",
-              )}
-            />
-            
-            }
+                <Image
+                  alt="Chevron Down"
+                  src="/icons/card-plus.svg"
+                  height={16}
+                  width={16}
+                  className={cn("ml-1 transition-transform duration-200")}
+                />
+              }
               text="Create Knowledge Card"
               onClick={() =>
                 handleItemClick(
@@ -123,15 +120,12 @@ const CreateCardDropdown: React.FC = () => {
             <DropdownItem
               icon={
                 <Image
-                alt="Chevron Down"
-                src="/icons/card-plus.svg"
-                height={16}
-                width={16}
-                className={cn(
-                  "ml-1 transition-transform duration-200",
-                )}
-              />
-              
+                  alt="Chevron Down"
+                  src="/icons/card-plus.svg"
+                  height={16}
+                  width={16}
+                  className={cn("ml-1 transition-transform duration-200")}
+                />
               }
               text="Create Learning Path"
               onClick={() =>
@@ -144,16 +138,15 @@ const CreateCardDropdown: React.FC = () => {
             />
 
             <DropdownItem
-             icon={
-              <Image
-              alt="Chevron Down"
-              src="/icons/announcement-line.svg"
-              height={16}
-              width={16}
-              className={cn(
-                "ml-1 transition-transform duration-200",
-              )}
-            />}
+              icon={
+                <Image
+                  alt="Chevron Down"
+                  src="/icons/announcement-line.svg"
+                  height={16}
+                  width={16}
+                  className={cn("ml-1 transition-transform duration-200")}
+                />
+              }
               text="Create Announcement"
               onClick={() =>
                 handleItemClick(
@@ -168,37 +161,35 @@ const CreateCardDropdown: React.FC = () => {
             <DropdownItem
               icon={
                 <Image
-                alt="Chevron Down"
-                src="/icons/bi_card-text.svg"
-                height={16}
-                width={16}
-                className={cn(
-                  "ml-1 transition-transform duration-200",
-                )}
-              />}
+                  alt="Chevron Down"
+                  src="/icons/bi_card-text.svg"
+                  height={16}
+                  width={16}
+                  className={cn("ml-1 transition-transform duration-200")}
+                />
+              }
               text="View Learning Path Drafts"
               onClick={() =>
-                handleItemClick(
-                  "/knowledge-base/Access-draft",
-                  "View Learning Path Drafts"
-                )
+                handleItemClick("/tutor/drafts", "View Learning Path Drafts")
               }
               isSelected={selectedItem === "View Learning Path Drafts"}
             />
             <DropdownItem
-             icon={
-              <Image
-              alt="Chevron Down"
-              src="/icons/bi_card-text.svg"
-              height={16}
-              width={16}
-              className={cn(
-                "ml-1 transition-transform duration-200",
-              )}
-            />}
+              icon={
+                <Image
+                  alt="Chevron Down"
+                  src="/icons/bi_card-text.svg"
+                  height={16}
+                  width={16}
+                  className={cn("ml-1 transition-transform duration-200")}
+                />
+              }
               text="View Card Drafts"
               onClick={() =>
-                handleItemClick("/tutor/Drafts", "View Card Drafts")
+                handleItemClick(
+                  "/knowledge-base/cards?status=draft",
+                  "View Card Drafts"
+                )
               }
               isSelected={selectedItem === "View Card Drafts"}
             />

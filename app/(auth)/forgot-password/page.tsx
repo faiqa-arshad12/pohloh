@@ -17,7 +17,7 @@ const SignupPage = () => {
           ScreenMobile={ForgotPassword}
           ClassNameScreen={"w-full lg:w-[70%] lg:mt-0 mt-10 justify-center"}
         />
-        
+
       </div>
 
       {/* Right Side */}

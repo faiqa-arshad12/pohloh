@@ -12,7 +12,6 @@ import Loader from "../shared/loader";
 import {ShowToast} from "../shared/show-toast";
 import {useUser} from "@clerk/nextjs";
 import {getLocalStorage, PAYMENT_DATA_KEY} from "@/lib/local-storage";
-import {useRouter} from "next/navigation";
 
 type PaymentFormProps = {
   clientSecret: string;
@@ -136,7 +135,7 @@ function StripePaymentForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="border border-gray-700 rounded-lg p-4 bg-transparent">
+      <div className="border border-gray-700 rounded-lg p-4 bg-transparent !font-urbanist">
         <PaymentElement
           options={{
             layout: {
@@ -179,7 +178,7 @@ function StripePaymentForm({
       <button
         type="submit"
         disabled={!stripe || loading}
-        className={`w-full py-3 px-4 rounded-lg font-medium ${
+        className={`w-full py-3 px-4 rounded-lg font-medium  cursor-pointer ${
           loading
             ? "bg-[#F9DB6F] cursor-not-allowed"
             : "bg-[#F9DB6F] hover:bg-[#F9DB6F]"
@@ -216,7 +215,6 @@ export default function PaymentPage({
   );
   const [paymentComplete, setPaymentComplete] = useState<boolean>(false);
   const {user} = useUser();
-  const router = useRouter();
 
   // Check if payment was already completed from localStorage
   useEffect(() => {
@@ -269,7 +267,7 @@ export default function PaymentPage({
           </h2>
           <p className="text-gray-400 mt-2">
             Thank you! Your payment has been processed successfully. You now
-            have full access to Pohloh.
+            have access to Pohloh.
           </p>
         </div>
       ) : clientSecret ? (
@@ -280,6 +278,7 @@ export default function PaymentPage({
             clientSecret,
             loader: "always",
           }}
+
         >
           <StripePaymentForm
             clientSecret={clientSecret}
@@ -287,6 +286,10 @@ export default function PaymentPage({
             onPaymentComplete={onPaymentComplete}
           />
         </Elements>
+      ) : !clientSecret && !isSubscribed && !org_id ? (
+        <div className="flex items-center justify-center py-12">
+          Redirecting...
+        </div>
       ) : (
         <div className="flex items-center justify-center py-12">
           <Loader size={40} />

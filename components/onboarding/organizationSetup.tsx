@@ -214,7 +214,7 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
             <div className="mb-6">
               <FormLabel>Add departments to your organization</FormLabel>
               <p className="text-xs text-[#D1D1D1] mb-3 mt-3">
-                This will pre- populate categories for your knowledge base.
+                This will pre-populate categories for your knowledge base.
                 Don't worry you can always edit these later. Select all that
                 apply.{" "}
               </p>
@@ -259,7 +259,7 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
                           <button
                             type="button"
                             onClick={() => toggleDepartment(department)}
-                            className="hover:text-[#ffffff]"
+                            className="hover:text-[#ffffff] cursor-pointer"
                           >
                             ×
                           </button>
@@ -306,7 +306,7 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
                       <Button
                         type="button"
                         onClick={() => field.onChange((field.value || 0) + 1)}
-                        className="px-3 py-2 bg-[#FFFFFF14] text-white rounded hover:bg-[#FFFFFF14] transition"
+                        className="px-3 py-2 bg-[#FFFFFF14] text-white rounded hover:bg-[#FFFFFF14] transition cursor-pointer"
                       >
                         +
                       </Button>
@@ -329,7 +329,7 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
                         onClick={() =>
                           field.onChange(Math.max((field.value || 0) - 1, 1))
                         }
-                        className="px-3 py-2 bg-[#FFFFFF14] text-white rounded hover:bg-[#FFFFFF14] transition"
+                        className="px-3 py-2 bg-[#FFFFFF14] text-white rounded hover:bg-[#FFFFFF14] transition cursor-pointer"
                       >
                         −
                       </Button>
@@ -345,13 +345,13 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
                 type="button"
                 onClick={onPrevious}
                 disabled
-                className="flex-1 h-[48px] rounded-[8px] text-white border border-gray-300 bg-[#2C2D2E] hover:bg-[#2C2D2E]"
+                className="flex-1 h-[48px] rounded-[8px] text-white border border-gray-300 bg-[#2C2D2E] hover:bg-[#2C2D2E] cursor-pointer"
               >
                 Previous
               </Button>
               <Button
                 type="submit"
-                className="flex-1 h-[48px] rounded-[8px] bg-[#F9DB6F] text-black hover:bg-[#F9DB6F]"
+                className="flex-1 h-[48px] rounded-[8px] bg-[#F9DB6F] text-black hover:bg-[#F9DB6F] cursor-pointer"
                 disabled={isloading}
               >
                 {isloading ? (
@@ -372,7 +372,7 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
-                      className="border-gray-500 data-[state=checked]:bg-yellow-400 data-[state=checked]:border-yellow-400"
+                      className="border-gray-500 data-[state=checked]:bg-yellow-400 data-[state=checked]:border-yellow-400 cursor-pointer"
                     />
                   </FormControl>
                   <label htmlFor="updates" className="text-xs text-gray-300">

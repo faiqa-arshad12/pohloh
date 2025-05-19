@@ -1,14 +1,23 @@
+"use client";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import {useState} from "react";
 
 export function Footer() {
+  const languageMap = {
+    en: "English",
+  };
+
+  type LanguageCode = keyof typeof languageMap;
+
+  const [selectedLang, setSelectedLang] = useState<LanguageCode>("en");
+
   return (
     <footer className="py-16 flex justify-between items-center text-white">
       <div className="flex items-center space-x-4 text-sm text-[#8996A9] dark:text-gray-400">
@@ -25,23 +34,25 @@ export function Footer() {
         </Link>
         <span>•</span>
         <Link href="/help" className="hover:text-gray-100">
-          Help
+          Helps
         </Link>
         <div className="flex items-center md:ml-16">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="text-sm text-[#8996A9]">
-              English
-              <ChevronDown className="ml-1 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>English</DropdownMenuItem>
-            <DropdownMenuItem>Français</DropdownMenuItem>
-            <DropdownMenuItem>Español</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+          <Select
+            value={selectedLang}
+            onValueChange={(val: LanguageCode) => setSelectedLang(val)}
+          >
+            <SelectTrigger className="flex items-center gap-4 outline-none border-none ">
+              <img src="/language.png" alt="Lang" className="w-5 h-5" />
+              <span>{languageMap[selectedLang]}</span>
+            </SelectTrigger>
+
+            <SelectContent className="bg-[#2C2D2E] text-[#FFFFFF52]">
+              <SelectItem value="en" className="text-[14px] text-[#8996A9]">
+                English
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </footer>
   );

@@ -5,28 +5,44 @@ import {usePathname} from "next/navigation";
 import {Header} from "@/components/shared/header";
 import Image from "next/image";
 import NotificationsPanel from "@/components/shared/notifications";
-import { useUser } from "@clerk/nextjs";
-import { useRole } from "@/components/ui/Context/UserContext";
-import { Role } from "@/types/types";
-import { users } from "@/utils/constant";
+import {useUser} from "@clerk/nextjs";
+import {useRole} from "@/components/ui/Context/UserContext";
+import {Role} from "@/types/types";
+import {users} from "@/utils/constant";
+import RenewSubscription from "@/components/dashboard/modals/renew-subscription";
 
 export default function ClientLayout({children}: {children: React.ReactNode}) {
   const [showAllNotifications, setShowAllNotifications] = useState(true);
   const pathname = usePathname();
   const {user} = useUser();
+
   const {setRoleAccess} = useRole();
   const isDashboard = pathname === "/dashboard";
+  const [showRenewModal, setShowRenewModal] = useState(false);
+  const[userData, setUserData] = useState<any>()
+
+  useEffect(() => {
+    if (user) {
+      const shouldShowModal =
+        !user.unsafeMetadata?.is_subscribed &&
+        !user.publicMetadata?.is_subscribed;
+      setShowRenewModal(shouldShowModal);
+    }
+  }, [user]);
 
   useEffect(() => {
     const createUser = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/${users}/${user?.id}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        });
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/${users}/onboarding-data/${user?.id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          }
+        );
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -36,9 +52,8 @@ export default function ClientLayout({children}: {children: React.ReactNode}) {
         }
 
         const result = await response.json();
-        // console.log("User created:", result);
-        if (result.user.role) setRoleAccess(result.user.role as Role);
-
+        setUserData(result.data)
+        if (result.data.role) setRoleAccess(result.data.role as Role);
       } catch (err) {
         console.error("Error creating user:", err);
       }
@@ -47,45 +62,16 @@ export default function ClientLayout({children}: {children: React.ReactNode}) {
     if (user) {
       createUser();
     }
-  }, [user]);
-
-
-    // useEffect(() => {
-    //   const fetch = async() =>{
-
-    //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${users}/user`, {
-    //             method: "POST",
-    //             headers: {
-    //               "Content-Type": "application/json",
-    //             },
-    //             body: JSON.stringify(userData),
-    //             credentials: "include", // Include credentials if needed
-    //           });
-
-    //           if (!response.ok) {
-    //             const errorText = await response.text();
-    //             throw new Error(
-    //               `Failed to create user: ${response.status} - ${errorText}`
-    //             );
-    //           }
-
-    //           const result = await response.json();
-
-
-    //     if (user) {
-    //       const role = user.unsafeMetadata?.role;
-    //       if (role) setRoleAccess(role as Role);
-    //     }
-    //   }
-    // }, [user]);
+  }, [user, setRoleAccess]);
 
   return (
     <div
-      className={`antialiased min-h-screen flex flex-col relative ${
+      className={`font-urbanist min-h-screen flex flex-col relative ${
         isDashboard ? "" : "bg-black"
       }`}
     >
-      {/* Gradient background only on /dashboard */}
+      {showRenewModal && <RenewSubscription open={showRenewModal} />}
+
       {isDashboard && (
         <div className="gradient-background fixed inset-0 -z-10">
           <Image
@@ -98,11 +84,11 @@ export default function ClientLayout({children}: {children: React.ReactNode}) {
           />
         </div>
       )}
-
-      <div className="flex min-h-screen flex-col">
+      <div className={`flex min-h-screen flex-col`}>
         <Header
           showAllNotifications={showAllNotifications}
           setShowAllNotifications={setShowAllNotifications}
+          userData={userData}
         />
 
         {showAllNotifications ? (

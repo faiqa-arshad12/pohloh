@@ -95,19 +95,9 @@ export default function TutorAnalytics() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [timePeriod, setTimePeriod] = useState("Monthly");
   const [expandedItems, setExpandedItems] = useState(new Set());
-  const [rowsPerPageLeaderboard, setRowsPerPageLeaderboard] = useState(4);
-  const [currentPageLeaderboard, setCurrentPageLeaderboard] = useState(1);
+  
 
-  // Pagination logic
-  const paginatedLeaderboardData = dataLeaderboardEntry.slice(
-    (currentPageLeaderboard - 1) * rowsPerPageLeaderboard,
-    currentPageLeaderboard * rowsPerPageLeaderboard
-  );
 
-  const totalLeaderboardPages = Math.ceil(
-    dataLeaderboardEntry.length / rowsPerPageLeaderboard
-  );
-  console.log("", timePeriod, expandedItems);
 
   const categories = [
     { id: 1, name: "Marketing", score: 91, icon: "📢" },
@@ -391,7 +381,7 @@ export default function TutorAnalytics() {
           <div className="w-full">
             <Table
               columns={columnsLeaderboardEntry}
-              data={paginatedLeaderboardData}
+              data={dataLeaderboardEntry}
               renderCell={(column, row) => {
                 if (column === "rankIcon")
                   return (
@@ -425,51 +415,7 @@ export default function TutorAnalytics() {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row justify-end items-center gap-4 mt-6 text-sm text-gray-400">
-          <div className="flex items-center gap-2">
-            <span>Rows per page:</span>
-            <Select
-              value={String(rowsPerPageLeaderboard)}
-              onValueChange={(value) => {
-                setRowsPerPageLeaderboard(Number(value));
-                setCurrentPageLeaderboard(1);
-              }}
-            >
-              <SelectTrigger className="bg-black text-white w-[70px] border-0 py-1 px-2 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-black text-white">
-                {[4, 6, 8, 10, 20].map((size) => (
-                  <SelectItem key={size} value={String(size)}>
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
-          <span className="text-xs text-gray-400">
-            Page {currentPageLeaderboard} of {totalLeaderboardPages}
-          </span>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              onClick={() => setCurrentPageLeaderboard((prev) => prev - 1)}
-              disabled={currentPageLeaderboard === 1}
-              className="bg-[#333435] hover:bg-[#333435] border-[#CDCDCD] border py-1 px-3 rounded-[8px] flex items-center gap-1"
-            >
-              <ArrowLeft size={14} />
-              Previous
-            </Button>
-            <Button
-              onClick={() => setCurrentPageLeaderboard((prev) => prev + 1)}
-              disabled={currentPageLeaderboard === totalLeaderboardPages}
-              className="bg-[#F9DB6F] hover:bg-[#F9DB6F] text-black py-1 px-3 rounded-[8px] flex items-center gap-1"
-            >
-              Next
-              <ArrowRight size={14} />
-            </Button>
-          </div>
-        </div>
       </div>
     </div>
   );

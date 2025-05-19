@@ -1,8 +1,6 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher, clerkClient } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { UserStatus } from './types/enum';
-import { getUserDetails } from './actions/auth';
-import { users } from './utils/constant';
 
 // Matchers
 const isPublicPageRoute = createRouteMatcher([
@@ -19,65 +17,51 @@ const isPublicPageRoute = createRouteMatcher([
 
 const isPublicApiRoute = createRouteMatcher([
   "/api/auth/(.*)",
-  "/api/webhooks/clerk(.*)",
+  "/api/webhooks/(.*)", // Allow all webhooks
+  // "/api/(.*)", // Allow subscription-related APIs
 ]);
 
 const isUserOnboardingRoute = createRouteMatcher(["/onboarding(.*)"]);
 const isOwnerOnboardingRoute = createRouteMatcher(["/owner/onboarding(.*)"]);
+const isSettingsRoute = createRouteMatcher(["/settings(.*)"]);
+const isAllowedApiRoute = createRouteMatcher([
+  "/api/trpc/(.*)", // Add your specific API routes that should be accessible
+  "/api/(.*)", // Subscription APIs
+]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { pathname, origin, searchParams } = req.nextUrl;
+  const { pathname, origin } = req.nextUrl;
 
-  // STEP 1: Check for Clerk verification parameters in the URL
-  // These parameters are present when a user clicks a verification link
-
-
-  // const hasVerificationParams =
-  //   searchParams.has('__clerk_status') ||
-  //   searchParams.has('__clerk_created_session') ||
-  //   searchParams.has('__clerk_ticket');
-
-  // // If verification parameters are present, allow the request to proceed
-  // // This lets Clerk handle the verification and establish the session
-  // if (hasVerificationParams && userId && user.status!==UserStatus.approved) {
-  //   return NextResponse.next();
-  // }
-
-  // STEP 2: Allow public API routes to proceed
-  if (isPublicApiRoute(req)) {
+  // STEP 1: Allow public and whitelisted API routes to proceed
+  if (isPublicApiRoute(req) || isAllowedApiRoute(req)) {
     return NextResponse.next();
   }
 
-  // STEP 3: Check authentication status
-
-  // STEP 4: Handle authenticated users
+  // STEP 2: Check authentication status
   const { userId } = await auth();
+
   if (userId) {
+    const clerk = await clerkClient();
+    const user = await clerk.users.getUser(userId);
+
     try {
-      // const user = await getUserDetails(userId!);
+      const isApproved = user.unsafeMetadata?.status === UserStatus.approved ||
+        user?.publicMetadata?.status === UserStatus.approved;
+      const isOwner = user.unsafeMetadata?.role === 'owner' ||
+        user?.publicMetadata?.role === 'owner';
+      const isSubscribed = user.unsafeMetadata?.is_subscribed === true ||
+        user?.publicMetadata?.is_subscribed === true;
+      // const isSubscribed = true
 
-              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/${users}/${userId}`, {
-                method: "GET",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                credentials: "include",
-              });
-
-              if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(
-                  `Failed to create user: ${response.status} - ${errorText}`
-                );
-              }
-
-              const result = await response.json();
-              // console.log("User created:", result);
-              // if (result.user.role) setRoleAccess(result.user.role as Role);
-
-      // Get user details
-      const isApproved = result.user.status === UserStatus.approved;
-      const isOwner = result.user.role === 'owner';
+      // Payment wall logic
+      if (!isSubscribed && isApproved) {
+        // Allow access to settings page and specific APIs
+        if (isSettingsRoute(req) || pathname.startsWith('/api/*')) {
+          return NextResponse.next();
+        }
+        // Redirect all other pages to payment settings
+        return NextResponse.redirect(new URL("/settings", origin));
+      }
 
       // IMPORTANT: If authenticated user is trying to access a public route,
       // redirect them to the appropriate page based on their status
@@ -113,16 +97,15 @@ export default clerkMiddleware(async (auth, req) => {
         }
       }
 
-      // Allow access to all other routes for authenticated users
+      // Allow access to all other routes for authenticated and subscribed users
       return NextResponse.next();
     } catch (error) {
       console.error("Middleware error:", error);
-      // If there's an error fetching user details, allow the request to continue
       return NextResponse.next();
     }
   }
 
-  // STEP 5: Handle unauthenticated users
+  // STEP 3: Handle unauthenticated users
 
   // Allow access to public routes
   if (isPublicPageRoute(req)) {

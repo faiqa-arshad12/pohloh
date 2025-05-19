@@ -43,18 +43,21 @@ import Loader from "../shared/loader";
 const formSchema = z.object({
   profilePicture: z.string().optional(),
   user_role: z.string().min(1, "Role is required"),
-  location: z.string().min(1, "Location is required"),
-  firstName: z
+  location: z
+    .string()
+    .min(1, "Location is required")
+    .max(100, "Location must not exceed 100 characters"),
+  first_name: z
     .string()
     .min(1, "First name is required")
     .max(50, "First name must not exceed 50 characters")
     .regex(nameRegex, "First name must contain only letters"),
-  lastName: z
+  last_name: z
     .string()
     .min(1, "Last name is required")
     .max(50, "Last name must not exceed 50 characters")
     .regex(nameRegex, "Last name must contain only letters"),
-  username: z
+  user_name: z
     .string()
     .min(1, "Username is required")
     .max(50, "Username must not exceed 50 characters")
@@ -63,9 +66,9 @@ const formSchema = z.object({
 
 interface ProfileData {
   user_role: string;
-  firstName?: string;
-  lastName?: string;
-  username?: string;
+  first_name?: string;
+  last_name?: string;
+  user_name?: string;
   location: string;
   profile_picture: string;
 }
@@ -123,7 +126,6 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
     }
   };
 
-  // Determine which data to use for form initialization
   // Priority: 1. Props data (from parent) 2. localStorage data 3. Default values
   const initialData = profileData ||
     localData || {
@@ -138,9 +140,9 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
       profilePicture: initialData.profile_picture || "",
       user_role: initialData.user_role || "Software Engineer",
       location: initialData.location || "",
-      firstName: initialData.firstName || user?.firstName || "",
-      lastName: initialData.lastName || user?.lastName || "",
-      username: initialData.username || user?.username || "",
+      first_name: initialData.first_name || user?.firstName || "",
+      last_name: initialData.last_name || user?.lastName || "",
+      user_name: initialData.user_name || user?.username || "",
     },
   });
 
@@ -206,9 +208,9 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
           const profileData: ProfileData = {
             user_role: currentValues.user_role || "",
             location: currentValues.location || "",
-            firstName: currentValues.firstName,
-            lastName: currentValues.lastName,
-            username: currentValues.username,
+            first_name: currentValues.first_name,
+            last_name: currentValues.last_name,
+            user_name: currentValues.user_name,
             profile_picture: uploadedUrl,
           };
 
@@ -241,16 +243,22 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
 
       if (role !== "owner") {
         await user.update({
-          firstName: values.firstName,
-          lastName: values.lastName,
+          firstName: values.first_name,
+          lastName: values.last_name,
+          unsafeMetadata: {
+            ...user.unsafeMetadata,
+
+            status: UserStatus.approved,
+            isProfileComplete: true, // New role
+          },
         });
       }
 
       const userData = {
         ...(role !== "owner" && {
-          user_name: values.username ?? user?.username ?? "",
-          first_name: values.firstName ?? user?.firstName ?? "",
-          last_name: values.lastName ?? user?.lastName ?? "",
+          user_name: values.user_name ?? user?.username ?? "",
+          first_name: values.first_name ?? user?.firstName ?? "",
+          last_name: values.last_name ?? user?.lastName ?? "",
         }),
         user_role: values.user_role ?? "",
         location: values.location ?? "",
@@ -266,13 +274,10 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
     }
   };
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setLoading(true);
     try {
       if (role === "owner") {
-        const response = await submitProfile();
-        console.log("Profile submitted:", response);
-
         if (updateProfile) {
           const profileData = {
             user_role: values.user_role,
@@ -293,14 +298,20 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
         // await submitProfile();
         // if (updateProfile) {
         await user?.update({
-          firstName: values.firstName,
-          lastName: values.lastName,
+          firstName: values.first_name,
+          lastName: values.last_name,
+          unsafeMetadata: {
+            ...user.unsafeMetadata,
+
+            status: UserStatus.approved,
+            isProfileComplete: true, // New role
+          },
         });
         const profileData = {
           user_role: values.user_role,
-          first_name: values.firstName,
-          last_name: values.lastName,
-          user_name: values.username,
+          first_name: values.first_name,
+          last_name: values.last_name,
+          user_name: values.user_name,
           status: UserStatus.approved,
           location: values.location,
           org_id: org_id || "",
@@ -318,8 +329,8 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
         if (!checkResponse.ok) {
           throw new Error("Failed to create subscription");
         }
-        ShowToast("user profile has been saved!");
-        router.push("/dashboard");
+        // ShowToast("user profile has been saved!");
+        // router.push("/dashboard");
       }
       setLoading(false);
       ShowToast("User profile has been saved!", "success");
@@ -329,7 +340,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
       ShowToast("Failed to update profile", "error");
       console.error("Error submitting form:", error);
     }
-  }
+  };
 
   // Watch form changes and update parent component + localStorage
   useEffect(() => {
@@ -338,9 +349,9 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
         const profileData: ProfileData = {
           user_role: value.user_role || "",
           location: value.location || "",
-          firstName: value.firstName,
-          lastName: value.lastName,
-          username: value.username,
+          first_name: value.first_name,
+          last_name: value.last_name,
+          user_name: value.user_name,
           profile_picture:
             profilePictureUrl || initialData?.profile_picture || "",
         };
@@ -360,8 +371,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
         <div className="w-full max-w-2xl text-center mb-4">
           <h1 className="text-[40px] font-medium mb-2">Setup Profile</h1>
           <p className="text-[20px] text-[#D1D1D1] px-8">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec
-            iaculis felis a risus cursus.
+            Add your personal details to get the most out of Pohloh.
           </p>
         </div>
 
@@ -377,10 +387,11 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
           <Form {...form}>
             <form
               className="space-y-6"
-              onSubmit={(e) => {
-                e.preventDefault();
-                onSubmit(form.getValues());
-              }}
+              // onSubmit={(e) => {
+              //   e.preventDefault();
+              //   onSubmit(form.getValues());
+              // }}
+              onSubmit={form.handleSubmit(onSubmit)}
             >
               <div className="space-y-4">
                 {/* Profile Picture Upload */}
@@ -459,7 +470,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                     {/* First Name Input */}
                     <FormField
                       control={form.control}
-                      name="firstName"
+                      name="first_name"
                       render={({field}) => (
                         <FormItem>
                           <FormLabel className="text-base">
@@ -480,7 +491,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                     {/* Last Name Input */}
                     <FormField
                       control={form.control}
-                      name="lastName"
+                      name="last_name"
                       render={({field}) => (
                         <FormItem>
                           <FormLabel className="text-base">Last Name</FormLabel>
@@ -499,7 +510,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                     {/* Username Input */}
                     <FormField
                       control={form.control}
-                      name="username"
+                      name="user_name"
                       render={({field}) => (
                         <FormItem>
                           <FormLabel className="text-base">Username</FormLabel>
@@ -572,7 +583,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
               <div className="flex gap-4 pt-4 w-full">
                 <Button
                   variant="outline"
-                  className="flex-1 h-[48px] rounded-[8px] text-white border border-gray-300 bg-[#2C2D2E]"
+                  className="flex-1 h-[48px] rounded-[8px] text-white border border-gray-300 bg-[#2C2D2E] cursor-pointer"
                   type="button"
                   onClick={onPrevious}
                 >
@@ -580,13 +591,12 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 h-[48px] rounded-[8px] bg-[#F9DB6F] text-black hover:bg-[#F9DB6F]"
+                  className="flex-1 h-[48px] rounded-[8px] bg-[#F9DB6F] text-black hover:bg-[#F9DB6F] cursor-pointer"
                   disabled={isLoading || isUploading}
                 >
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
                     </>
                   ) : (
                     <p>Save & Continue</p>

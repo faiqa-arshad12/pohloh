@@ -189,7 +189,7 @@ export function LoginForm() {
               render={({field}) => (
                 <FormItem>
                   <FormLabel className="font-normal text-base leading-6 align-middle">
-                    email
+                    Email
                   </FormLabel>
                   <FormControl>
                     <div className="relative w-full h-[44px]">
@@ -236,9 +236,9 @@ export function LoginForm() {
                         className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 focus:outline-none"
                       >
                         {showPassword ? (
-                          <EyeOff className="w-4 h-4" />
+                          <EyeOff className="w-4 h-4 cursor-pointer" />
                         ) : (
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-4 h-4 cursor-pointer" />
                         )}
                       </button>
                     </div>
@@ -253,12 +253,13 @@ export function LoginForm() {
               control={form.control}
               name="remember"
               render={({field}) => (
-                <FormItem className="flex items-center space-x-2">
+                <FormItem className="flex items-center space-x-2 cursor-pointer">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
                       disabled={isLoading || socialLoading !== null}
+                      className="cursor-pointer"
                     />
                   </FormControl>
                   <FormLabel className="text-sm leading-5 font-normal align-middle !mt-0">
@@ -271,7 +272,7 @@ export function LoginForm() {
             {/* Submit */}
             <Button
               type="submit"
-              className="w-full text-black"
+              className="w-full text-black cursor-pointer"
               disabled={isLoading || socialLoading !== null}
             >
               {isLoading ? <Loader /> : "Log In"}

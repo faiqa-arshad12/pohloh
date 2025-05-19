@@ -1,12 +1,11 @@
 "use client";
 import {useEffect, useState} from "react";
 import {
-  User,
+  User as User_Icon,
   LogOut,
   Edit,
   Ellipsis,
   Trash2,
-  UserIcon,
   BuildingIcon,
   TrashIcon,
   UploadIcon,
@@ -14,6 +13,7 @@ import {
   MessageSquareWarning,
   LayoutGrid,
   Check,
+  Pencil,
 } from "lucide-react";
 import EditProfileModal from "./Account/edit-Profile";
 import {Button} from "../ui/button";
@@ -22,57 +22,32 @@ import Table from "../ui/table";
 import {useClerk, useUser} from "@clerk/nextjs";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Billing from "./billing";
-import Apps from "./apps";
+import Apps from "./Apps";
 import EditLeadModal from "./Account/edit-lead";
 import Image from "next/image";
-import {useSearchParams} from "next/navigation";
 import {InviteUserModal} from "./Account/Invite-User";
 import {EditUserModal} from "./Account/edit-User";
 import {useRole} from "../ui/Context/UserContext";
-import {getUserDetails} from "@/actions/auth";
 import {DEPARTMENTS, organizations} from "@/utils/constant";
 import {ShowToast} from "../shared/show-toast";
 import Loader from "../shared/loader";
 import {supabase} from "@/supabase/client";
-import {defaultWorkDays, Weekday, WorkDaysState} from "@/types/types";
-
-interface User {
-  name: string;
-  seatType: string;
-  team: string;
-  jobRole: string;
-}
-
-type UserDetails = {
-  id: string;
-  created_at: string;
-  user_name: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  user_id: string;
-  org_id: string;
-  role: string;
-  user_role: string;
-  location: string;
-  status: string;
-  profile_picture: string;
-};
-
+import {defaultWorkDays, Weekday, WorkDaysState, User} from "@/types/types";
+import {DeleteUserModal} from "./Account/delete-user";
+import {useRouter, useSearchParams} from "next/navigation";
+import {getSubscriptionDetails} from "@/actions/subscription.action";
 export default function Account() {
   const {signOut} = useClerk();
   const {roleAccess} = useRole();
   const {user, isLoaded} = useUser();
   const searchParams = useSearchParams();
   const page = searchParams.get("page");
-
   const [activeTab, setActiveTab] = useState("user");
   const [selectedDepartments, setSelectedDepartments] = useState(["Customer"]);
   const [organizationName, setOrganizationName] = useState("");
   const [seats, setSeats] = useState<number>(0);
   const [customDepartment, setCustomDepartment] = useState("");
   const [profileImage, setProfileImage] = useState("/placeholder-profile.svg");
-
   const [openInvite, setOpenInvite] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openEditlead, setOpenEditlead] = useState(false);
@@ -87,55 +62,57 @@ export default function Account() {
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [isInviteLoading, setIsInviteLoading] = useState(false);
   const [isLoadeding, setIsLoading] = useState(false);
+  const [userDataLoading, setUserDataLoading] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const router = useRouter();
 
-  // const [workDays, setWorkDays] = useState<WorkDaysState>()
-
-  const [users] = useState<User[]>([
-    {name: "John Doe", seatType: "User", team: "Design", jobRole: "Designer"},
-    {name: "Trent", seatType: "Lead", team: "Sale", jobRole: "Sales"},
-    {
-      name: "James",
-      seatType: "User",
-      team: "Analytics",
-      jobRole: "Analytics",
-    },
-    {name: "David", seatType: "Lead", team: "HR", jobRole: "HR"},
-    {name: "David", seatType: "User", team: "HR", jobRole: "HR"},
-  ]);
+  const [selectedRow, setSelectedRow] = useState<any>();
+  const [users, setUsers] = useState<any>([]);
   const handleLogout = async () => {
     setStep(3);
     await signOut();
+    router.replace("/login");
   };
   const handleInvitingNewUser = async () => {
     try {
       setIsInviteLoading(true);
+      if (userDetails?.organizations?.subscriptions[0].subscription_id) {
+        const subscription: any = await getSubscriptionDetails(
+          userDetails?.organizations?.subscriptions[0].subscription_id
+        );
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/users/organizations/${userDetails?.organizations?.id}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/users/count/${userDetails?.organizations?.id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            `Failed to fetch organization data: ${response.status} - ${errorText}`
+          );
         }
-      );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Failed to fetch organization data: ${response.status} - ${errorText}`
-        );
-      }
-
-      const result = await response.json();
-      if (result.data.count >= result.data.num_of_seat) {
-        ShowToast(
-          "You've reached the maximum number of users for your current plan. Upgrade your subscription to invite more users.",
-          "error"
-        );
+        const result = await response.json();
+        if (
+          result.data.count >= subscription.plan.subscription.quantity &&
+          subscription.plan.subscription.status === "active"
+        ) {
+          ShowToast(
+            "You've reached the maximum number of users for your current plan. Upgrade your subscription to invite more users.",
+            "error"
+          );
+        } else {
+          setOpenInvite(true);
+        }
       } else {
-        setOpenInvite(true);
+        ShowToast("Upgrade your subscription to invite more users", "error");
       }
     } catch (err) {
       console.error("Error inviting user:", err);
@@ -180,7 +157,7 @@ export default function Account() {
       const updatedUserData = {
         week_days: selectedDays, // Send as array
         num_of_card: weeklyCards,
-        num_of_tutor: dailyQuestions,
+        num_of_questions: dailyQuestions,
       };
 
       const response = await fetch(
@@ -229,10 +206,11 @@ export default function Account() {
         const data = await res.json();
         setUserDetails(data.user);
         setWeeklyCards(data.user?.num_of_card?.toString() || "0");
-        setDailyQuestions(data.user?.num_of_tutor?.toString() || "0");
+        setDailyQuestions(data.user?.num_of_questions?.toString() || "0");
         setOrganizationName(data.user?.organizations.name || "");
         setSeats(data.user?.organizations.num_of_seat || "");
         setSelectedDepartments(data.user?.organizations.departments || []);
+        setProfileImage(data.user?.organizations.org_picture);
         // setDepa(data.user?.organizations.num_of_seat||'')
 
         if (data?.week_days && Array.isArray(data.week_days)) {
@@ -259,10 +237,10 @@ export default function Account() {
     }
   }, [user?.id, isLoaded]);
   const columns = [
-    {Header: "User Name", accessor: "name"},
-    {Header: "Seat Type", accessor: "seatType"},
-    {Header: "Team", accessor: "team"},
-    {Header: "Job Role", accessor: "jobRole"},
+    {Header: "Name", accessor: "user_name"},
+    {Header: "Seat Type", accessor: "role"},
+    {Header: "Team", accessor: "users_team.name"},
+    {Header: "Job Role", accessor: "user_role"},
     {Header: "Action", accessor: "action"},
   ];
 
@@ -274,8 +252,7 @@ export default function Account() {
     }
   }, [page]);
 
-  // Custom action renderer
-  const renderRowActions = (row: User) => {
+  const renderRowActions = (row: any) => {
     return (
       <div className="flex justify-start">
         <DropdownMenu.Root>
@@ -297,30 +274,31 @@ export default function Account() {
             <DropdownMenu.Item
               className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer"
               onSelect={(event) => {
-                // ✅ Blur the trigger to fix re-open issue
                 const button = (event.target as HTMLElement)?.closest("button");
                 if (button) {
                   button.blur(); // Blur the button to close dropdown
                 }
-
-                // ✅ Delay modal open so Radix can clean up
+                setSelectedRow(row);
                 setTimeout(() => {
-                  if (row.seatType === "Lead") {
-                    setOpenEditlead(true);
-                  } else {
-                    setOpenEdit(true);
-                  }
+                  setOpenEdit(true);
                 }, 0);
               }}
             >
-              <Edit className="h-4 w-4" />
+              <Pencil className="h-4 w-4" />
               <span>Edit</span>
             </DropdownMenu.Item>
 
             <DropdownMenu.Item
               className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer"
-              onSelect={() => {
-                console.log("Delete", row);
+              onSelect={(event) => {
+                const button = (event.target as HTMLElement)?.closest("button");
+                if (button) {
+                  button.blur();
+                }
+                setSelectedRow(row);
+                setTimeout(() => {
+                  setDeleteModalOpen(true);
+                }, 0);
               }}
             >
               <Trash2 className="h-4 w-4" />
@@ -334,19 +312,73 @@ export default function Account() {
   const handleCheckboxChange = (day: Weekday) => {
     setWorkDays((prev) => ({...prev, [day]: !prev[day]}));
   };
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setUserDataLoading(true);
 
-  const handleSave = (userData: {
-    name: string;
-    role: string;
-    seatType: string;
-    team: string;
-  }) => {
-    // console.log("Saving user:", userData);
-    // Add your save logic here
-  };
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/users/organizations/${userDetails?.organizations?.id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          }
+        );
 
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            `Failed to fetch organization data: ${response.status} - ${errorText}`
+          );
+        }
+
+        const result = await response.json();
+        setUsers(result.data);
+      } catch (err) {
+        console.error("Error fetching user:", err);
+      } finally {
+        setUserDataLoading(false);
+      }
+    };
+    const fetchUsersByTeam = async () => {
+      try {
+        setUserDataLoading(true);
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/users/organizations/teams/${userDetails.team_id}?orgId=${userDetails.org_id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            `Failed to fetch organization data: ${response.status} - ${errorText}`
+          );
+        }
+
+        const result = await response.json();
+        console.log(result, "ssk");
+        setUsers(result.data);
+      } catch (err) {
+        console.error("Error fetching user:", err);
+      } finally {
+        setUserDataLoading(false);
+      }
+    };
+    if (userDetails && userDetails?.role === "owner") fetchUsers();
+    else if (userDetails && userDetails.role === "admin") fetchUsersByTeam();
+  }, [user, userDetails]);
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; // Optional chaining to handle null or undefined files
+    const file = e.target.files?.[0];
     if (file) {
       setFileToUpload(file);
       const reader = new FileReader();
@@ -359,6 +391,11 @@ export default function Account() {
 
   const removeImage = () => {
     setProfileImage("/organization-logo.png");
+  };
+  const getNestedValue = (obj: any, path: string) => {
+    return path.split(".").reduce((prev, curr) => {
+      return prev ? prev[curr] : null;
+    }, obj);
   };
   const uploadFileToSupabase = async (file: File): Promise<string | null> => {
     try {
@@ -462,11 +499,8 @@ export default function Account() {
         }
 
         const data = await res.json();
-
-        // Update states with fetched data
-        // Convert string values to numbers for the form
         setWeeklyCards(data.user?.num_of_card?.toString() || "5");
-        setDailyQuestions(data.user?.num_of_tutor?.toString() || "3");
+        setDailyQuestions(data.user?.num_of_questions?.toString() || "3");
 
         if (data.user?.week_days && Array.isArray(data.user.week_days)) {
           const updatedWorkDays = {...defaultWorkDays};
@@ -502,53 +536,70 @@ export default function Account() {
 
             <Button
               onClick={() => setStep(1)}
-              className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm ${
+              className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm cursor-pointer ${
                 steps === 1
                   ? "bg-[#F9E36C] text-black"
                   : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
               }`}
             >
-              <User className="w-4.5 h-4.5" />
-              <span>Account</span>
+              <User_Icon className="w-10 h-10" />
+
+              {/* <Image src="/users.png" height={24}width={24} alt={"users"} className=""/> */}
+
+              <span className="text-[20px] text-normal font-urbanist">
+                Account
+              </span>
             </Button>
             {roleAccess === "owner" && (
               <Button
                 onClick={() => setStep(2)}
-                className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm ${
+                className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm  cursor-pointer ${
                   steps === 2
                     ? "bg-[#F9E36C] text-black"
                     : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
                 }`}
               >
-                <CreditCard className="w-4.5 h-4.5" />
-                <span>Billing</span>
+                <CreditCard className="w-10 h-10" />
+                {/* <Image src="/billing.png" height={24}width={24} alt={"billing"} className=""/> */}
+
+                <span className="text-[20px] text-normal font-urbanist">
+                  Billing
+                </span>
               </Button>
             )}
 
             {roleAccess === "owner" && (
               <Button
                 onClick={() => setStep(3)}
-                className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm ${
+                className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm  cursor-pointer ${
                   steps === 3
                     ? "bg-[#F9E36C] text-black"
                     : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
                 }`}
               >
-                <LayoutGrid className="w-4.5 h-4.5" />
-                <span>Apps</span>
+                <LayoutGrid className="w-10 h-10" />
+                {/* <Image src="/app.png" height={24}width={24} alt={"apps"} className=""/> */}
+
+                <span className="text-[20px] text-normal font-urbanist">
+                  Apps
+                </span>
               </Button>
             )}
 
             <Button
               onClick={() => setStep(4)}
-              className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm ${
+              className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm  cursor-pointer ${
                 steps === 4
                   ? "bg-[#F9E36C] text-black"
                   : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
               }`}
             >
-              <MessageSquareWarning className="w-4.5 h-4.5" />
-              <span>Feedback</span>
+              <MessageSquareWarning className="w-10 h-10" />
+              {/* <Image src="/feedback.png" height={24}width={24} alt={"feedback"} className=""/> */}
+
+              <span className="text-[20px] text-normal font-urbanist">
+                Feedback
+              </span>
             </Button>
 
             <Button
@@ -556,7 +607,7 @@ export default function Account() {
                 handleLogout();
                 setStep(5);
               }}
-              className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm ${
+              className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm cursor-pointer  cursor-pointer ${
                 steps === 5
                   ? "bg-[#F9E36C] text-black"
                   : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
@@ -575,7 +626,7 @@ export default function Account() {
                   <>
                     <div className="flex w-full mb-8 bg-[#191919] p-2">
                       <button
-                        className={`flex-1 p-3 font-urbanist font-medium text-[26px] leading-[100%] tracking-[0] ${
+                        className={`flex-1 p-3 font-urbanist font-medium text-[26px] leading-[100%] tracking-[0] cursor-pointer ${
                           activeTab === "user"
                             ? "bg-[#F9DB6F] text-black rounded-lg"
                             : "text-gray-400"
@@ -585,7 +636,7 @@ export default function Account() {
                         User Details
                       </button>
                       <button
-                        className={`flex-1 p-3 font-urbanist font-medium text-[26px] leading-[100%] tracking-[0] ${
+                        className={`flex-1 p-3 font-urbanist font-medium text-[26px] leading-[100%] tracking-[0] cursor-pointer ${
                           activeTab === "organization"
                             ? "bg-[#F9DB6F] text-black rounded-lg"
                             : "text-gray-400"
@@ -610,10 +661,8 @@ export default function Account() {
                           <img
                             src={userDetails?.profile_picture || profileImage}
                             alt="avatar"
-                            // className="w-full h-full"
+                            className="w-full h-full"
                             // style={{width:'90px', height:'90px'}}
-                            // width={56}
-                            // height={56}
                           />
                         </div>
                         <div>
@@ -622,21 +671,27 @@ export default function Account() {
                               <p className="font-urbanist font-semibold text-[30px] ">
                                 {userDetails.first_name} {userDetails.last_name}
                               </p>
-                              <p className="font-urbanist font-semibold text-[30px]  text-[white]">
+                              <p className="font-urbanist font-normal text-[30px]  text-[#FFFFFFCC]">
                                 {userDetails.location}
                               </p>
                             </>
                           )}
                         </div>
                       </div>
-                      <Button className="self-end md:self-auto bg-[#F9E36C] text-black rounded-lg p-2 flex items-center justify-center">
+                      <Button className="self-end md:self-auto bg-[#F9E36C] text-black rounded-lg p-2 flex items-center justify-center cursor-pointer">
                         <div
                           onClick={() => {
                             setIsEditProfileModalOpen(true);
                           }}
-                          className="p-2 text-black rounded-md flex items-center justify-center"
+                          className="p-2 text-black rounded-md flex items-center justify-center "
                         >
-                          <Edit className="w-4 h-4" />
+                          {/* <Edit className="w-4 h-4 cursor-pointer" /> */}
+                          <Image
+                            src="/editIcon.png"
+                            width={10}
+                            height={10}
+                            alt="edit user"
+                          />
                         </div>
                       </Button>
                     </div>
@@ -649,7 +704,7 @@ export default function Account() {
                             User Management
                           </h1>
                           <button
-                            className="bg-[#F9E36C] h-[40px] text-black px-4 py-2 rounded-md hover:bg-[#F9E36C] transition-colors font-urbanist font-medium text-[14px] leading-[100%] tracking-[0]"
+                            className="bg-[#F9E36C] h-[40px] text-black px-4 py-2 rounded-md hover:bg-[#F9E36C] transition-colors font-urbanist font-medium text-[14px] leading-[100%] tracking-[0] cursor-pointer opacity-100 hover:opacity-80"
                             onClick={() => handleInvitingNewUser()}
                           >
                             {isInviteLoading ? <Loader /> : "Invite User"}
@@ -663,10 +718,35 @@ export default function Account() {
                             renderActions={(row) =>
                               renderRowActions(row as User)
                             }
+                            loggedInUserId={user?.id}
                             tableClassName="min-w-full text-sm sm:text-base shadow rounded-lg border-collapse"
                             headerClassName="bg-[#F9DB6F] text-black text-left font-urbanist font-medium text-[16px] leading-[21.9px] tracking-[0]"
                             bodyClassName="py-3 px-4 font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0] "
-                            cellClassName="border-t border-[#E0EAF5] py-3 px-4 align-middle whitespace-nowrap  "
+                            cellClassName="border-t border-[#E0EAF5] py-3 px-4 align-middle whitespace-nowrap "
+                            isLoading={userDataLoading}
+                            renderCell={(
+                              column: string,
+                              row: {[x: string]: any}
+                            ) => {
+                              // Get the value (this would use getNestedValue internally in the Table component)
+                              const value = column.includes(".")
+                                ? getNestedValue(row, column)
+                                : row[column];
+
+                              if (column === "role") {
+                                return value === "admin"
+                                  ? "Lead"
+                                  : value === "user"
+                                  ? "User"
+                                  : value?.toString();
+                              }
+
+                              if (value === null || value === undefined)
+                                return "";
+                              if (typeof value === "object")
+                                return JSON.stringify(value);
+                              return value;
+                            }}
                           />
                         </div>
                       </div>
@@ -703,11 +783,11 @@ export default function Account() {
                                     onChange={() =>
                                       handleCheckboxChange(day as Weekday)
                                     }
-                                    className="peer h-full w-full appearance-none border border-[#F9E36C] bg-transparent"
+                                    className="peer h-full w-full appearance-none border border-[#F9E36C] bg-transparent cursor-pointer"
                                   />
 
                                   {checked && (
-                                    <Check className="absolute top-0 left-0 h-full w-full text-[#F9E36C] p-[6px] pointer-events-none" />
+                                    <Check className="absolute top-0 left-0 h-full w-full text-[#F9E36C] p-[6px] pointer-events-none cursor-pointer" />
                                   )}
                                 </div>
 
@@ -734,7 +814,7 @@ export default function Account() {
                           <select
                             value={dailyQuestions}
                             onChange={(e) => setDailyQuestions(e.target.value)}
-                            className="w-full max-w-xs bg-[#FFFFFF14] text-white rounded-md px-3 py-3 text-sm border-none appearance-none bg-no-repeat bg-[right_12px_center] focus:outline-none"
+                            className="w-full max-w-xs bg-[#FFFFFF14] text-white rounded-md px-3 py-3 text-sm border-none appearance-none bg-no-repeat bg-[right_12px_center] focus:outline-none cursor-pointer"
                             style={{
                               backgroundImage:
                                 "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
@@ -764,7 +844,7 @@ export default function Account() {
                           <select
                             value={weeklyCards}
                             onChange={(e) => setWeeklyCards(e.target.value)}
-                            className="w-full max-w-xs bg-[#FFFFFF14] text-white rounded-md px-3 py-3 text-sm border-none appearance-none bg-no-repeat bg-[right_12px_center] focus:outline-none"
+                            className="w-full max-w-xs bg-[#FFFFFF14] text-white rounded-md px-3 py-3 text-sm border-none appearance-none bg-no-repeat bg-[right_12px_center] focus:outline-none cursor-pointer"
                             style={{
                               backgroundImage:
                                 "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
@@ -784,7 +864,7 @@ export default function Account() {
                       </div>
                     </div>
                     <Button
-                      className="w-[164px] h-12 rounded-[8px] border  px-10 py-[10px] text-black"
+                      className="w-[164px] h-12 rounded-[8px] border  px-10 py-[10px] text-black  cursor-pointer"
                       onClick={() => {
                         handleSaveChange();
                       }}
@@ -814,8 +894,8 @@ export default function Account() {
                               />
                             </div>
 
-                            <label className="bg-[#F9DB6F]  h-[48px] text-black px-4 py-2 rounded-[8px] flex items-center cursor-pointer font-urbanist font-medium text-[14px] leading-[100%] tracking-[0]">
-                              <UploadIcon size={16} className="mr-2" />
+                            <label className="bg-[#F9DB6F] gap-2 h-[48px] text-black px-4 py-2 rounded-[8px] flex items-center cursor-pointer font-urbanist font-medium text-[14px] leading-[100%] tracking-[0]">
+                              <img src="/upload-image.png" alt="user" />
                               Upload Image
                               <input
                                 type="file"
@@ -826,7 +906,7 @@ export default function Account() {
                             </label>
 
                             <button
-                              className=" border border-[#FFFFFF] h-[48px] px-4 py-2 rounded-[8px] flex items-center font-urbanist font-medium text-[14px] leading-[100%] tracking-[0]"
+                              className=" border border-[#FFFFFF] h-[48px] px-4 py-2 rounded-[8px] flex items-center font-urbanist font-medium text-[14px] leading-[100%] tracking-[0] cursor-pointer"
                               onClick={removeImage}
                             >
                               <TrashIcon size={16} className="mr-2" />
@@ -874,8 +954,9 @@ export default function Account() {
                               </p>
                             )}
                           </div>
+                          {/* Department/Organization Categories sections */}
 
-                          <div>
+                          {/* <div>
                             <label className="block text-[16px] leading-[24px] tracking-[0px] align-middle font-normal font-['Urbanist'] mb-2">
                               Add departments to your organization
                             </label>
@@ -890,7 +971,7 @@ export default function Account() {
                               {DEPARTMENTS.map((dept) => (
                                 <button
                                   key={dept}
-                                  className={`py-2 px-4  bg-[#FFFFFF14] rounded-[6px] font-urbanist font-normal text-[14px] leading-[20px] tracking-[0] align-middle border ${
+                                  className={` cursor-pointer py-2 px-4  bg-[#FFFFFF14] rounded-[6px] font-urbanist font-normal text-[14px] leading-[20px] tracking-[0] align-middle border ${
                                     selectedDepartments?.includes(dept)
                                       ? "border-[#F9DB6F] text-[#F9DB6F]"
                                       : "border-none text-[#FFFFFF52]"
@@ -906,14 +987,14 @@ export default function Account() {
                                 {departmentError}
                               </p>
                             )}
-                          </div>
+                          </div> */}
 
                           <div>
-                            <label className="text-[16px] text-[#F9DB6F] leading-[24px] font-medium tracking-[0px] align-middle font-['Urbanist'] mb-2 block">
+                            {/* <label className="text-[16px] text-[#F9DB6F] leading-[24px] font-medium tracking-[0px] align-middle font-['Urbanist'] mb-2 block">
                               Add your Custom Department
-                            </label>
+                            </label> */}
 
-                            {customDepartments?.length > 0 && (
+                            {/* {customDepartments?.length > 0 && (
                               <div className="flex flex-wrap gap-2 mb-4">
                                 {customDepartments.map((department) => (
                                   <div
@@ -933,9 +1014,9 @@ export default function Account() {
                                   </div>
                                 ))}
                               </div>
-                            )}
+                            )} */}
 
-                            <div className="mb-3">
+                            {/* <div className="mb-3">
                               <label className="text-[16px] leading-[24px] font-normal tracking-[0px] align-middle font-['Urbanist'] text-white mb-1 block">
                                 Add Department Name
                               </label>
@@ -987,7 +1068,7 @@ export default function Account() {
                                   {customDepartmentError}
                                 </p>
                               )}
-                            </div>
+                            </div> */}
 
                             <div className="mb-3">
                               <label className="text-[16px] leading-[24px] font-normal tracking-[0px] align-middle font-['Urbanist'] text-white mb-1 block">
@@ -995,11 +1076,10 @@ export default function Account() {
                               </label>
 
                               <div className="flex items-center gap-2">
-                                {/* Add Button */}
                                 <button
                                   type="button"
                                   onClick={() => setSeats(seats + 1)}
-                                  className="px-3 py-2  bg-[#FFFFFF14] text-white rounded hover:bg-[#FFFFFF14] transition"
+                                  className="px-3 py-2  bg-[#FFFFFF14] text-white rounded hover:bg-[#FFFFFF14] transition cursor-pointer"
                                 >
                                   +
                                 </button>
@@ -1007,20 +1087,19 @@ export default function Account() {
                                 <input
                                   type="text"
                                   placeholder="Enter the department name"
-                                  className=" w-[120px] bg-[#FFFFFF14] border-none rounded-[6px] p-2 focus:outline-none text-[#FFFFFF52]"
+                                  className=" w-[120px] bg-[#FFFFFF14] border-none rounded-[6px] p-2 focus:outline-none text-[#FFFFFF52] "
                                   value={seats}
                                   onChange={(e) =>
                                     setSeats(Number(e.target.value) || 0)
                                   }
                                 />
 
-                                {/* Subtract Button */}
                                 <button
                                   type="button"
                                   onClick={() =>
                                     setSeats((prev) => Math.max(prev - 1, 0))
                                   }
-                                  className="px-3 py-2 bg-[#FFFFFF14] text-white rounded hover:bg-[#FFFFFF14] transition"
+                                  className="px-3 py-2 bg-[#FFFFFF14] text-white rounded hover:bg-[#FFFFFF14] transition cursor-pointer"
                                 >
                                   −
                                 </button>
@@ -1034,12 +1113,12 @@ export default function Account() {
                           </div>
 
                           <div className="flex space-x-4 pt-4 justify-between">
-                            <button className=" h-[48px] w-[370px] py-3 border border-gray-600 rounded">
+                            <button className=" h-[48px] w-[370px] py-3 border border-gray-600 rounded cursor-pointer">
                               Cancel
                             </button>
                             <button
                               type="button"
-                              className="py-3 w-[370px] h-[48px] bg-[#F9DB6F] text-black rounded"
+                              className="py-3 w-[370px] h-[48px] bg-[#F9DB6F] text-black rounded cursor-pointer"
                               onClick={(e) => {
                                 e.preventDefault();
 
@@ -1093,20 +1172,22 @@ export default function Account() {
         </div>
       )}
 
-      <EditLeadModal open={openEditlead} onClose={setOpenEditlead} />
-
+      <EditLeadModal
+        open={openEditlead}
+        onClose={setOpenEditlead}
+        userDetails={userDetails}
+      />
+      <DeleteUserModal
+        open={deleteModalOpen}
+        UserDetails={selectedRow}
+        onOpenChange={setDeleteModalOpen}
+      />
       <InviteUserModal open={openInvite} onOpenChange={setOpenInvite} />
 
       <EditUserModal
         open={openEdit}
+        userDetails={selectedRow}
         onOpenChange={setOpenEdit}
-        onSave={handleSave}
-        defaultValues={{
-          name: "John Doe",
-          role: "editor",
-          seatType: "dev",
-          team: "qa",
-        }}
       />
       <EditProfileModal
         userData={userDetails}

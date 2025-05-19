@@ -96,7 +96,7 @@ const NotificationsPanel: React.FC = () => {
 //   color: string;
 // }
 
-// 
+//
 
 //   <div
 //     className={`text-white rounded-full w-8 h-8 flex items-center justify-center text-sm ${color}`}
@@ -115,7 +115,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
   return (
     <div>
 
-    
+
     <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2 h-[88px] ">
       <div className="flex items-start gap-4">
         <Image

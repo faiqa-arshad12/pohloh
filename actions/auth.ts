@@ -1,7 +1,7 @@
 "use server";
-import {auth, clerkClient} from "@clerk/nextjs/server";
-import {supabase} from "@/supabase/client";
-import {createClerkClient} from "@clerk/backend";
+import { auth, clerkClient } from "@clerk/nextjs/server";
+import { supabase } from "@/supabase/client";
+import { createClerkClient } from "@clerk/backend";
 
 // export async function inviteUser(email: string, role: string, org_id: string) {
 //     try {
@@ -35,12 +35,12 @@ export async function setUserRole(id: string, role: string) {
 
   try {
     const res = await client.users.updateUser(id, {
-      unsafeMetadata: {role: role},
+      unsafeMetadata: { role: role },
     });
-    return {message: res.unsafeMetadata};
+    return { message: res.unsafeMetadata };
   } catch (err) {
     console.log(err, "err");
-    return {message: err};
+    return { message: err };
   }
 }
 export async function removeRole(formData: FormData) {
@@ -50,22 +50,23 @@ export async function removeRole(formData: FormData) {
     const res = await client.users.updateUserMetadata(
       formData.get("id") as string,
       {
-        unsafeMetadata: {role: null},
+        unsafeMetadata: { role: null },
       }
     );
-    return {message: res.publicMetadata};
+    return { message: res.publicMetadata };
   } catch (err) {
-    return {message: err};
+    return { message: err };
   }
 }
 
 export async function inviteUser(email: string, role: string, user_id: string) {
   try {
-    const {userId} = await auth();
+    const { userId } = await auth();
     if (userId) {
       const user = await getUserDetails(userId);
       if (user) {
         const client = await clerkClient();
+
         const invitation = await client.invitations.createInvitation({
           emailAddress: email,
           // redirectUrl:''
@@ -73,7 +74,8 @@ export async function inviteUser(email: string, role: string, user_id: string) {
 
           publicMetadata: {
             role,
-            org_id: user.org_id,
+            org_id: user.organizations.id,
+            is_subscribed: user.organizations.subscriptions[0].is_subscribed,
           },
         });
         return {
@@ -89,7 +91,7 @@ export async function inviteUser(email: string, role: string, user_id: string) {
     }
   } catch (error) {
     console.error("Error inviting user:", error);
-    return {success: false, error};
+    return { success: false, error };
   }
 }
 
@@ -130,12 +132,22 @@ export async function getUserDetails(userId: string) {
       throw new Error("Not authenticated");
     }
 
-    const {data, error} = await supabase
+    const { data, error } = await supabase
       .from("users")
-      .select("*")
+
+      .select(
+        `
+      *,
+      organizations (
+        *,
+        subscriptions (
+          *
+        )
+      )
+    `
+      )
       .eq("user_id", userId)
       .single();
-
     if (error) {
       return "User not found in Supabase: " + error.message;
     }
@@ -153,9 +165,9 @@ export async function getTotalUser(orgId: string) {
       throw new Error("Not authenticated");
     }
 
-    const {count, error} = await supabase
+    const { count, error } = await supabase
       .from("users")
-      .select("*", {count: "exact", head: true})
+      .select("*", { count: "exact", head: true })
       .eq("org_id", orgId);
 
     if (error) {
@@ -168,4 +180,20 @@ export async function getTotalUser(orgId: string) {
       error: error instanceof Error ? error.message : String(error),
     };
   }
+}
+export async function deleetUsr(user_id: string) {
+  try {
+    if (!user_id) {
+      throw new Error("User is not defined");
+    }
+
+    const client = await clerkClient();
+
+    await client.users.deleteUser(user_id);
+
+    return { success: "true" };
+  } catch (err) {
+    return { message: err };
+  }
+
 }
