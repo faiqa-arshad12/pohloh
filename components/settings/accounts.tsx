@@ -22,7 +22,7 @@ import Table from "../ui/table";
 import {useClerk, useUser} from "@clerk/nextjs";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Billing from "./billing";
-// import Apps from "./App";
+import Apps from "./App";
 import EditLeadModal from "./Account/edit-lead";
 import Image from "next/image";
 import {InviteUserModal} from "./Account/Invite-User";
@@ -1167,7 +1167,7 @@ export default function Account() {
             </>
           )}
           {steps == 2 && <Billing />}
-          {/* {steps == 3 && <Apps />} */}
+          {steps == 3 && <Apps />}
           {steps === 4 && <Feedback />}
         </div>
       )}
