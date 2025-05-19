@@ -93,7 +93,6 @@ function CreateAnnouncement({open, onClose}: RenewSubscriptionProps) {
       card_id: "",
     },
   });
-  console.log(savedCard?.card,'askdasj')
 
   useEffect(() => {
     if (open) {

@@ -22,7 +22,7 @@ import Table from "../ui/table";
 import {useClerk, useUser} from "@clerk/nextjs";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Billing from "./billing";
-import Apps from "./Apps";
+import Apps from "./App";
 import EditLeadModal from "./Account/edit-lead";
 import Image from "next/image";
 import {InviteUserModal} from "./Account/Invite-User";
