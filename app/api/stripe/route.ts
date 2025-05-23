@@ -96,7 +96,7 @@ export async function POST(req: Request) {
       totalAmount: totalAmount / 100,
     })
   } catch (error) {
-    console.error("Subscription error:", error)
+    console.error("Subscription error", error)
     return NextResponse.json({ error: error instanceof Error ? error.message : "Payment failed" }, { status: 500 })
   }
 }
