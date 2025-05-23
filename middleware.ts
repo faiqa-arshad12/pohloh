@@ -31,7 +31,7 @@ const isAllowedApiRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { pathname, origin, searchParams } = req.nextUrl;
+  const { pathname, origin } = req.nextUrl;
 
   // STEP 1: Allow public and whitelisted API routes to proceed
   if (isPublicApiRoute(req) || isAllowedApiRoute(req)) {
@@ -48,7 +48,7 @@ export default clerkMiddleware(async (auth, req) => {
     try {
       // Set default role if not set
       if (!user.unsafeMetadata?.role && !user.publicMetadata?.role) {
-        const role = searchParams.get('role') || 'owner';
+        const role = 'owner';
         await clerk.users.updateUser(userId, {
           unsafeMetadata: {
             ...user.unsafeMetadata,
