@@ -1,4 +1,4 @@
-import { clerkMiddleware, createRouteMatcher, clerkClient } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { UserStatus } from './types/enum';
 
@@ -19,7 +19,6 @@ const isPublicApiRoute = createRouteMatcher([
   "/api/auth/(.*)",
   "/api/webhooks/(.*)", // Allow all webhooks
   "/api/verify(.*)", // Allow verification endpoints
-  // "/api/(.*)", // Allow subscription-related APIs
 ]);
 
 const isUserOnboardingRoute = createRouteMatcher(["/onboarding(.*)"]);
@@ -31,7 +30,7 @@ const isAllowedApiRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { pathname, origin } = req.nextUrl;
+  const { pathname, origin, searchParams } = req.nextUrl;
 
   // STEP 1: Allow public and whitelisted API routes to proceed
   if (isPublicApiRoute(req) || isAllowedApiRoute(req)) {
@@ -39,31 +38,13 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // STEP 2: Check authentication status
-  const { userId } = await auth();
+  const { userId, sessionClaims } = await auth();
 
   if (userId) {
-    const clerk = await clerkClient();
-    const user = await clerk.users.getUser(userId);
-
     try {
-      // Set default role if not set
-      if (!user.unsafeMetadata?.role && !user.publicMetadata?.role) {
-        const role = 'owner';
-        await clerk.users.updateUser(userId, {
-          unsafeMetadata: {
-            ...user.unsafeMetadata,
-            role: role,
-            status: UserStatus.Pending
-          }
-        });
-      }
-
-      const isApproved = user.unsafeMetadata?.status === UserStatus.approved ||
-        user?.publicMetadata?.status === UserStatus.approved;
-      const isOwner = user.unsafeMetadata?.role === 'owner' ||
-        user?.publicMetadata?.role === 'owner';
-      const isSubscribed = user.unsafeMetadata?.is_subscribed === true ||
-        user?.publicMetadata?.is_subscribed === true;
+      const isApproved = sessionClaims?.status === UserStatus.approved;
+      const isOwner = sessionClaims?.role === 'owner';
+      const isSubscribed = sessionClaims?.is_subscribed === true;
 
       // Handle verification and signup flow
       if (pathname.includes('/verify') || pathname.includes('/signup-link')) {

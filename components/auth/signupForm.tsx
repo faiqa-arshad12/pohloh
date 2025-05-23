@@ -25,7 +25,7 @@ import {ShowToast} from "../shared/show-toast";
 import Loader from "../shared/loader";
 import {Role} from "@/types/types";
 import {apiUrl, nameRegex, usernameRegex, users} from "@/utils/constant";
-import { UserStatus } from "@/types/enum";
+import {UserStatus} from "@/types/enum";
 
 // const formSchema = z.object({
 
@@ -94,18 +94,14 @@ export function SignupForm() {
         role: role,
       };
 
-
-      const response = await fetch(
-        `${apiUrl}/${users}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(userData),
-          credentials: "include", // Include credentials if needed
-        }
-      );
+      const response = await fetch(`${apiUrl}/${users}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData),
+        credentials: "include", // Include credentials if needed
+      });
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -138,7 +134,7 @@ export function SignupForm() {
         unsafeMetadata: {
           role: role,
           isProfileComplete: false,
-          status:UserStatus.Pending
+          status: UserStatus.Pending,
           // add other metadata fields here
         },
         // username: values.username,
@@ -177,6 +173,16 @@ export function SignupForm() {
     }
     try {
       setSocialLoading(provider);
+
+      // Create signup with metadata before redirect
+      await signUp.create({
+        unsafeMetadata: {
+          role: role,
+          isProfileComplete: false,
+          status: UserStatus.Pending,
+        },
+      });
+
       // Make sure we're using the correct redirect URLs
       await signUp?.authenticateWithRedirect({
         strategy: provider,
