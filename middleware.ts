@@ -1,58 +1,69 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher, clerkClient } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { UserStatus } from './types/enum';
 
 // Matchers
-const isPublicPageRoute = (path: string) => {
-  const publicPaths = [
-    "/",
-    "/login",
-    "/signup",
-    "/signup-link",
-    "/forgot-password",
-    "/reset-password",
-    "/verify-code",
-    "/sso-callback",
-  ];
-  return publicPaths.some(p => path.startsWith(p));
-};
+const isPublicPageRoute = createRouteMatcher([
+  "/",
+  "/login(.*)",
+  "/signup(.*)",
+  "/signup-link(.*)",
+  "/forgot-password(.*)",
+  "/reset-password(.*)",
+  "/verify-code(.*)",
+  "/sso-callback(.*)",
+  "/verify-email-pending(.*)",
+]);
 
-const isPublicApiRoute = (path: string) => {
-  const publicApiPaths = [
-    "/api/auth/",
-    "/api/webhooks/",
-    "/api/verify",
-  ];
-  return publicApiPaths.some(p => path.startsWith(p));
-};
+const isPublicApiRoute = createRouteMatcher([
+  "/api/auth/(.*)",
+  "/api/webhooks/(.*)", // Allow all webhooks
+  "/api/verify(.*)", // Allow verification endpoints
+  // "/api/(.*)", // Allow subscription-related APIs
+]);
 
-const isUserOnboardingRoute = (path: string) => path.startsWith("/onboarding");
-const isOwnerOnboardingRoute = (path: string) => path.startsWith("/owner/onboarding");
-const isSettingsRoute = (path: string) => path.startsWith("/settings");
-const isAllowedApiRoute = (path: string) => {
-  const allowedApiPaths = [
-    "/api/trpc/",
-    "/api/",
-  ];
-  return allowedApiPaths.some(p => path.startsWith(p));
-};
+const isUserOnboardingRoute = createRouteMatcher(["/onboarding(.*)"]);
+const isOwnerOnboardingRoute = createRouteMatcher(["/owner/onboarding(.*)"]);
+const isSettingsRoute = createRouteMatcher(["/settings(.*)"]);
+const isAllowedApiRoute = createRouteMatcher([
+  "/api/trpc/(.*)", // Add your specific API routes that should be accessible
+  "/api/(.*)", // Subscription APIs
+]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { pathname, origin } = req.nextUrl;
+  const { pathname, origin, searchParams } = req.nextUrl;
 
   // STEP 1: Allow public and whitelisted API routes to proceed
-  if (isPublicApiRoute(pathname) || isAllowedApiRoute(pathname)) {
+  if (isPublicApiRoute(req) || isAllowedApiRoute(req)) {
     return NextResponse.next();
   }
 
   // STEP 2: Check authentication status
-  const { userId, sessionClaims } = await auth();
+  const { userId } = await auth();
 
   if (userId) {
+    const clerk = await clerkClient();
+    const user = await clerk.users.getUser(userId);
+
     try {
-      const isApproved = sessionClaims?.status === UserStatus.approved;
-      const isOwner = sessionClaims?.role === 'owner';
-      const isSubscribed = sessionClaims?.is_subscribed === true;
+      // Set default role if not set
+      if (!user.unsafeMetadata?.role && !user.publicMetadata?.role) {
+        const role = searchParams.get('role') || 'owner';
+        await clerk.users.updateUser(userId, {
+          unsafeMetadata: {
+            ...user.unsafeMetadata,
+            role: role,
+            status: UserStatus.Pending
+          }
+        });
+      }
+
+      const isApproved = user.unsafeMetadata?.status === UserStatus.approved ||
+        user?.publicMetadata?.status === UserStatus.approved;
+      const isOwner = user.unsafeMetadata?.role === 'owner' ||
+        user?.publicMetadata?.role === 'owner';
+      const isSubscribed = user.unsafeMetadata?.is_subscribed === true ||
+        user?.publicMetadata?.is_subscribed === true;
 
       // Handle verification and signup flow
       if (pathname.includes('/verify') || pathname.includes('/signup-link')) {
@@ -76,7 +87,7 @@ export default clerkMiddleware(async (auth, req) => {
 
       // IMPORTANT: If authenticated user is trying to access a public route,
       // redirect them to the appropriate page based on their status
-      if (isPublicPageRoute(pathname)) {
+      if (isPublicPageRoute(req)) {
         if (isApproved) {
           // Approved users go to dashboard
           return NextResponse.redirect(new URL("/dashboard", origin));
@@ -88,7 +99,7 @@ export default clerkMiddleware(async (auth, req) => {
       }
 
       // Handle onboarding routes
-      if (isApproved && (isUserOnboardingRoute(pathname) || isOwnerOnboardingRoute(pathname))) {
+      if (isApproved && (isUserOnboardingRoute(req) || isOwnerOnboardingRoute(req))) {
         // Approved users shouldn't access onboarding
         return NextResponse.redirect(new URL("/dashboard", origin));
       }
@@ -96,8 +107,8 @@ export default clerkMiddleware(async (auth, req) => {
       // Handle unapproved users
       if (!isApproved) {
         const correctOnboardingRoute =
-          (isOwner && isOwnerOnboardingRoute(pathname)) ||
-          (!isOwner && isUserOnboardingRoute(pathname));
+          (isOwner && isOwnerOnboardingRoute(req)) ||
+          (!isOwner && isUserOnboardingRoute(req));
 
         const isApiOrTrpc = pathname.startsWith("/api") || pathname.startsWith("/trpc");
 
@@ -119,7 +130,7 @@ export default clerkMiddleware(async (auth, req) => {
   // STEP 3: Handle unauthenticated users
 
   // Allow access to public routes
-  if (isPublicPageRoute(pathname)) {
+  if (isPublicPageRoute(req)) {
     return NextResponse.next();
   }
 
