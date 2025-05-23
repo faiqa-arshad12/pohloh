@@ -2,7 +2,7 @@
 import {ProfileSetup} from "@/components/onboarding/profile-setup";
 import Loader from "@/components/shared/loader";
 import {Role, User} from "@/types/types";
-import {users} from "@/utils/constant";
+import {apiUrl, users} from "@/utils/constant";
 import {useUser} from "@clerk/nextjs";
 import {useRouter} from "next/navigation";
 import React, {useEffect, useState} from "react";
@@ -20,7 +20,7 @@ const OnboardingPage = () => {
       setIsLoading(true);
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/${users}/${user.id}`,
+          `${apiUrl}/${users}/${user.id}`,
           {
             method: "GET",
             headers: {

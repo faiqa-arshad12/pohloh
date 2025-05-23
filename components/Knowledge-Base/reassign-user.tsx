@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { apiUrl } from "@/utils/constant";
 
 interface User {
   id: string;
@@ -32,7 +33,6 @@ interface ReassignUserModalProps {
   currentAssigneeId?: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export function ReassignUserModal({
   isOpen,
@@ -52,7 +52,7 @@ export function ReassignUserModal({
     setIsLoadingUsers(true);
     try {
       const response = await fetch(
-        `${API_URL}/api/users/organizations/${orgId}`,
+        `${apiUrl}/users/organizations/${orgId}`,
         {
           method: "GET",
           headers: {"Content-Type": "application/json"},
@@ -78,7 +78,7 @@ export function ReassignUserModal({
     async (userId: string) => {
       setAssigningUserId(userId);
       try {
-        await fetch(`${API_URL}/api/cards/${cardId}`, {
+        await fetch(`${apiUrl}/cards/${cardId}`, {
           method: "PUT",
           headers: {"Content-Type": "application/json"},
           body: JSON.stringify({card_owner_id: userId}),

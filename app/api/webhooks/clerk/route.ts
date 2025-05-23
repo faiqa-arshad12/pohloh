@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     const role = user?.unsafe_metadata?.role || user?.public_metadata?.role || 'user';
     const org_id = user?.unsafe_metadata?.org_id || user?.public_metadata?.org_id || null;
 
-    const userData: User = {
+    const userData: any = {
       user_id: user.id,
       first_name: user.first_name,
       last_name: user.last_name,

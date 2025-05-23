@@ -18,6 +18,7 @@ const isPublicPageRoute = createRouteMatcher([
 const isPublicApiRoute = createRouteMatcher([
   "/api/auth/(.*)",
   "/api/webhooks/(.*)", // Allow all webhooks
+  "/api/verify(.*)", // Allow verification endpoints
   // "/api/(.*)", // Allow subscription-related APIs
 ]);
 
@@ -30,7 +31,7 @@ const isAllowedApiRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { pathname, origin } = req.nextUrl;
+  const { pathname, origin, searchParams } = req.nextUrl;
 
   // STEP 1: Allow public and whitelisted API routes to proceed
   if (isPublicApiRoute(req) || isAllowedApiRoute(req)) {
@@ -45,22 +46,43 @@ export default clerkMiddleware(async (auth, req) => {
     const user = await clerk.users.getUser(userId);
 
     try {
+      // Set default role if not set
+      if (!user.unsafeMetadata?.role && !user.publicMetadata?.role) {
+        const role = searchParams.get('role') || 'owner';
+        await clerk.users.updateUser(userId, {
+          unsafeMetadata: {
+            ...user.unsafeMetadata,
+            role: role,
+            status: UserStatus.Pending
+          }
+        });
+      }
+
       const isApproved = user.unsafeMetadata?.status === UserStatus.approved ||
         user?.publicMetadata?.status === UserStatus.approved;
       const isOwner = user.unsafeMetadata?.role === 'owner' ||
         user?.publicMetadata?.role === 'owner';
       const isSubscribed = user.unsafeMetadata?.is_subscribed === true ||
         user?.publicMetadata?.is_subscribed === true;
-      // const isSubscribed = true
 
-      // Payment wall logic
-      if (!isSubscribed && isApproved) {
-        // Allow access to settings page and specific APIs
-        if (isSettingsRoute(req) || pathname.startsWith('/api/*')) {
-          return NextResponse.next();
+      // Handle verification and signup flow
+      if (pathname.includes('/verify') || pathname.includes('/signup-link')) {
+        if (isApproved) {
+          return NextResponse.redirect(new URL("/dashboard", origin));
+        } else {
+          const onboardingPath = isOwner ? "/owner/onboarding" : "/onboarding";
+          return NextResponse.redirect(new URL(onboardingPath, origin));
         }
-        // Redirect all other pages to payment settings
-        return NextResponse.redirect(new URL("/settings", origin));
+      }
+
+      // If user is logged in and tries to access login/signup pages, redirect to appropriate page
+      if (pathname.startsWith('/login') || pathname.startsWith('/signup')) {
+        if (isApproved) {
+          return NextResponse.redirect(new URL("/dashboard", origin));
+        } else {
+          const onboardingPath = isOwner ? "/owner/onboarding" : "/onboarding";
+          return NextResponse.redirect(new URL(onboardingPath, origin));
+        }
       }
 
       // IMPORTANT: If authenticated user is trying to access a public route,

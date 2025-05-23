@@ -17,6 +17,7 @@ import type {
   UserOnboardingData,
 } from "@/types/types";
 import {
+  apiUrl,
   CURRENT_STEP_KEY,
   ONBOARDING_DATA_KEY,
   organizations,
@@ -261,13 +262,13 @@ const OnboardingPage = () => {
         user_id: user.id,
       };
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/${organizations}`;
+      const apiRoute = `${apiUrl}/${organizations}`;
 
-      if (!apiUrl) {
+      if (!apiRoute) {
         throw new Error("API URL is not configured");
       }
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(apiRoute, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(data),
@@ -331,13 +332,13 @@ const OnboardingPage = () => {
         );
       }
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${user.id}`;
+      const apiRoute = `${apiUrl}/users/${user.id}`;
 
-      if (!apiUrl) {
+      if (!apiRoute) {
         throw new Error("API URL is not configured");
       }
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(apiRoute, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -473,13 +474,13 @@ const OnboardingPage = () => {
         }
 
         // If no localStorage data or incomplete, fall back to API
-        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/onboarding-data/${user?.id}`;
+        const apiRoute = `${apiUrl}/users/onboarding-data/${user?.id}`;
 
-        if (!apiUrl) {
+        if (!apiRoute) {
           throw new Error("API URL is not configured");
         }
 
-        const response = await fetch(apiUrl, {
+        const response = await fetch(apiRoute, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

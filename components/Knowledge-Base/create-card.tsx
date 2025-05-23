@@ -32,10 +32,18 @@ import Tag from "./tags";
 import {ManageCategory} from "./Create-Card/manage-category";
 import Loader from "../shared/loader";
 import {ShowToast} from "../shared/show-toast";
-import {CardStatus} from "@/utils/constant";
+import {
+  apiUrl,
+  CardStatus,
+  visibilityLabels,
+  visibilityOptions,
+} from "@/utils/constant";
 import {stripHtml} from "@/lib/stripeHtml";
 import ArrowBack from "../shared/ArrowBack";
 import {cn} from "@/lib/utils";
+import ChooseTeamModal from "./ChooseTeamModal";
+import ChooseUserModal from "./ChooseUserModal";
+import SelectUserModal from "./ChooseSelectedUsers";
 
 const TipTapEditor = dynamic(() => import("./editor"), {
   ssr: false,
@@ -95,8 +103,12 @@ CustomDateInput.displayName = "CustomDateInput";
 const formSchema = z.object({
   title: z
     .string()
-    .min(3, {message: "Title must be at least 3 characters"})
-    .max(100, {message: "Title must be less than 100 characters"}),
+    .min(4, {message: "Title must be at least 4 characters"})
+    .max(10, {message: "Title must not be greater than 10 characters"})
+    .regex(/^[a-zA-Z0-9\s\-_.,!?()]+$/, {
+      message:
+        "Title can only contain letters, numbers, spaces, and basic punctuation",
+    }),
   category_id: z.string().min(1, {message: "Category is required"}),
   folder_id: z.string().min(1, {message: "Folder is required"}),
   card_owner_id: z.string().min(1, {message: "Owner is required"}),
@@ -111,6 +123,7 @@ const formSchema = z.object({
     .string()
     .min(10, {message: "Content must be at least 10 characters"}),
   tags: z.array(z.string()).optional(),
+  visibility: z.string().min(1, {message: "Card visibility is required"}),
 });
 
 export default function CreateCard({cardId}: {cardId?: string}) {
@@ -130,6 +143,11 @@ export default function CreateCard({cardId}: {cardId?: string}) {
   const [isMounted, setIsMounted] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [isTeamModalOpen, setIsTeamOpen] = useState(false);
+  const [isUserModalOpen, setIsUserOpen] = useState(false);
+  const [team, setTeam] = useState<any>();
+  const [selectedUsers, setSelectedUsers] = useState<any[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
 
   const [loadingStates, setLoadingStates] = useState({
     teams: false,
@@ -170,8 +188,17 @@ export default function CreateCard({cardId}: {cardId?: string}) {
   const setError = (key: keyof typeof errors, value: string | null) => {
     setErrors((prev) => ({...prev, [key]: value}));
   };
+  const visibility = form.watch("visibility");
 
- 
+  useEffect(() => {
+    setSelectedUsers([]);
+    if (visibility === "team_based") {
+      setIsTeamOpen(true);
+    }
+    if (visibility === "selected_users") {
+      setIsOpen(true);
+    }
+  }, [visibility]);
 
   const calculateDateFromPeriod = (period: string): Date => {
     const now = new Date();
@@ -238,6 +265,12 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         return "Select period";
     }
   };
+  const onTeamSelect = async (team: any) => {
+    setTeam(team);
+    setIsTeamOpen(false);
+
+    setIsUserOpen(true);
+  };
 
   const fetchCardData = useCallback(async () => {
     if (!cardId) return;
@@ -245,14 +278,11 @@ export default function CreateCard({cardId}: {cardId?: string}) {
     setLoading("card", true);
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/cards/${cardId}`,
-        {
-          method: "GET",
-          headers: {"Content-Type": "application/json"},
-          credentials: "include",
-        }
-      );
+      const response = await fetch(`${apiUrl}/cards/${cardId}`, {
+        method: "GET",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+      });
 
       if (!response.ok) throw new Error("Failed to fetch card data");
 
@@ -273,15 +303,31 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           category_id: cardData.category_id?.id || "",
           folder_id: cardData.folder_id?.id || "",
           card_owner_id: cardData.card_owner_id?.id || "",
+          team: cardData?.team_access_id || null,
           team_to_announce_id:
             cardData.team_to_announce_id?.id ||
             cardData.team_to_announce_id ||
             "",
+          visibility: cardData.visibility,
         };
 
         const periodType = determinePeriodType(
           extractedData.verificationperiod
         );
+        if (
+          extractedData.visibility === "selected_users" ||
+          extractedData.visibility === "team_based"
+        ) {
+          const response = await fetch(`${apiUrl}/cards/users/${cardId}`, {
+            method: "GET",
+            headers: {"Content-Type": "application/json"},
+            credentials: "include",
+          });
+
+          if (!response.ok) throw new Error("Failed to fetch card data");
+
+          const data = await response.json();
+        }
 
         form.reset({
           ...form.getValues(),
@@ -290,9 +336,11 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           tags: extractedData.tags,
           verificationperiod: extractedData.verificationperiod,
           verificationPeriodType: periodType,
+          visibility: extractedData.visibility,
         });
 
         setEditorContent(extractedData.content);
+        setTeam(extractedData.team);
         setIsContentEmpty(!extractedData.content);
         setTags(extractedData.tags);
         setOrganizationId(extractedData.org_id);
@@ -320,14 +368,11 @@ export default function CreateCard({cardId}: {cardId?: string}) {
       setLoading("users", true);
 
       try {
-        const userResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/users/${user.id}`,
-          {
-            method: "GET",
-            headers: {"Content-Type": "application/json"},
-            credentials: "include",
-          }
-        );
+        const userResponse = await fetch(`${apiUrl}/users/${user.id}`, {
+          method: "GET",
+          headers: {"Content-Type": "application/json"},
+          credentials: "include",
+        });
 
         if (!userResponse.ok) throw new Error("Failed to fetch user details");
 
@@ -342,22 +387,16 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         setOrganizationId(orgId);
 
         const [usersResponse, teamsResponse] = await Promise.all([
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/users/organizations/${orgId}`,
-            {
-              method: "GET",
-              headers: {"Content-Type": "application/json"},
-              credentials: "include",
-            }
-          ),
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/teams/organizations/${orgId}`,
-            {
-              method: "GET",
-              headers: {"Content-Type": "application/json"},
-              credentials: "include",
-            }
-          ),
+          fetch(`${apiUrl}/users/organizations/${orgId}`, {
+            method: "GET",
+            headers: {"Content-Type": "application/json"},
+            credentials: "include",
+          }),
+          fetch(`${apiUrl}/teams/organizations/${orgId}`, {
+            method: "GET",
+            headers: {"Content-Type": "application/json"},
+            credentials: "include",
+          }),
         ]);
 
         if (!usersResponse.ok) throw new Error("Failed to fetch users");
@@ -416,7 +455,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
 
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/sub-categories/teams/${selectedCategory}`,
+          `${apiUrl}/sub-categories/teams/${selectedCategory}`,
           {
             method: "GET",
             headers: {"Content-Type": "application/json"},
@@ -473,7 +512,6 @@ export default function CreateCard({cardId}: {cardId?: string}) {
 
     setLoading("submitting", true);
     setError("form", null);
-
     try {
       const cardData = {
         ...values,
@@ -481,14 +519,14 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         org_id,
         ...(!cardId && {card_status: CardStatus.PUBLISH}),
         content: editorContent,
+        users: selectedUsers,
+        team_access_id: team ? team.id : null,
       };
 
       // Remove the period type before sending to backend
       delete cardData.verificationPeriodType;
 
-      const url = isEditMode
-        ? `${process.env.NEXT_PUBLIC_API_URL}/api/cards/${cardId}`
-        : `${process.env.NEXT_PUBLIC_API_URL}/api/cards`;
+      const url = isEditMode ? `${apiUrl}/cards/${cardId}` : `${apiUrl}/cards`;
       const method = isEditMode ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -565,15 +603,12 @@ export default function CreateCard({cardId}: {cardId?: string}) {
       // Remove the period type before sending to backend
       delete cardData.verificationPeriodType;
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/cards`,
-        {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify(cardData),
-          credentials: "include",
-        }
-      );
+      const response = await fetch(`${apiUrl}/cards`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(cardData),
+        credentials: "include",
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -800,6 +835,39 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                       )}
                     />
                   </div>
+                  <div>
+                    <label className="font-urbanist font-normal text-base leading-6 align-middle">
+                      Card Visibility
+                    </label>
+                    <FormField
+                      control={form.control}
+                      name="visibility"
+                      render={({field}) => (
+                        <FormItem>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full h-[44px] bg-[#2C2D2E] text-[#FFFFFF52] border border-white/10 rounded-[6px] mt-2 justify-between">
+                                {field.value
+                                  ? visibilityLabels[field.value]
+                                  : "Select visibility"}
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="bg-[#2C2D2E] border-none text-white">
+                              {visibilityOptions.map(({value, label}) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   {/* Verification Period */}
                   <div>
@@ -1004,10 +1072,10 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                       <FormItem>
                         <div
                           className={cn(
-                            "h-[300px] md:h-[446px] w-full border rounded-[20px] flex items-center justify-center p-2",
-                            form.formState.errors.content
-                              ? "border-red-500 border-dashed"
-                              : "border-dashed border-gray-600"
+                            "h-[300px] md:h-[446px] w-full border rounded-[20px] flex items-center justify-center p-2 border-none"
+                            // form.formState.errors.content
+                            //   ? "border-red-500 border-dashed"
+                            //   : "border-dashed border-gray-600"
                           )}
                         >
                           {isMounted && (
@@ -1076,6 +1144,31 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           </div>
         )}
       </div>
+      <ChooseTeamModal
+        isOpen={isTeamModalOpen}
+        onClose={() => setIsTeamOpen(false)}
+        teams={teams}
+        onTeamSelect={onTeamSelect}
+        selectedTeam={team}
+      />
+      <ChooseUserModal
+        isOpen={isUserModalOpen}
+        onClose={() => setIsUserOpen(false)}
+        team={team}
+        onConfirm={(users: any) => {
+          setSelectedUsers(users);
+          console.log("Selected users:", users);
+        }}
+      />
+      <SelectUserModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        onConfirm={(users: any) => {
+          setSelectedUsers(users);
+          console.log("Selected users:", users);
+        }}
+        org={org_id}
+      />
     </div>
   );
 }

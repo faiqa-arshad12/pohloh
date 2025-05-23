@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {nameRegex, user_roles} from "@/utils/constant";
+import {apiUrl, nameRegex, user_roles} from "@/utils/constant";
 import {ShowToast} from "@/components/shared/show-toast";
 import Loader from "@/components/shared/loader";
 import {useUser} from "@clerk/nextjs";
@@ -99,13 +99,13 @@ export function EditUserModal({
     if (!userDetails?.team_id) return null;
 
     try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/teams/${userDetails.team_id}`;
+      const api = `${apiUrl}/teams/${userDetails.team_id}`;
 
-      if (!apiUrl) {
+      if (!api) {
         throw new Error("API URL is not configured");
       }
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(api, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -136,13 +136,13 @@ export function EditUserModal({
       setIsLoading(true);
       setFetchError(null);
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/teams/organizations/${userDetails.org_id}`;
+      const api = `${apiUrl}/teams/organizations/${userDetails.org_id}`;
 
-      if (!apiUrl) {
+      if (!api) {
         throw new Error("API URL is not configured");
       }
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(api, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -173,9 +173,9 @@ export function EditUserModal({
 
     try {
       setIsLoadingTeamMembers(true);
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/organizations/${userDetails.org_id}`;
+      const api= `${apiUrl}/users/organizations/${userDetails.org_id}`;
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(api, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -211,16 +211,15 @@ export function EditUserModal({
       setIsLoadingTeamMembers(false);
     }
   }, [userDetails?.org_id, form]);
-  console.log(teamMembers, "mene");
 
   const fetchOrgUsers = React.useCallback(async () => {
     if (!userDetails?.org_id) return;
 
     try {
       setIsLoadingOrgUsers(true);
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/organizations/${userDetails.org_id}`;
+      const api = `${apiUrl}/users/organizations/${userDetails.org_id}`;
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(api, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -252,9 +251,9 @@ export function EditUserModal({
     if (!currentTeamId || !newUser) return;
 
     try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${newUser.user_id}`;
+      const api = `${apiUrl}/users/${newUser.user_id}`;
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(api, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -289,9 +288,9 @@ export function EditUserModal({
     if (!userId) return;
 
     try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${userId}`;
+      const api = `${apiUrl}/users/${userId}`;
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(api, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -380,9 +379,9 @@ export function EditUserModal({
         },
       });
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${userDetails.user_id}`;
+      const api = `${apiUrl}/users/${userDetails.user_id}`;
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(api, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -405,7 +404,7 @@ export function EditUserModal({
           user_id: userDetails.user_id,
         };
 
-        const teamApiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/teams/${values.team_id}`;
+        const teamApiUrl = `${apiUrl}/teams/${values.team_id}`;
 
         const teamResponse = await fetch(teamApiUrl, {
           method: "PUT",

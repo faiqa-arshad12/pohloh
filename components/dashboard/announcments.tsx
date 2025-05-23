@@ -6,7 +6,7 @@ import {Button} from "@/components/ui/button";
 import {cn} from "@/lib/utils";
 import ViewAnnouncmentModal from "./modals/view-announcement";
 import Image from "next/image";
-import {CardType} from "@/utils/constant";
+import {apiUrl, CardType} from "@/utils/constant";
 import {stripHtml} from "@/lib/stripeHtml";
 
 type Announcement = {
@@ -53,9 +53,9 @@ export function AnnouncementCard({userData}: AnnouncementCardProps) {
         setLoading(true);
         let url = "";
         if (userData.role === "owner") {
-          url = `${process.env.NEXT_PUBLIC_API_URL}/api/announcements/organizations/${userData.org_id}`;
+          url = `${apiUrl}/announcements/organizations/${userData.org_id}`;
         } else {
-          url = `${process.env.NEXT_PUBLIC_API_URL}/api/announcements/teams/${userData.team_id}`;
+          url = `${apiUrl}/announcements/teams/${userData.team_id}`;
         }
 
         const response = await fetch(url, {

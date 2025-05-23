@@ -9,7 +9,6 @@ export default function Page() {
   const [showChat, setShowChat] = useState(false);
   return (
     <div>
-      {/* <LearningPaths/> */}
       <Drafts />
       <div
         className="fixed bottom-4 right-4 z-50 cursor-pointer hover:scale-105 transition-transform"

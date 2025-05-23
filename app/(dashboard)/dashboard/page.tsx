@@ -21,6 +21,8 @@ import RenewSubscription from "@/components/dashboard/modals/renew-subscription"
 import {toast} from "sonner";
 import {useUser} from "@clerk/nextjs";
 import {Skeleton} from "@/components/ui/skeleton";
+import {apiUrl} from "@/utils/constant";
+import {useUserHook} from "@/hooks/useUser";
 
 type ViewMode = "Monthly" | "Weekly" | "Daily";
 type Interval = "monthly" | "weekly" | "daily";
@@ -71,7 +73,7 @@ const Page = () => {
   );
   const {user, isLoaded: isUserLoaded} = useUser();
   const [cardsData, setCards] = useState<any[]>([]);
-  const [userInfo, setUserInfo] = useState<any[]>([]);
+  const {userData} = useUserHook();
 
   const [isLoading, setIsLoading] = useState(true);
   const [dateStatuses] = useState<Record<string, DayStatus>>({
@@ -89,58 +91,44 @@ const Page = () => {
       try {
         setIsLoading(true);
 
-        // Get user details
-        const userRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/users/${user.id}`,
-          {
-            method: "GET",
-            headers: {"Content-Type": "application/json"},
-            credentials: "include",
-          }
-        );
-
-        if (!userRes.ok) throw new Error("Failed to fetch user");
-        const userData = await userRes.json();
-        const orgId = userData?.user?.organizations?.id;
-        const userRole = userData?.user?.role;
-        setUserInfo(userData.user);
-
-        if (!orgId) {
+        if (!userData?.orgId) {
           setCards([]);
           return;
         }
-
-        // Get all cards for the organization
         const cardsRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/cards/organizations/${orgId}`,
+          `${apiUrl}/cards/organizations/${userData?.orgId}`,
           {
-            method: "GET",
+            method: "POST",
             headers: {"Content-Type": "application/json"},
             credentials: "include",
+            body: JSON.stringify({
+              role: userData.user?.role,
+              userId: userData.user?.id,
+            }),
           }
         );
 
         if (!cardsRes.ok) throw new Error("Failed to fetch cards");
         const {cards} = await cardsRes.json();
+        setCards(cards);
+        // if (userRole === "owner") {
+        //   setCards(cards || []);
+        // } else if (userRole === "user") {
+        //   const filteredCards = (cards || []).filter((card: any) => {
+        //     return card.card_owner_id?.id === userData.user.id;
+        //   });
 
-        if (userRole === "owner") {
-          setCards(cards || []);
-        } else if (userRole === "user") {
-          const filteredCards = (cards || []).filter((card: any) => {
-            return card.card_owner_id?.id === userData.user.id;
-          });
+        //   setCards(filteredCards);
+        // } else {
+        //   const filteredCards = (cards || []).filter((card: any) => {
+        //     return (
+        //       card.card_owner_id?.id === userData.user.id ||
+        //       card.category_id.id == userData.user.team_id
+        //     );
+        //   });
 
-          setCards(filteredCards);
-        } else {
-          const filteredCards = (cards || []).filter((card: any) => {
-            return (
-              card.card_owner_id?.id === userData.user.id ||
-              card.category_id.id == userData.user.team_id
-            );
-          });
-
-          setCards(filteredCards);
-        }
+        //   setCards(filteredCards);
+        // }
       } catch (err) {
         console.error("Error fetching cards:", err);
         toast.error("Failed to load cards");
@@ -303,7 +291,10 @@ const Page = () => {
 
         <div className="py-2 mx-4 mb-5 rounded-md inline-block">
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="bg-[#232323] w-[full] h-[41px] text-[#FFFFFF] p-4  border-none cursor-pointer" style={{borderRadius:'8px'}}>
+            <SelectTrigger
+              className="bg-[#232323] w-[full] h-[41px] text-[#FFFFFF] p-4  border-none cursor-pointer"
+              style={{borderRadius: "8px"}}
+            >
               <SelectValue>{formatDateRange(selectedMonth)}</SelectValue>
             </SelectTrigger>
 
@@ -375,7 +366,7 @@ const Page = () => {
           <UnverifiedCards cards={cardsData} />
         </div>
         <div className="h-full">
-          <AnnouncementCard userData={userInfo} />
+          <AnnouncementCard userData={userData} />
         </div>
       </section>
 

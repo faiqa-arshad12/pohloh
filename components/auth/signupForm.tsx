@@ -24,7 +24,7 @@ import {useSignUp, useUser} from "@clerk/nextjs";
 import {ShowToast} from "../shared/show-toast";
 import Loader from "../shared/loader";
 import {Role} from "@/types/types";
-import {nameRegex, usernameRegex, users} from "@/utils/constant";
+import {apiUrl, nameRegex, usernameRegex, users} from "@/utils/constant";
 import { UserStatus } from "@/types/enum";
 
 // const formSchema = z.object({
@@ -96,7 +96,7 @@ export function SignupForm() {
 
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/${users}`,
+        `${apiUrl}/${users}`,
         {
           method: "POST",
           headers: {

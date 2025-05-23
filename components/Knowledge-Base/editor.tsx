@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useRef } from "react"
-import { EditorContent, useEditor } from "@tiptap/react"
-import StarterKit from "@tiptap/starter-kit"
-import Underline from "@tiptap/extension-underline"
-import TextStyle from "@tiptap/extension-text-style"
-import FontFamily from "@tiptap/extension-font-family"
-import TextAlign from "@tiptap/extension-text-align"
-import Color from "@tiptap/extension-color"
-import Link from "@tiptap/extension-link"
+import {useState, useEffect, useRef} from "react";
+import {EditorContent, useEditor} from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import TextStyle from "@tiptap/extension-text-style";
+import FontFamily from "@tiptap/extension-font-family";
+import TextAlign from "@tiptap/extension-text-align";
+import Color from "@tiptap/extension-color";
+import Link from "@tiptap/extension-link";
 import {
   Bold,
   Italic,
@@ -19,14 +19,14 @@ import {
   AlignJustify,
   LinkIcon,
   ChevronDown,
-} from "lucide-react"
+} from "lucide-react";
 
 interface TipTapEditorProps {
-  content: string
-  onChange: (html: string) => void
-  placeholder?: string
-  isContentEmpty?: boolean
-  onUploadClick?: () => void
+  content: string;
+  onChange: (html: string) => void;
+  placeholder?: string;
+  isContentEmpty?: boolean;
+  onUploadClick?: () => void;
 }
 
 const TipTapEditor = ({
@@ -37,22 +37,34 @@ const TipTapEditor = ({
   onUploadClick,
 }: TipTapEditorProps) => {
   // Refs for dropdowns
-  const paragraphDropdownRef = useRef<HTMLDivElement>(null)
-  const fontSizeDropdownRef = useRef<HTMLDivElement>(null)
-  const fontFamilyDropdownRef = useRef<HTMLDivElement>(null)
+  const paragraphDropdownRef = useRef<HTMLDivElement>(null);
+  const fontSizeDropdownRef = useRef<HTMLDivElement>(null);
+  const fontFamilyDropdownRef = useRef<HTMLDivElement>(null);
 
   // State for dropdown visibility
-  const [showParagraphDropdown, setShowParagraphDropdown] = useState(false)
-  const [showFontSizeDropdown, setShowFontSizeDropdown] = useState(false)
-  const [showFontFamilyDropdown, setShowFontFamilyDropdown] = useState(false)
+  const [showParagraphDropdown, setShowParagraphDropdown] = useState(false);
+  const [showFontSizeDropdown, setShowFontSizeDropdown] = useState(false);
+  const [showFontFamilyDropdown, setShowFontFamilyDropdown] = useState(false);
 
   // State for selected values
-  const [selectedParagraph, setSelectedParagraph] = useState("Paragraph")
-  const [selectedFontSize, setSelectedFontSize] = useState("12")
-  const [selectedFontFamily, setSelectedFontFamily] = useState("Default")
+  const [selectedParagraph, setSelectedParagraph] = useState("Paragraph");
+  const [selectedFontSize, setSelectedFontSize] = useState("12");
+  const [selectedFontFamily, setSelectedFontFamily] = useState("Default");
 
   // Available options
-  const fontSizes = ["8", "10", "12", "14", "16", "18", "20", "24", "30", "36", "48"]
+  const fontSizes = [
+    "8",
+    "10",
+    "12",
+    "14",
+    "16",
+    "18",
+    "20",
+    "24",
+    "30",
+    "36",
+    "48",
+  ];
   const fontFamilies = [
     "Default",
     "Helvetica",
@@ -65,7 +77,7 @@ const TipTapEditor = ({
     "Times New Roman",
     "Cambria",
     "Consolas",
-  ]
+  ];
 
   // Custom extension for font size
   const FontSize = TextStyle.configure().extend({
@@ -76,16 +88,16 @@ const TipTapEditor = ({
           parseHTML: (element) => element.style.fontSize,
           renderHTML: (attributes) => {
             if (!attributes.fontSize) {
-              return {}
+              return {};
             }
             return {
               style: `font-size: ${attributes.fontSize}`,
-            }
+            };
           },
         },
-      }
+      };
     },
-  })
+  });
 
   const editor = useEditor({
     extensions: [
@@ -103,145 +115,172 @@ const TipTapEditor = ({
       }),
     ],
     content: content || "",
-    onUpdate: ({ editor }) => {
-      onChange(editor.getHTML())
+    onUpdate: ({editor}) => {
+      onChange(editor.getHTML());
     },
     editorProps: {
       attributes: {
-        class: "prose prose-invert focus:outline-none min-h-[200px] h-full w-full",
+        class:
+          "prose prose-invert focus:outline-none min-h-[200px] h-full w-full",
       },
     },
-  })
+  });
 
   // Handle click outside to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (paragraphDropdownRef.current && !paragraphDropdownRef.current.contains(event.target as Node)) {
-        setShowParagraphDropdown(false)
+      if (
+        paragraphDropdownRef.current &&
+        !paragraphDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowParagraphDropdown(false);
       }
-      if (fontSizeDropdownRef.current && !fontSizeDropdownRef.current.contains(event.target as Node)) {
-        setShowFontSizeDropdown(false)
+      if (
+        fontSizeDropdownRef.current &&
+        !fontSizeDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowFontSizeDropdown(false);
       }
-      if (fontFamilyDropdownRef.current && !fontFamilyDropdownRef.current.contains(event.target as Node)) {
-        setShowFontFamilyDropdown(false)
+      if (
+        fontFamilyDropdownRef.current &&
+        !fontFamilyDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowFontFamilyDropdown(false);
       }
-    }
+    };
 
-    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Update content when it changes externally
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content)
+      editor.commands.setContent(content);
     }
-  }, [content, editor])
+  }, [content, editor]);
 
   if (!editor) {
-    return null
+    return null;
   }
 
   // Apply paragraph style
   const applyParagraphStyle = (style: string) => {
-    if (!editor) return
+    if (!editor) return;
 
     if (style === "Paragraph") {
-      editor.chain().focus().setParagraph().run()
-      setSelectedParagraph("Paragraph")
+      editor.chain().focus().setParagraph().run();
+      setSelectedParagraph("Paragraph");
     } else if (style.startsWith("Heading")) {
-      const level = Number.parseInt(style.split(" ")[1]) as 1 | 2 | 3 | 4 | 5 | 6
-      editor.chain().focus().toggleHeading({ level }).run()
-      setSelectedParagraph(style)
+      const level = Number.parseInt(style.split(" ")[1]) as
+        | 1
+        | 2
+        | 3
+        | 4
+        | 5
+        | 6;
+      editor.chain().focus().toggleHeading({level}).run();
+      setSelectedParagraph(style);
     }
-    setShowParagraphDropdown(false)
-  }
+    setShowParagraphDropdown(false);
+  };
 
   // Apply font size
   const applyFontSize = (size: string) => {
-    if (!editor) return
+    if (!editor) return;
 
     // Select all text if nothing is selected
     if (editor.state.selection.empty) {
-      editor.chain().focus().selectAll().run()
+      editor.chain().focus().selectAll().run();
     }
 
     editor
       .chain()
       .focus()
-      .setMark("textStyle", { fontSize: `${size}px` })
-      .run()
-    setSelectedFontSize(size)
-    setShowFontSizeDropdown(false)
-  }
+      .setMark("textStyle", {fontSize: `${size}px`})
+      .run();
+    setSelectedFontSize(size);
+    setShowFontSizeDropdown(false);
+  };
 
   // Apply font family
   const applyFontFamily = (font: string) => {
-    if (!editor) return
+    if (!editor) return;
 
     // Select all text if nothing is selected
     if (editor.state.selection.empty) {
-      editor.chain().focus().selectAll().run()
+      editor.chain().focus().selectAll().run();
     }
 
     if (font === "Default") {
-      editor.chain().focus().unsetFontFamily().run()
+      editor.chain().focus().unsetFontFamily().run();
     } else {
-      editor.chain().focus().setFontFamily(font).run()
+      editor.chain().focus().setFontFamily(font).run();
     }
-    setSelectedFontFamily(font)
-    setShowFontFamilyDropdown(false)
-  }
+    setSelectedFontFamily(font);
+    setShowFontFamilyDropdown(false);
+  };
 
   // Apply text alignment
   const applyTextAlign = (align: "left" | "center" | "right" | "justify") => {
-    if (!editor) return
-    editor.chain().focus().setTextAlign(align).run()
-  }
+    if (!editor) return;
+    editor.chain().focus().setTextAlign(align).run();
+  };
 
   // Handle link insertion
   const insertLink = () => {
-    if (!editor) return
+    if (!editor) return;
 
-    const url = window.prompt("Enter link URL")
+    const url = window.prompt("Enter link URL");
     if (url) {
       // If no text is selected, use the URL as the link text
       if (editor.state.selection.empty) {
-        editor.chain().focus().insertContent(`<a href="${url}">${url}</a>`).run()
+        editor
+          .chain()
+          .focus()
+          .insertContent(`<a href="${url}">${url}</a>`)
+          .run();
       } else {
         // If text is selected, turn it into a link
-        editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run()
+        editor
+          .chain()
+          .focus()
+          .extendMarkRange("link")
+          .setLink({href: url})
+          .run();
       }
     }
-  }
+  };
 
   // Empty state with upload button
   if (isContentEmpty) {
     return (
-      <div className="flex flex-col items-center justify-center h-full w-full text-center p-4">
-        <p className="text-white mb-4">{placeholder}</p>
+      <div className="flex flex-col items-center justify-center h-full w-full text-center p-4 border border-dashed border-gray-600 rounded-[20px]">
+        <p className="text-white mb-4 text-[20px] font-urbanist">{placeholder}</p>
         <button
           onClick={onUploadClick}
           className="bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black px-4 py-2 rounded-md flex gap-2 items-center justify-center w-[200px] cursor-pointer"
         >
-                  <img src="/upload-image.png" alt="user" />
+          <img src="/upload-image.png" alt="user" />
 
-         <span className="">
-         Upload
-          </span>
+          <span className="">Upload</span>
         </button>
       </div>
-    )
+    );
   }
 
   return (
     <div className="tiptap-editor w-full h-full flex flex-col p-2">
       {/* Toolbar */}
-      <div className="toolbar flex items-center gap-2" >
+      <div className="toolbar flex items-center gap-2">
         {/* Paragraph Style Dropdown */}
-        <div ref={paragraphDropdownRef} className="relative cursor-pointer !h-[44px]"style={{borderRadius:'6px'}}>
+        <div
+          ref={paragraphDropdownRef}
+          className="relative cursor-pointer !h-[44px]"
+          style={{borderRadius: "6px"}}
+        >
           <button
             onClick={() => setShowParagraphDropdown(!showParagraphDropdown)}
             className="flex items-center justify-between w-[252px] bg-[#2C2D2E] text-white px-3 py-2 !h-[44px] rounded cursor-pointer"
@@ -284,13 +323,16 @@ const TipTapEditor = ({
           <button
             onClick={() => setShowFontSizeDropdown(!showFontSizeDropdown)}
             className="flex items-center justify-between w-[120px] bg-[#2C2D2E] h-[44px] text-white px-3 py-2 rounded cursor-pointer"
-            style={{borderRadius:'6px'}}
+            style={{borderRadius: "6px"}}
           >
             <span className="text-sm">{selectedFontSize}</span>
             <ChevronDown size={14} />
           </button>
           {showFontSizeDropdown && (
-            <div className="absolute z-10 mt-1 w-[120px] max-h-[200px] overflow-y-auto bg-[#2C2D2E]  rounded shadow-lg cursor-pointer" style={{borderRadius:'6px'}}>
+            <div
+              className="absolute z-10 mt-1 w-[120px] max-h-[200px] overflow-y-auto bg-[#2C2D2E]  rounded shadow-lg cursor-pointer"
+              style={{borderRadius: "6px"}}
+            >
               {fontSizes.map((size) => (
                 <button
                   key={size}
@@ -309,7 +351,7 @@ const TipTapEditor = ({
           <button
             onClick={() => setShowFontFamilyDropdown(!showFontFamilyDropdown)}
             className="flex items-center justify-between w-[180px] bg-[#2C2D2E]  h-[44px] text-white px-3 py-2  cursor-pointer"
-            style={{borderRadius:'6px'}}
+            style={{borderRadius: "6px"}}
           >
             <span className="truncate text-sm">{selectedFontFamily}</span>
             <ChevronDown size={14} />
@@ -321,7 +363,7 @@ const TipTapEditor = ({
                   key={font}
                   onClick={() => applyFontFamily(font)}
                   className="block w-full text-left px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F]  text-sm cursor-pointer"
-                  style={{ fontFamily: font === "Default" ? "inherit" : font }}
+                  style={{fontFamily: font === "Default" ? "inherit" : font}}
                 >
                   {font}
                 </button>
@@ -340,8 +382,8 @@ const TipTapEditor = ({
               hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
 
               `}
-              style={{borderRadius:'8px'}}
-              // ${editor.isActive("bold") ? "opacity-100" : "opacity-80"}
+            style={{borderRadius: "8px"}}
+            // ${editor.isActive("bold") ? "opacity-100" : "opacity-80"}
 
             title="Bold"
           >
@@ -353,7 +395,7 @@ const TipTapEditor = ({
               hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
 
               `}
-              style={{borderRadius:'8px'}}
+            style={{borderRadius: "8px"}}
             title="Italic"
           >
             <Italic size={16} />
@@ -365,7 +407,7 @@ const TipTapEditor = ({
               hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
 
               `}
-              style={{borderRadius:'8px'}}
+            style={{borderRadius: "8px"}}
             title="Underline"
           >
             <UnderlineIcon size={16} />
@@ -379,7 +421,7 @@ const TipTapEditor = ({
               hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
 
               `}
-              style={{borderRadius:'8px'}}
+            style={{borderRadius: "8px"}}
             title="Align Left"
           >
             <AlignLeft size={16} />
@@ -391,7 +433,7 @@ const TipTapEditor = ({
               hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
 
               `}
-              style={{borderRadius:'8px'}}
+            style={{borderRadius: "8px"}}
             title="Align Center"
           >
             <AlignCenter size={16} />
@@ -403,7 +445,7 @@ const TipTapEditor = ({
               hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
 
               `}
-              style={{borderRadius:'8px'}}
+            style={{borderRadius: "8px"}}
             title="Align Right"
           >
             <AlignRight size={16} />
@@ -415,7 +457,7 @@ const TipTapEditor = ({
               hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
 
               `}
-              style={{borderRadius:'8px'}}
+            style={{borderRadius: "8px"}}
             title="Justify"
           >
             <AlignJustify size={16} />
@@ -429,7 +471,7 @@ const TipTapEditor = ({
               hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
 
               `}
-              style={{borderRadius:'8px'}}
+            style={{borderRadius: "8px"}}
             title="Add Link"
           >
             <LinkIcon size={16} />
@@ -438,7 +480,7 @@ const TipTapEditor = ({
       </div>
 
       {/* Editor Content */}
-      <div className="flex-grow p-4 bg-[#191919] overflow-auto">
+      <div className="flex-grow rounded-[20px] bg-[#191919] overflow-auto !border !bborder-gray-600 !border-dashed  mt-8 p-4">
         <EditorContent editor={editor} />
       </div>
 
@@ -477,24 +519,44 @@ const TipTapEditor = ({
         }
 
         .tiptap-editor .ProseMirror a {
-          color: #F9DB6F;
+          color: #f9db6f;
           text-decoration: underline;
         }
 
         /* Font family styles */
-        .tiptap-editor .ProseMirror [style*="font-family: Helvetica"] { font-family: Helvetica, sans-serif; }
-        .tiptap-editor .ProseMirror [style*="font-family: Garamond"] { font-family: Garamond, serif; }
-        .tiptap-editor .ProseMirror [style*="font-family: Arial"] { font-family: Arial, sans-serif; }
-        .tiptap-editor .ProseMirror [style*="font-family: Verdana"] { font-family: Verdana, sans-serif; }
-        .tiptap-editor .ProseMirror [style*="font-family: Georgia"] { font-family: Georgia, serif; }
-        .tiptap-editor .ProseMirror [style*="font-family: Calibri"] { font-family: Calibri, sans-serif; }
-        .tiptap-editor .ProseMirror [style*="font-family: Futura"] { font-family: Futura, sans-serif; }
-        .tiptap-editor .ProseMirror [style*="font-family: Times New Roman"] { font-family: "Times New Roman", serif; }
-        .tiptap-editor .ProseMirror [style*="font-family: Cambria"] { font-family: Cambria, serif; }
-        .tiptap-editor .ProseMirror [style*="font-family: Consolas"] { font-family: Consolas, monospace; }
+        .tiptap-editor .ProseMirror [style*="font-family: Helvetica"] {
+          font-family: Helvetica, sans-serif;
+        }
+        .tiptap-editor .ProseMirror [style*="font-family: Garamond"] {
+          font-family: Garamond, serif;
+        }
+        .tiptap-editor .ProseMirror [style*="font-family: Arial"] {
+          font-family: Arial, sans-serif;
+        }
+        .tiptap-editor .ProseMirror [style*="font-family: Verdana"] {
+          font-family: Verdana, sans-serif;
+        }
+        .tiptap-editor .ProseMirror [style*="font-family: Georgia"] {
+          font-family: Georgia, serif;
+        }
+        .tiptap-editor .ProseMirror [style*="font-family: Calibri"] {
+          font-family: Calibri, sans-serif;
+        }
+        .tiptap-editor .ProseMirror [style*="font-family: Futura"] {
+          font-family: Futura, sans-serif;
+        }
+        .tiptap-editor .ProseMirror [style*="font-family: Times New Roman"] {
+          font-family: "Times New Roman", serif;
+        }
+        .tiptap-editor .ProseMirror [style*="font-family: Cambria"] {
+          font-family: Cambria, serif;
+        }
+        .tiptap-editor .ProseMirror [style*="font-family: Consolas"] {
+          font-family: Consolas, monospace;
+        }
       `}</style>
     </div>
-  )
-}
+  );
+};
 
-export default TipTapEditor
+export default TipTapEditor;

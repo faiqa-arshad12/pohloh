@@ -13,7 +13,7 @@ import {
 import {ShowToast} from "@/components/shared/show-toast";
 import {useUser} from "@clerk/nextjs";
 import Loader from "../shared/loader";
-import {users} from "@/utils/constant";
+import {apiUrl, users} from "@/utils/constant";
 import {getSubscriptionDetails} from "@/actions/subscription.action";
 import PaymentPage from "./payment";
 import {Skeleton} from "@/components/ui/skeleton";
@@ -87,18 +87,17 @@ const InvoicesSkeleton = () => (
     <div className="mt-4">
       <Skeleton className="h-12 w-full  mb-2 rounded" />
       <div className="space-y-4">
-  {Array.from({ length: 5 }).map((_, i) => {
-    const widthPercent = 100 - i * 10; // 100%, 90%, 80%, ...
-    return (
-      <Skeleton
-        key={i}
-        className={`h-[28px]`}
-        style={{ width: `${widthPercent}%` }}
-      />
-    );
-  })}
-</div>
-
+        {Array.from({length: 5}).map((_, i) => {
+          const widthPercent = 100 - i * 10; // 100%, 90%, 80%, ...
+          return (
+            <Skeleton
+              key={i}
+              className={`h-[28px]`}
+              style={{width: `${widthPercent}%`}}
+            />
+          );
+        })}
+      </div>
     </div>
   </div>
 );
@@ -323,7 +322,7 @@ export default function Billing() {
       try {
         setIsUserLoading(true);
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/${users}/onboarding-data/${user?.id}`,
+          `${apiUrl}/${users}/onboarding-data/${user?.id}`,
           {
             method: "GET",
             headers: {
@@ -446,14 +445,16 @@ export default function Billing() {
       {/* Header */}
       <div className="mb-6 text-white font-sans">
         <div
-          className={`flex flex-col md:flex-row gap-5 mt-2 ${
-            !userData?.organizations?.subscriptions[0]?.is_subscribed ||
-            isSubscriptionCanceled
-              ? "justify-center"
-              : "justify-between"
-          }`}
+          // className={`flex flex-col md:flex-row gap-5 mt-2 ${
+          //   !userData?.organizations?.subscriptions[0]?.is_subscribed ||
+          //   isSubscriptionCanceled
+          //     ? "justify-center"
+          //     : "justify-between"
+          // }`}
+          className={`flex flex-col md:flex-row gap-5 mt-2 justify-center
+          `}
         >
-          {userLoading
+          {/* {userLoading
             ? !isSubscriptionCanceled && <SubscriptionSkeleton />
             : userData?.organizations?.subscriptions[0]?.is_subscribed &&
               !isSubscriptionCanceled && (
@@ -462,19 +463,28 @@ export default function Billing() {
                     <h2 className="text-[#F9DB6F] font-urbanist font-semibold text-[30px] leading-[24px] tracking-[0]">
                       Pohloh {subscription?.plan?.name} Plan
                     </h2>
-
-                    <>
-                      <p className="font-urbanist font-medium text-[24px] leading-[24px] tracking-[0] mt-5">
-                        Next Bill Date
-                      </p>
-                      <p className="text-[#F9DB6F] font-urbanist font-semibold text-[30px] leading-[24px] tracking-[0] mt-2">
-                        {subscription?.nextBillingDate
-                          ? new Date(
-                              subscription.nextBillingDate * 1000
-                            ).toDateString()
-                          : "N/A"}
-                      </p>
-                    </>
+                    <div className="flex flex-row justify-between">
+                      <>
+                        <p className="font-urbanist font-medium text-[24px] leading-[24px] tracking-[0] mt-5">
+                          Next Bill Date
+                        </p>
+                        <p className="text-[#F9DB6F] font-urbanist font-semibold text-[30px] leading-[24px] tracking-[0] mt-2">
+                          {subscription?.nextBillingDate
+                            ? new Date(
+                                subscription.nextBillingDate * 1000
+                              ).toDateString()
+                            : "N/A"}
+                        </p>
+                      </>
+                      <div className="flex flex-row items-center mt-5">
+                        <p className="text-white font-urbanist font-semibold text-[30px] leading-[24px] tracking-[0]">
+                          Total Seat:
+                        </p>
+                        <p className="ml-1 text-white font-urbanist font-semibold text-[30px] leading-[24px] tracking-[0]">
+                          {subscription?.plan?.subscription?.quantity}
+                        </p>
+                      </div>
+                    </div>
 
                     <div className="flex flex-row items-center mt-5">
                       <p className="text-white font-urbanist font-semibold text-[30px] leading-[24px] tracking-[0]">
@@ -497,12 +507,12 @@ export default function Billing() {
                     )}
                   </div>
                 </div>
-              )}
+              )} */}
 
           {fetchingPlans ? (
             <PlansSkeleton isCanceled={isSubscriptionCanceled} />
           ) : (
-            <div className="w-full lg:w-2/3 flex flex-col justify-between p-6 rounded-2xl">
+            <div className="w-full lg:w-2/3 flex flex-col justify-center p-6 rounded-2xl">
               {/* Billing Toggle */}
               <div className="flex justify-center w-full">
                 <div className="bg-[#FFFFFF14] bg-opacity-10 rounded-2xl p-2 flex items-center justify-center gap-2 w-full max-w-md">
@@ -529,18 +539,43 @@ export default function Billing() {
                     (p) => p.interval === billingCycle
                   );
                   if (!price) return null;
-                  const isSelected = selectedPriceId === price.id;
+                  // Determine if this is the current plan
+                  const isCurrent =
+                    subscription?.plan?.id === price.id &&
+                    userData?.organizations?.subscriptions[0]?.is_subscribed &&
+                    !isSubscriptionCanceled;
+                  // Determine if this is the selected plan (but not current)
+                  const isSelected = selectedPriceId === price.id && !isCurrent;
 
                   return (
                     <div
                       key={plan.id}
-                      onClick={() => setSelectedPriceId(price.id)}
-                      className={`w-full h-full p-4 rounded-[23px] flex flex-col justify-between border transition cursor-pointer ${
-                        isSelected
-                          ? "bg-black border-none"
-                          : "border-none bg-[#FFFFFF0A] hover:border-yellow-500/50 hover:bg-[#ffffff10]"
-                      } `}
+                      onClick={() => {
+                        if (!isCurrent) setSelectedPriceId(price.id);
+                      }}
+                      className={`w-full h-full p-6 rounded-[23px] flex flex-col justify-between border transition cursor-pointer relative
+                        ${
+                          isCurrent
+                            ? "bg-black border-none"
+                            : isSelected
+                            ? "bg-black  border-none shadow-md"
+                            : "border-none bg-[#FFFFFF0A] hover:border-yellow-500/50 hover:bg-[#ffffff10]"
+                        }
+                        group
+                      `}
+                      style={{minHeight: 420}}
                     >
+                      {/* Badge for Current/Selected */}
+                      {/* {isCurrent && (
+                        <span className="absolute top-4 right-4 bg-[#F9DB6F] text-black font-urbanist font-bold text-[15px] px-4 py-1 rounded-full z-10 shadow">
+                          Current
+                        </span>
+                      )}
+                      {isSelected && !isCurrent && (
+                        <span className="absolute top-4 right-4 bg-[#232323] text-[#F9DB6F] font-urbanist font-bold text-[15px] px-4 py-1 rounded-full z-10 border border-[#F9DB6F] shadow">
+                          Selected
+                        </span>
+                      )} */}
                       <div>
                         <div className="flex justify-between items-center mb-4">
                           <div className="w-[78.81px] h-[78.81px] flex items-center justify-center">
@@ -554,12 +589,12 @@ export default function Billing() {
                           <div className="text-right">
                             <div className="flex">
                               <div className="flex flex-col items-start">
-                                <span className="text-lg text-[#D1D1D1] px-2 pt-[-5px]">
+                                <span className="text-lg text-[#D1D1D1] px-2 pt-[-5px] text-[18px]">
                                   $
                                 </span>
                                 <span className="invisible">.</span>
                               </div>
-                              <span className="font-urbanist font-thin text-[50px] leading-[100%] text-white">
+                              <span className="font-urbanist font-normal text-[50px] leading-[100%] text-white">
                                 {price.amount}
                               </span>
                               <div className="flex flex-col justify-end">
@@ -571,15 +606,43 @@ export default function Billing() {
                             </div>
                           </div>
                         </div>
-
-                        <h3 className="font-urbanist font-semibold text-[24px] leading-[22px] mb-2">
+                        <h3 className="font-urbanist font-semibold text-[24px] leading-[22px] mb-2 text-white">
                           {plan.name} Plan
                         </h3>
                         <p className="text-[#707070] font-urbanist text-[14px] mb-4">
-                          {plan.description || "Flexible usage plan"}
+                          {plan.description || "Perfect plan to check"}
                         </p>
+                        {/* Show current plan info only on current plan */}
+                        {isCurrent && (
+                          <div className="flex flex-row justify-between py-4">
+                            <div className="flex flex-col  gap-2">
+                              <p className="font-urbanist font-medium text-[19.11px] leading-[24px] tracking-[0] mt-2 text-white">
+                                Next Bill Date
+                              </p>
+                              <p className="text-[#F9DB6F] font-urbanist font-semibold text-[19.11px] leading-[24px] tracking-[0] mt-1">
+                                {subscription?.nextBillingDate
+                                  ? new Date(
+                                      subscription.nextBillingDate * 1000
+                                    ).toLocaleDateString("en-US", {
+                                      day: "numeric",
+                                      month: "long",
+                                      year: "numeric",
+                                    })
+                                  : "N/A"}
+                              </p>
+                            </div>
+                            <div className="flex flex-col  mt-2 gap-2">
+                              <p className="text-white font-urbanist font-semibold text-[19.11px] leading-[24px] tracking-[0]">
+                                Total Seats
+                              </p>
+                              <p className="ml-1 text-[#F9DB6F] font-urbanist font-semibold text-[19px] leading-[24px] tracking-[0]">
+                                {subscription?.plan?.subscription?.quantity}{" "}
+                                Seats
+                              </p>
+                            </div>
+                          </div>
+                        )}
                         <div className="border-t border-[#E5E5E5] mb-5"></div>
-
                         <div className="space-y-5">
                           {[
                             "Feature 1",
@@ -599,34 +662,89 @@ export default function Billing() {
                           ))}
                         </div>
                       </div>
+                      <div className="flex flex-row justify-between">                      {/* Button logic */}
+                      {isCurrent && (
+                        <button
+                          className={`rounded-[9.42px] h-[56.51px] px-[47.09px] py-[11.77px] font-urbanist font-[600] text-[18px] mt-5 flex items-center justify-center cursor-pointer transition-all duration-200
+                             ${
+                               isCurrent
+                                 ? "bg-[#F9DB6F] text-black border-none"
+                                 : isSelected
+                                 ? "bg-[#F9DB6F] text-black border-none"
+                                 : "bg-transparent border border-white text-white w-full hover:bg-[#F9DB6F] hover:text-black"
+                             }
 
+                           `}
+                          disabled={
+                            isLoading
+                            // ||
+                            // isCurrent ||
+                            // (isSubscriptionCanceled && !isCurrent)
+                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPriceId(price.id);
+                            createPaymentIntent();
+                          }}
+                        >
+                          {isSelected ? (
+                            isLoading ? (
+                              <Loader />
+                            ) : (
+                              <>Change Plan</>
+                            )
+                          ) : 'Change Plan'}
+                        </button>
+                      )}
                       <button
-                        className={`rounded-[9.42px] h-[56.51px] px-[47.09px] py-[11.77px] font-medium mt-5 flex items-center justify-center cursor-pointer ${
-                          isSelected
-                            ? "bg-[#F9DB6F] text-black"
-                            : "bg-transparent border border-white text-white w-full"
-                        } ${
-                          isSubscriptionCanceled ? "cursor-not-allowed" : ""
-                        }`}
-                        disabled={isLoading}
-                        onClick={() => {
-                          // if (isSubscriptionCanceled) return;
+                        className={`rounded-[9.42px] h-[56.51px] px-[47.09px] py-[11.77px] font-urbanist font-semibold text-[18px] mt-5 flex items-center justify-center cursor-pointer transition-all duration-200
+                          ${
+                            isCurrent
+                              ? "bg-transparent border border-white text-white"
+                              : isSelected
+                              ? "bg-[#F9DB6F] text-black border-none w-full"
+                              : "bg-transparent border border-white text-white w-full hover:bg-[#F9DB6F] hover:text-black"
+                          }
+
+                        `}
+                        disabled={
+                          isLoading
+                          // ||
+                          // isCurrent ||
+                          // (isSubscriptionCanceled && !isCurrent)
+                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isCurrent) {
+                            handleCancelPlan();
+                          }
+                          // if (!isCurrent && !isSubscriptionCanceled) {
                           setSelectedPriceId(price.id);
                           createPaymentIntent();
+                          // }
                         }}
                       >
-                        {isLoading && selectedPriceId === price.id ? (
-                          <Loader />
+                        {isCurrent ? (
+                          isCancelling ? (
+                            <Loader />
+                          ) : (
+                            "Cancel Plan"
+                          )
+                        ) : isSelected ? (
+                          isLoading ? (
+                            <Loader />
+                          ) : plan.name === "Premium" ? (
+                            `Upgrade to ${plan.name}`
+                          ) : (
+                            `Choose ${plan.name}`
+                          )
+                        ) : plan.name === "Premium" ? (
+                          `Upgrade to ${plan.name}`
                         ) : (
-                          <span>
-                            {isSelected
-                              ? "Selected Plan"
-                              : plan.name === "Premium"
-                              ? `Upgrade to ${plan.name}`
-                              : `Choose ${plan.name}`}
-                          </span>
+                          `Choose ${plan.name}`
                         )}
                       </button>
+                      </div>
                     </div>
                   );
                 })}

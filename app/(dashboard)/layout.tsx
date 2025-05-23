@@ -8,7 +8,7 @@ import NotificationsPanel from "@/components/shared/notifications";
 import {useUser} from "@clerk/nextjs";
 import {useRole} from "@/components/ui/Context/UserContext";
 import {Role} from "@/types/types";
-import {users} from "@/utils/constant";
+import {apiUrl, users} from "@/utils/constant";
 import RenewSubscription from "@/components/dashboard/modals/renew-subscription";
 
 export default function ClientLayout({children}: {children: React.ReactNode}) {
@@ -19,7 +19,7 @@ export default function ClientLayout({children}: {children: React.ReactNode}) {
   const {setRoleAccess} = useRole();
   const isDashboard = pathname === "/dashboard";
   const [showRenewModal, setShowRenewModal] = useState(false);
-  const[userData, setUserData] = useState<any>()
+  const [userData, setUserData] = useState<any>();
 
   useEffect(() => {
     if (user) {
@@ -34,7 +34,7 @@ export default function ClientLayout({children}: {children: React.ReactNode}) {
     const createUser = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/${users}/onboarding-data/${user?.id}`,
+          `${apiUrl}/${users}/onboarding-data/${user?.id}`,
           {
             method: "GET",
             headers: {
@@ -52,7 +52,7 @@ export default function ClientLayout({children}: {children: React.ReactNode}) {
         }
 
         const result = await response.json();
-        setUserData(result.data)
+        setUserData(result.data);
         if (result.data.role) setRoleAccess(result.data.role as Role);
       } catch (err) {
         console.error("Error creating user:", err);
@@ -66,11 +66,11 @@ export default function ClientLayout({children}: {children: React.ReactNode}) {
 
   return (
     <div
-      className={`font-urbanist min-h-screen flex flex-col relative ${
+      className={`font-urbanist min-h-screen flex flex-col relative font-urbanist ${
         isDashboard ? "" : "bg-black"
       }`}
     >
-      {showRenewModal && <RenewSubscription open={showRenewModal} />}
+      {/* {showRenewModal && <RenewSubscription open={showRenewModal} />} */}
 
       {isDashboard && (
         <div className="gradient-background fixed inset-0 -z-10">

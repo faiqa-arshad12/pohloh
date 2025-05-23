@@ -30,7 +30,7 @@ import {
   SelectValue,
   SelectContent,
 } from "@/components/ui/select";
-import {CardStatus, CardType} from "@/utils/constant";
+import {apiUrl, CardStatus, CardType} from "@/utils/constant";
 import {ShowToast} from "@/components/shared/show-toast";
 import Loader from "@/components/shared/loader";
 import {Skeleton} from "@/components/ui/skeleton";
@@ -40,13 +40,14 @@ import {Button} from "@/components/ui/button";
 type RenewSubscriptionProps = {
   open: boolean;
   onClose: (open: boolean) => void;
+  selectedCard: any;
 };
 
 const formSchema = z.object({
   title: z
     .string()
-    .min(1, "Title is required")
-    .max(100, "Title must be less than 100 characters"),
+    .min(4, "Title is required")
+    .max(60, "Title must be less than 100 characters"),
   description: z
     .string()
     .min(1, "Description is required")
@@ -66,7 +67,11 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-function CreateAnnouncement({open, onClose}: RenewSubscriptionProps) {
+function CreateAnnouncement({
+  open,
+  onClose,
+  selectedCard,
+}: RenewSubscriptionProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [teams, setTeams] = useState<any[]>([]);
@@ -78,10 +83,10 @@ function CreateAnnouncement({open, onClose}: RenewSubscriptionProps) {
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [savedCard, setSaved] = useState<any>();
 
-  const [selectedCard, setSelectedCard] = useState<{
-    id: string;
-    title: string;
-  } | null>(null);
+  // const [selectedCard, setSelectedCard] = useState<{
+  //   id: string;
+  //   title: string;
+  // } | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -100,18 +105,18 @@ function CreateAnnouncement({open, onClose}: RenewSubscriptionProps) {
       fetchTeams();
 
       // Check for selected card in URL params when modal opens
-      const params = new URLSearchParams(window.location.search);
-      const selectedCardId = params.get("selectedCardId");
-      const selectedCardTitle = params.get("selectedCardTitle");
+      // const params = new URLSearchParams(window.location.search);
+      // const selectedCardId = params.get("selectedCardId");
+      // const selectedCardTitle = params.get("selectedCardTitle");
 
-      if (selectedCardId && selectedCardTitle) {
-        setSelectedCard({id: selectedCardId, title: selectedCardTitle});
-        form.setValue("card_id", selectedCardId);
+      // if (selectedCardId && selectedCardTitle) {
+      //   setSelectedCard({id: selectedCardId, title: selectedCardTitle});
+      //   form.setValue("card_id", selectedCardId);
 
-        // Clean up the URL
-        const newUrl = window.location.pathname;
-        window.history.replaceState(null, "", newUrl);
-      }
+      //   // Clean up the URL
+      //   const newUrl = window.location.pathname;
+      //   window.history.replaceState(null, "", newUrl);
+      // }
     }
   }, [open, form]);
   useEffect(() => {
@@ -125,16 +130,13 @@ function CreateAnnouncement({open, onClose}: RenewSubscriptionProps) {
     setIsInitialLoading(true);
     try {
       if (user) {
-        const userResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/users/${user?.id}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            credentials: "include",
-          }
-        );
+        const userResponse = await fetch(`${apiUrl}/users/${user?.id}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
 
         if (!userResponse.ok) {
           throw new Error("Failed to fetch user details");
@@ -149,13 +151,17 @@ function CreateAnnouncement({open, onClose}: RenewSubscriptionProps) {
         }
 
         const teamsResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/teams/organizations/categories/${orgId}`,
+          `${apiUrl}/teams/organizations/categories/${orgId}`,
           {
-            method: "GET",
+            method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             credentials: "include",
+            body: JSON.stringify({
+              role: userDataa.user.role,
+              userId: userDataa.user.id,
+            }),
           }
         );
 
@@ -181,7 +187,7 @@ function CreateAnnouncement({open, onClose}: RenewSubscriptionProps) {
 
   const handleClose = () => {
     onClose(false);
-    setSelectedCard(null);
+    // setSelectedCard(null);
     form.reset();
   };
 
@@ -242,20 +248,17 @@ function CreateAnnouncement({open, onClose}: RenewSubscriptionProps) {
         ...data,
         org_id: userData.organizations.id,
         user_id: userData.id,
-        card_id: savedCard?.card?.id || null,
+        card_id: selectedCard?.id || null,
       };
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/announcements`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(cardData),
-          credentials: "include",
-        }
-      );
+      const response = await fetch(`${apiUrl}/announcements`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(cardData),
+        credentials: "include",
+      });
 
       if (!response.ok) {
         let errorMessage = "Failed to create announcement";
@@ -281,11 +284,11 @@ function CreateAnnouncement({open, onClose}: RenewSubscriptionProps) {
       }
 
       const result = await response.json();
-      const cardSaved = localStorage.getItem("selectedAnnouncementCard");
-      if (cardSaved) {
-        setSelectedCard(JSON.parse(cardSaved));
-        localStorage.removeItem("selectedAnnouncementCard"); // Clear after loading
-      }
+      // const cardSaved = localStorage.getItem("selectedAnnouncementCard");
+      // if (cardSaved) {
+      //   setSelectedCard(JSON.parse(cardSaved));
+      //   localStorage.removeItem("selectedAnnouncementCard"); // Clear after loading
+      // }
       ShowToast("Announcement created successfully", "success");
 
       router.replace("/dashboard");
@@ -466,24 +469,26 @@ function CreateAnnouncement({open, onClose}: RenewSubscriptionProps) {
 
             <div className="space-y-2">
               <FormLabel className="text-[16px] font-normal mb-2 block">
-                {savedCard ? "Selected Card" : "Select Card"}
+                {/* {savedCard ? "Selected Card" : "Select Card"} */}
+                Selected Card
               </FormLabel>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   className="border bg-[#FFFFFF14] border-[#f0d568] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#F9DB6F]/10 h-10 rounded-md cursor-pointer"
-                  onClick={() => {
-                    router.push("/knowledge-base?selectForAnnouncement=true");
-                  }}
+                  // onClick={() => {
+                  //   router.push("/knowledge-base?selectForAnnouncement=true");
+                  // }}
+                  disabled
                   type="button"
                 >
-                  {savedCard ? savedCard?.card?.title : " Select Card"}
+                  {selectedCard.title}
                 </Button>
-                {selectedCard && (
+                {/* {selectedCard && (
                   <Badge className="bg-[#F9DB6F1a] text-[#F9DB6F] hover:bg-[#F9DB6F1a]">
                     {selectedCard.title}
                   </Badge>
-                )}
+                )} */}
               </div>
               <FormMessage className="text-red-400">
                 {form.formState.errors.card_id?.message}

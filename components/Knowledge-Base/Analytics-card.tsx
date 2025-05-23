@@ -1,182 +1,182 @@
-"use client";
-import {useEffect, useRef, useState} from "react";
+"use client"
+import { useEffect, useRef, useState } from "react"
 import {
   ChevronUp,
   ChevronDown,
-  Edit,
   Trash2,
   FileText,
   Copy,
   Ellipsis,
-  ArchiveIcon,
   CopyCheck,
-  BadgeX,
-  Save,
-  TicketIcon,
   Check,
   Pencil,
   Import,
-} from "lucide-react";
-import {CategoryItem, NavItem, SubcategoryItem} from "./buttons";
-import {Button} from "../ui/button";
-import {ReassignUserModal} from "./reassign-user";
-import Image from "next/image";
-import {useUser} from "@clerk/nextjs";
-import Tag from "./tags";
-import {Skeleton} from "@/components/ui/skeleton";
-import {useRouter} from "next/navigation";
-import {ShowToast} from "../shared/show-toast";
-import {stripHtml} from "@/lib/stripeHtml";
-import {renderIcon} from "@/lib/renderIcon";
-import DeleteConfirmationModal from "../shared/delete-modal";
-import {CardStatus} from "@/utils/constant";
+  X,
+} from "lucide-react"
+import { CategoryItem, NavItem, SubcategoryItem } from "./buttons"
+import { Button } from "../ui/button"
+import { ReassignUserModal } from "./reassign-user"
+import Image from "next/image"
+import { useUser } from "@clerk/nextjs"
+import Tag from "./tags"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useRouter } from "next/navigation"
+import { ShowToast } from "../shared/show-toast"
+import { stripHtml } from "@/lib/stripeHtml"
+import { renderIcon } from "@/lib/renderIcon"
+import DeleteConfirmationModal from "../shared/delete-modal"
+import { apiUrl, CardStatus } from "@/utils/constant"
+import { Icon } from "@iconify/react"
+import CreateAnnouncement from "../dashboard/modals/create-announcemnet"
 
 interface Team {
-  id: string;
-  name: string;
-  icon?: string;
-  iconAttachment?: string;
-  subcategories?: Subcategory[];
+  id: string
+  name: string
+  icon?: string
+  iconAttachment?: string
+  subcategories?: Subcategory[]
 }
 
 interface Subcategory {
-  id: string;
-  name: string;
-  knowledge_card?: KnowledgeCard[];
+  id: string
+  name: string
+  knowledge_card?: KnowledgeCard[]
 }
 
 interface KnowledgeCard {
-  id: string;
-  title: string;
-  content: string;
-  is_verified: boolean;
+  id: string
+  title: string
+  content: string
+  is_verified: boolean
   card_owner_id: {
-    id: string;
-    first_name: string;
-    last_name: string;
-    profile_picture: string;
-  };
-  tags?: string[];
-  created_at: string;
-  type: string;
-  subcategory_id?: string;
+    id: string
+    first_name: string
+    last_name: string
+    profile_picture: string
+  }
+  tags?: string[]
+  created_at: string
+  type: string
+  subcategory_id?: string
+  category_id?: string
+  verificationperiod?: string | Date
+  card_status?: CardStatus
 }
 
 interface AnalyticsCardProps {
-  cardId?: string;
+  cardId?: string
 }
 
-export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
-  const {user, isLoaded: isUserLoaded} = useUser();
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [activeTeam, setActiveTeam] = useState<Team | null>(null);
-  const [activeSubcategory, setActiveSubcategory] =
-    useState<Subcategory | null>(null);
-  const [activeItem, setActiveItem] = useState<KnowledgeCard | null>(null);
-  const [expandedSubcategories, setExpandedSubcategories] = useState<
-    Record<string, boolean>
-  >({});
-  const [showFloating, setShowFloating] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
+export default function AnalyticsCard({ cardId }: AnalyticsCardProps) {
+  const { user, isLoaded: isUserLoaded } = useUser()
+  const [teams, setTeams] = useState<Team[]>([])
+  const [activeTeam, setActiveTeam] = useState<Team | null>(null)
+  const [activeSubcategory, setActiveSubcategory] = useState<Subcategory | null>(null)
+  const [activeItem, setActiveItem] = useState<KnowledgeCard | null>(null)
+  const [expandedSubcategories, setExpandedSubcategories] = useState<Record<string, boolean>>({})
+  const [showFloating, setShowFloating] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCopied, setIsCopied] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [atTop, setAtTop] = useState(true);
-  const [atBottom, setAtBottom] = useState(false);
-  const floatingRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [card, setCard] = useState<string | null>(null);
-  const [announcemnetCard, setAnnouncementCard] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [atTop, setAtTop] = useState(true)
+  const [atBottom, setAtBottom] = useState(false)
+  const floatingRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const [card, setCard] = useState<string | null>(null)
+  const [canEdit, setCanEdit] = useState(false)
+  const [announcemnetCard, setAnnouncementCard] = useState<string | null>(null)
 
-  const [isOpen, setIsOpen] = useState(false);
-  const [isCardDeleteLoading, setIsCardDeleting] = useState(false);
-  const [selectedCardId, setSelectedCardId] = useState("");
+  const [isOpen, setIsOpen] = useState(false)
+  const [openModal, setOpenModal] = useState(false)
+  const [selectedCard, setSelectedCard] = useState<any>()
+
+  const [isCardDeleteLoading, setIsCardDeleting] = useState(false)
+  const [selectedCardId, setSelectedCardId] = useState("")
+  const [selectedCards, setSelectedCards] = useState<KnowledgeCard[]>([])
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setCard(params.get("selectForLearningPath"));
-  }, []);
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setAnnouncementCard(params.get("selectForAnnouncement"));
-  }, []);
-  const [userDetails, setUserDetails] = useState<any>();
+    const params = new URLSearchParams(window.location.search)
+    setCard(params.get("selectForLearningPath") === "true" ? "true" : null)
+  }, [])
+
+  const [userDetails, setUserDetails] = useState<any>()
 
   const checkScroll = () => {
-    const el = scrollRef.current;
+    const el = scrollRef.current
     if (el) {
-      setAtTop(el.scrollTop === 0);
-      setAtBottom(el.scrollHeight - el.scrollTop <= el.clientHeight + 1);
+      setAtTop(el.scrollTop === 0)
+      setAtBottom(el.scrollHeight - el.scrollTop <= el.clientHeight + 1)
     }
-  };
-  const handleSaveCard = async (id: string, is_verified?: boolean) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
+  }
+  const handleSaveCard = async (id: string, is_verified?: boolean, date?: string | Date) => {
+    if (date && new Date(date) < new Date()) {
+      ShowToast("Cannot verify. Verification period has expired.", "error")
+      return
+    }
     if (!id) {
-      ShowToast("Invalid card ID", "error");
-      return;
+      ShowToast("Invalid card ID", "error")
+      return
     }
-    const cardData = is_verified
-      ? {is_verified: true}
-      : {card_status: CardStatus.SAVED};
+    const cardData = is_verified ? { is_verified: true } : { card_status: CardStatus.SAVED }
 
     try {
-      const res = await fetch(`${apiUrl}/api/cards/${id}`, {
+      const res = await fetch(`${apiUrl}/cards/${id}`, {
         method: "PUT",
-        headers: {"Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          cardData,
+          ...cardData,
         }),
-      });
+      })
 
       if (!res.ok) {
-        throw new Error("Failed to save card");
+        throw new Error("Failed to save card")
       }
 
-      ShowToast("Card saved successfully");
+      ShowToast("Card saved successfully")
     } catch (err) {
-      console.error("Error saving card:", err);
-      ShowToast("Something went wrong while saving the card", "error");
+      console.error("Error saving card:", err)
+      ShowToast("Something went wrong while saving the card", "error")
     } finally {
-      setShowFloating(false);
+      setShowFloating(false)
     }
-  };
+  }
   const handleScroll = (direction: "up" | "down") => {
-    const el = scrollRef.current;
-    if (!el) return;
+    const el = scrollRef.current
+    if (!el) return
 
-    const scrollAmount = 100;
+    const scrollAmount = 100
     el.scrollBy({
       top: direction === "up" ? -scrollAmount : scrollAmount,
       behavior: "smooth",
-    });
+    })
 
-    setTimeout(checkScroll, 200);
-  };
+    setTimeout(checkScroll, 200)
+  }
 
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
+    const el = scrollRef.current
+    if (!el) return
 
-    checkScroll();
-    el.addEventListener("scroll", checkScroll);
-    return () => el.removeEventListener("scroll", checkScroll);
-  }, []);
+    checkScroll()
+    el.addEventListener("scroll", checkScroll)
+    return () => el.removeEventListener("scroll", checkScroll)
+  }, [])
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard
       .writeText(text)
       .then(() => {
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
+        setIsCopied(true)
+        setTimeout(() => setIsCopied(false), 2000)
       })
       .catch((err) => {
-        console.error("Failed to copy text:", err);
-      });
-  };
+        console.error("Failed to copy text:", err)
+      })
+  }
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -186,252 +186,288 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
         triggerRef.current &&
         !triggerRef.current.contains(event.target as Node)
       ) {
-        setShowFloating(false);
+        setShowFloating(false)
       }
-    };
+    }
 
     if (showFloating) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside)
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showFloating]);
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [showFloating])
+  useEffect(() => {
+    if (!userDetails || !activeItem) return
+
+    const isOwner = userDetails.user.role === "owner"
+    const isAdminOfTeam = userDetails.user.role === "admin" && userDetails.user.team_id === activeItem.category_id
+    const isCardOwner = activeItem.card_owner_id?.id === userDetails.user.id
+
+    setCanEdit(isOwner || isAdminOfTeam || isCardOwner)
+  }, [userDetails, activeItem])
+
   const handleDeleteCard = async (id: string) => {
     try {
-      setIsCardDeleting(true);
+      setIsCardDeleting(true)
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/cards/${id}`,
-        {
-          method: "DELETE",
-          headers: {"Content-Type": "application/json"},
-          credentials: "include",
-        }
-      );
+      const res = await fetch(`${apiUrl}/cards/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      })
 
       if (!res.ok) {
-        throw new Error(res.statusText || "Failed to delete card");
+        throw new Error(res.statusText || "Failed to delete card")
       }
 
-      ShowToast("Card deleted successfully", "success");
-      router.push("/dashboard");
+      ShowToast("Card deleted successfully", "success")
+      router.push("/dashboard")
     } catch (error) {
-      console.error("Delete card error:", error);
-      ShowToast(
-        error instanceof Error ? error.message : "Failed to delete card",
-        "error"
-      );
+      console.error("Delete card error:", error)
+      ShowToast(error instanceof Error ? error.message : "Failed to delete card", "error")
     } finally {
-      setIsCardDeleting(false);
+      setIsCardDeleting(false)
     }
-  };
+  }
 
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
+      setIsLoading(true)
       try {
         if (user) {
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/users/${user?.id}`,
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              credentials: "include",
-            }
-          );
+          const response = await fetch(`${apiUrl}/users/${user?.id}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          })
 
           if (!response.ok) {
-            throw new Error("Failed to fetch user details");
+            throw new Error("Failed to fetch user details")
           }
 
-          const userData = await response.json();
-          setUserDetails(userData);
-          const res = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/teams/organizations/categories/${userData.user.organizations?.id}`,
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              credentials: "include",
-            }
-          );
+          const userData = await response.json()
+          setUserDetails(userData)
+          const res = await fetch(`${apiUrl}/teams/organizations/categories/${userData.user.organizations?.id}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({
+              role: userData.user.role,
+              userId: userData.user.id,
+            }),
+          })
 
           if (!res.ok) {
-            throw new Error("Failed to fetch teams");
+            throw new Error("Failed to fetch teams")
           }
 
-          const mockData = await res.json();
-          setTeams(mockData.teams || []);
+          const mockData = await res.json()
+          setTeams(mockData.teams || [])
 
-          const initialExpandedState: Record<string, boolean> = {};
+          const initialExpandedState: Record<string, boolean> = {}
           mockData.teams?.forEach((team: Team) => {
             team.subcategories?.forEach((subcategory: Subcategory) => {
-              initialExpandedState[subcategory.id] = false;
-            });
-          });
-          setExpandedSubcategories(initialExpandedState);
+              initialExpandedState[subcategory.id] = false
+            })
+          })
+          setExpandedSubcategories(initialExpandedState)
         }
       } catch (err) {
-        console.error("Error fetching data:", err);
+        console.error("Error fetching data:", err)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
+    }
 
     if (isUserLoaded) {
-      fetchData();
+      fetchData()
     }
-  }, [user, isUserLoaded]);
+  }, [user, isUserLoaded])
 
   useEffect(() => {
     const loadCardById = async (id: string) => {
       try {
         // Find the card in the existing data structure
         for (const team of teams) {
-          if (!team.subcategories) continue;
+          if (!team.subcategories) continue
 
           for (const subcategory of team.subcategories) {
-            if (!subcategory.knowledge_card) continue;
+            if (!subcategory.knowledge_card) continue
 
-            const card = subcategory.knowledge_card.find(
-              (card) => card.id === id
-            );
+            const card = subcategory.knowledge_card.find((card) => card.id === id)
             if (card) {
               // Set the active states to display this card
-              setActiveTeam(team);
-              setActiveSubcategory(subcategory);
-              setActiveItem(card);
+              setActiveTeam(team)
+              setActiveSubcategory(subcategory)
+              setActiveItem(card)
 
               // Expand the subcategory containing this card
               setExpandedSubcategories((prev) => ({
                 ...prev,
                 [subcategory.id]: true,
-              }));
+              }))
 
-              return;
+              return
             }
           }
         }
 
         // If card not found in existing data, fetch it directly
         if (userDetails?.user?.organizations?.id) {
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/knowledge-cards/${id}`,
-            {
+          const response = await fetch(`${apiUrl}/cards/${id}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          })
+
+          if (!response.ok) {
+            throw new Error("Failed to fetch card details")
+          }
+
+          const cardData = await response.json()
+
+          // Now fetch the team and subcategory this card belongs to
+          if (cardData.subcategory_id) {
+            const subcategoryResponse = await fetch(`${apiUrl}/subcategories/${cardData.subcategory_id}`, {
               method: "GET",
               headers: {
                 "Content-Type": "application/json",
               },
               credentials: "include",
-            }
-          );
+            })
 
-          if (!response.ok) {
-            throw new Error("Failed to fetch card details");
-          }
+            if (subcategoryResponse.ok) {
+              const subcategoryData = await subcategoryResponse.json()
 
-          const cardData = await response.json();
-
-          // Now fetch the team and subcategory this card belongs to
-          if (cardData.subcategory_id) {
-            const subcategoryResponse = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/api/subcategories/${cardData.subcategory_id}`,
-              {
+              // Find the team this subcategory belongs to
+              const teamResponse = await fetch(`${apiUrl}/teams/${subcategoryData.team_id}`, {
                 method: "GET",
                 headers: {
                   "Content-Type": "application/json",
                 },
                 credentials: "include",
-              }
-            );
-
-            if (subcategoryResponse.ok) {
-              const subcategoryData = await subcategoryResponse.json();
-
-              // Find the team this subcategory belongs to
-              const teamResponse = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/teams/${subcategoryData.team_id}`,
-                {
-                  method: "GET",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  credentials: "include",
-                }
-              );
+              })
 
               if (teamResponse.ok) {
-                const teamData = await teamResponse.json();
+                const teamData = await teamResponse.json()
 
                 // Update the active states
-                setActiveTeam(teamData);
-                setActiveSubcategory(subcategoryData);
-                setActiveItem(cardData);
+                setActiveTeam(teamData)
+                setActiveSubcategory(subcategoryData)
+                setActiveItem(cardData)
 
                 // Expand the subcategory
                 setExpandedSubcategories((prev) => ({
                   ...prev,
                   [subcategoryData.id]: true,
-                }));
+                }))
               }
             }
           }
         }
       } catch (error) {
-        console.error("Error loading card by ID:", error);
+        console.error("Error loading card by ID:", error)
       }
-    };
+    }
 
     if (cardId && teams.length > 0 && userDetails) {
-      loadCardById(cardId);
+      loadCardById(cardId)
     }
-  }, [cardId, teams, userDetails]);
+  }, [cardId, teams, userDetails])
 
   const toggleSubcategoryExpanded = (subcategoryId: string) => {
     setExpandedSubcategories((prev) => ({
       ...prev,
       [subcategoryId]: !prev[subcategoryId],
-    }));
-  };
+    }))
+  }
 
   const handleTeamClick = (team: Team) => {
-    setActiveTeam(team);
-    setActiveSubcategory(team.subcategories?.[0] || null);
-    setActiveItem(team.subcategories?.[0]?.knowledge_card?.[0] || null);
-  };
+    setActiveTeam(team)
+    setActiveSubcategory(team.subcategories?.[0] || null)
+    setActiveItem(team.subcategories?.[0]?.knowledge_card?.[0] || null)
+  }
 
   const handleSubcategoryClick = (subcategory: Subcategory) => {
-    setActiveSubcategory(subcategory);
-    toggleSubcategoryExpanded(subcategory.id);
-    setActiveItem(subcategory.knowledge_card?.[0] || null);
-  };
+    setActiveSubcategory(subcategory)
+    toggleSubcategoryExpanded(subcategory.id)
+    setActiveItem(subcategory.knowledge_card?.[0] || null)
+  }
+
+  const toggleCardSelection = (item: KnowledgeCard) => {
+    const isCardSelected = selectedCards.some((card) => card.id === item.id)
+
+    if (isCardSelected) {
+      // If already selected, remove it from the selection
+      setSelectedCards((prev) => {
+        const updatedCards = prev.filter((card) => card.id !== item.id)
+        // Update localStorage when card is removed
+        if (card === "true") {
+          localStorage.setItem("selectedLearningPathCards", JSON.stringify(updatedCards))
+        }
+        return updatedCards
+      })
+    } else {
+      // If not selected, add it to the selection
+      setSelectedCards((prev) => {
+        const updatedCards = [...prev, item]
+        // Update localStorage when card is added
+        if (card === "true") {
+          localStorage.setItem("selectedLearningPathCards", JSON.stringify(updatedCards))
+        }
+        return updatedCards
+      })
+    }
+  }
 
   const handleItemClick = (item: KnowledgeCard) => {
-    setActiveItem(item);
-    if (card) {
-      localStorage.setItem(
-        "selectedLearningPathCard",
-        JSON.stringify({
-          card: item,
-          // title: card.title,
-        })
-      );
+    // Always set the active item for display
+    setActiveItem(item)
+
+    // If in multi-select mode (selectForLearningPath=true)
+    if (card === "true") {
+      toggleCardSelection(item)
+
+      // Store in localStorage for learning path
+      // localStorage.setItem(
+      //   "selectedLearningPathCard",
+      //   JSON.stringify({
+      //     card: item,
+      //   }),
+      // )
     }
-    if (announcemnetCard) {
-      localStorage.setItem(
-        "selectedAnnouncementCard",
-        JSON.stringify({
-          card: item,
-          // title: card.title,
-        })
-      );
+    //  else {
+    //   // Regular single-select mode
+    //   if (card) {
+    //     localStorage.setItem(
+    //       "selectedLearningPathCard",
+    //       JSON.stringify({
+    //         card: item,
+    //       }),
+    //     )
+    //   }
+    // }
+  }
+
+  const isCardSelected = (cardId: string) => {
+    return selectedCards.some((card) => card.id === cardId)
+  }
+
+  const clearSelectedCards = () => {
+    setSelectedCards([])
+    // Clear localStorage when cards are cleared
+    if (card === "true") {
+      localStorage.setItem("selectedLearningPathCards", JSON.stringify([]))
     }
-  };
+  }
 
   if (!isUserLoaded || isLoading) {
     return (
@@ -524,14 +560,52 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="text-white flex flex-col">
       {/* Header */}
-      <div className="py-4 lg:py-6 justify-between flex">
-        <h1 className="text-white text-[36px] font-semibold">Knowledge Base</h1>
+
+      <div className="py-4 lg:py-6 justify-between flex items-center">
+        <div>
+          <h1 className="text-white text-[36px] font-semibold">Knowledge Base</h1>
+        </div>
+
+        {/* Selection controls - only show when in selection mode */}
+        {card === "true" && (
+          <div className="flex items-center gap-4">
+            <div className="bg-[#2C2D2E] px-4 py-2 rounded-lg flex items-center cursor-pointer">
+              <span className="text-[#F9DB6F] font-medium">
+                {selectedCards.length} card{selectedCards.length !== 1 ? "s" : ""} selected
+              </span>
+            </div>
+
+            {selectedCards.length > 0 && (
+              <Button
+                onClick={clearSelectedCards}
+                className="bg-[#2C2D2E] hover:bg-[#3A3B3C] text-white border-none flex items-center gap-2 cursor-pointer"
+              >
+                <X size={16} />
+                Clear selection
+              </Button>
+            )}
+
+            {selectedCards.length > 0 && (
+              <Button
+                onClick={() => {
+                  // Save selected cards to localStorage or process them
+                  localStorage.setItem("selectedLearningPathCards", JSON.stringify(selectedCards))
+                  // ShowToast(`${selectedCards.length} cards saved to learning path`, "success")
+                  router.push("/tutor/creating-learning-path")
+                }}
+                className="bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black cursor-pointer"
+              >
+                Confirm Selection
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="h-full flex flex-1 gap-[32px]">
@@ -544,13 +618,9 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
               disabled={atTop}
               className={`w-full h-[46px] p-[12px] rounded-full border border-[#F9DB6F] flex items-center justify-center gap-[10px] cursor-pointer
                 ${atTop ? "cursor-not-allowed" : ""}`}
-              style={{borderRadius: "12px"}}
+              style={{ borderRadius: "12px" }}
             >
-              <ChevronUp
-                className={`h-5 w-5  ${
-                  atTop ? "text-[#F9DB6F]" : "text-[white]"
-                }`}
-              />
+              <ChevronUp className={`h-5 w-5  ${atTop ? "text-[#F9DB6F]" : "text-[white]"}`} />
             </button>
           </div>
 
@@ -569,9 +639,7 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                 <NavItem
                   icon={renderIcon(
                     team.icon || "",
-                    activeTeam?.id === team.id
-                      ? "text-[black] h-5 w-5"
-                      : "invert-0 h-5 w-5"
+                    activeTeam?.id === team.id ? "text-[black] h-5 w-5" : "invert-0 h-5 w-5",
                   )}
                   label={team.name}
                   active={activeTeam?.id === team.id}
@@ -590,20 +658,16 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
               className={`w-full h-[46px] p-[12px] rounded-full border border-[#F9DB6F] flex items-center justify-center gap-[10px] cursor-pointer ${
                 atBottom ? "cursor-not-allowed" : ""
               }`}
-              style={{borderRadius: "12px"}}
+              style={{ borderRadius: "12px" }}
             >
-              <ChevronDown
-                className={`h-5 w-5  ${
-                  atBottom ? "text-[#F9DB6F]" : "text-[white]"
-                }`}
-              />
+              <ChevronDown className={`h-5 w-5  ${atBottom ? "text-[#F9DB6F]" : "text-[white]"}`} />
             </button>
           </div>
         </div>
 
         {/* Middle Sidebar */}
         {activeTeam ? (
-          <div className="w-full max-w-xs  rounded-[20px] gap-[24px] pt-[30px] pb-[54px] px-[24px] bg-[#191919] justify-center items-center max-h-[80vh] overflow-auto">
+          <div className="w-full max-w-xs rounded-[20px] gap-[24px] pt-[30px] pb-[54px] px-[24px] bg-[#191919] justify-center items-center max-h-[80vh] overflow-auto">
             {activeTeam.subcategories && activeTeam.subcategories.length > 0 ? (
               activeTeam.subcategories.map((subcategory) => (
                 <div key={subcategory.id} className="flex flex-col gap-1">
@@ -619,13 +683,35 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                     subcategory.knowledge_card.length > 0 && (
                       <div className="mx-5 mt-2 space-y-3 max-h-[450px] overflow-auto pr-2">
                         {subcategory.knowledge_card.map((item) => (
-                          <SubcategoryItem
-                            key={item.id}
-                            label={item.title}
-                            active={activeItem?.id === item.id}
-                            highlight={activeItem?.id === item.id}
-                            onClick={() => handleItemClick(item)}
-                          />
+                          <div key={item.id} className="flex items-center gap-2">
+                            {/* {card === "true" && (
+                              <div
+                                className="cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleCardSelection(item)
+                                }}
+                              >
+                                {isCardSelected(item.id) ? (
+                                  <CheckCircle className="h-5 w-5 text-[#F9DB6F]" />
+                                ) : (
+                                  <Circle className="h-5 w-5 text-white" />
+                                )}
+                              </div>
+                            )} */}
+                            <div className="flex-1">
+                              <SubcategoryItem
+                                label={item.title}
+                                active={activeItem?.id === item.id}
+                                highlight={
+                                  card === "true"
+                                    ? card === "true" && isCardSelected(item.id)
+                                    : activeItem?.id === item.id
+                                }
+                                onClick={() => handleItemClick(item)}
+                              />
+                            </div>
+                          </div>
                         ))}
                       </div>
                     )}
@@ -633,12 +719,8 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
               ))
             ) : (
               <div className="flex flex-col items-center h-full !pt-[-30px]">
-                <h1 className="text-[20px] font-weight-[500] text-center">
-                  No subcategories available
-                </h1>
-                <p className="text-[20px] font-weight-[500]">
-                  Select a different category
-                </p>
+                <h1 className="text-[20px] font-weight-[500] text-center">No subcategories available</h1>
+                <p className="text-[20px] font-weight-[500]">Select a different category</p>
               </div>
             )}
           </div>
@@ -661,6 +743,28 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                     {activeItem.title}
                   </h2>
                   <div className="ml-2 flex items-center cursor-pointer gap-4">
+                    {/* {card === "true" && (
+                      <Button
+                        onClick={() => toggleCardSelection(activeItem)}
+                        className={`px-3 py-1 rounded-full text-sm flex items-center gap-2 ${
+                          isCardSelected(activeItem.id)
+                            ? "bg-[#F9DB6F] text-black hover:bg-[#F9DB6F]/90"
+                            : "bg-[#2C2D2E] text-white hover:bg-[#3A3B3C]"
+                        }`}
+                      >
+                        {isCardSelected(activeItem.id) ? (
+                          <>
+                            <CheckCircle size={16} />
+                            Selected
+                          </>
+                        ) : (
+                          <>
+                            <Circle size={16} />
+                            Select
+                          </>
+                        )}
+                      </Button>
+                    )} */}
                     <div className="relative inline-block">
                       {!isCopied ? (
                         <Copy
@@ -681,18 +785,16 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                         <Ellipsis className="h-5 w-5 text-white" />
                       </Button>
 
-                      {showFloating && (
+                      {showFloating && canEdit && (
                         <div
                           ref={floatingRef}
-                          className="absolute right-0 top-10 w-[199px]  bg-[#2C2D2E] border border-[#3A3B3C] rounded-[10px] shadow-lg z-10 p-[14px] flex flex-col gap-[10px] text-left"
+                          className="absolute right-0 top-10 w-[250px]  bg-[#2C2D2E] border border-[#3A3B3C] rounded-[10px] shadow-lg z-10 p-[14px] flex flex-col gap-[10px] text-left"
                         >
                           <div
                             className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] rounded-[4px] cursor-pointer"
                             onClick={() => {
-                              router.push(
-                                `knowledge-base/create-knowledge-base?cardId=${activeItem.id}`
-                              );
-                              setShowFloating(false);
+                              router.push(`knowledge-base/create-knowledge-base?cardId=${activeItem.id}`)
+                              setShowFloating(false)
                             }}
                           >
                             <Pencil className="h-4 w-4 hover:text-[#F9DB6F]" />
@@ -702,9 +804,9 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                             className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] rounded-[4px] cursor-pointer"
                             onClick={() => {
                               // handleDeleteCard(activeItem.id);
-                              setShowFloating(false);
-                              setIsOpen(true);
-                              setSelectedCardId(activeItem.id);
+                              setShowFloating(false)
+                              setIsOpen(true)
+                              setSelectedCardId(activeItem.id)
                             }}
                           >
                             <Trash2 className="h-4 w-4 hover:text-[#F9DB6F]" />
@@ -712,28 +814,34 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                               Delete
                             </span>
                           </div>
+                          {activeItem.card_status !== CardStatus.SAVED && (
+                            <div
+                              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] rounded-[4px] cursor-pointer"
+                              onClick={() => {
+                                handleSaveCard(activeItem.id)
+                              }}
+                            >
+                              <Import className="h-4 w-4 hover:text-[#F9DB6F]" />
+                              <span>Save Card</span>
+                            </div>
+                          )}
                           <div
                             className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] rounded-[4px] cursor-pointer"
                             onClick={() => {
-                              handleSaveCard(activeItem.id);
+                              // handleSaveCard(activeItem.id);
+                              setSelectedCard(activeItem)
+                              setOpenModal(true)
                             }}
                           >
-                            <Import className="h-4 w-4 hover:text-[#F9DB6F]" />
-                            <span>Save Card</span>
+                            <Icon icon="mingcute:announcement-line" width="24" height="24" />
+                            <span>Create Announcment</span>
                           </div>
 
-                          {/* <div
-                            className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] rounded-[4px] cursor-pointer"
-                            onClick={() => setShowFloating(false)}
-                          >
-                            <ArchiveIcon className="h-4 w-4 hover:text-[#F9DB6F]" />
-                            <span>Archive Card</span>
-                          </div> */}
                           {!activeItem.is_verified && (
                             <div
                               className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] rounded-[4px] cursor-pointer"
                               onClick={() => {
-                                handleSaveCard(activeItem.id, true);
+                                handleSaveCard(activeItem.id, true, activeItem?.verificationperiod)
                               }}
                             >
                               <Check />
@@ -749,54 +857,48 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                 <div className="flex items-center space-x-4">
                   <div className="h-10 w-10 rounded-full flex items-center justify-center">
                     {activeItem.is_verified ? (
-                      <Image
-                        src="/CheckMark.png"
-                        width={47.67}
-                        height={47.67}
-                        alt="checkmark"
-                      />
+                      <Image src="/CheckMark.png" width={47.67} height={47.67} alt="checkmark" />
                     ) : (
-                      <Image
-                        src="/unverified.png"
-                        width={47.67}
-                        height={47.67}
-                        alt="checkmark"
-                      />
-                      // <BadgeX color="#EA2D30" size={"medium"} />
+                      <Image src="/unverified.png" width={47.67} height={47.67} alt="checkmark" />
                     )}
                   </div>
-                  <div className="flex w-full items-end bg-[#FFFFFF14] rounded-full p-2 gap-3">
-                    <div className="h-10 w-10">
+                  <div className="flex items-center justify-center w-full">
+                    <div className="flex items-center justify-center bg-[#FFFFFF14] rounded-full px-4 py-2 gap-3">
                       <Image
                         src={
-                          activeItem.card_owner_id.profile_picture ||
+                          activeItem?.card_owner_id?.profile_picture ||
                           "/pic1.png" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
                           "/placeholder.svg"
                         }
                         alt="User"
-                        className="rounded-full"
+                        className="rounded-full w-[60px] h-[60px]"
                         width={60}
                         height={60}
                       />
-                    </div>
-                    <div className="flex flex-col text-[20]">
-                      <span className="font-urbanist font-medium leading-[100%]">
-                        {`${activeItem.card_owner_id.first_name} ${activeItem.card_owner_id.last_name}`}
-                      </span>
-                      <span
-                        className="text-xs text-[#F9DB6F] underline cursor-pointer"
-                        onClick={() => setIsModalOpen(true)}
-                      >
-                        Reassign
-                      </span>
-                      <ReassignUserModal
-                        isOpen={isModalOpen}
-                        onClose={() => setIsModalOpen(false)}
-                        orgId={userDetails?.user?.organizations?.id}
-                        cardId={activeItem.id}
-                        currentAssigneeId={activeItem.card_owner_id.id}
-                      />
-                      {/* <KnowledgeManagementWithRealData/> */}
+                      <div className="flex flex-col text-[20px]">
+                        <span className="font-urbanist font-medium leading-[100%]">
+                          {`${activeItem?.card_owner_id?.first_name} ${activeItem.card_owner_id?.last_name}`}
+                        </span>
+                        {canEdit && (
+                          <>
+                            <span
+                              className="text-xs text-[#F9DB6F] underline cursor-pointer"
+                              onClick={() => setIsModalOpen(true)}
+                            >
+                              Reassign
+                            </span>
+                            <ReassignUserModal
+                              isOpen={isModalOpen}
+                              onClose={() => setIsModalOpen(false)}
+                              orgId={userDetails?.user?.organizations?.id}
+                              cardId={activeItem?.id}
+                              currentAssigneeId={activeItem?.card_owner_id?.id}
+                            />
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -819,11 +921,7 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                     </span>
                   </div>
                   <div className="p-2">
-                    <Tag
-                      initialTags={activeItem.tags || []}
-                      onTagsChange={() => {}}
-                      className="w-full"
-                    />
+                    <Tag initialTags={activeItem.tags || []} onTagsChange={() => {}} className="w-full" />
                   </div>
                 </div>
               </div>
@@ -832,17 +930,13 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
         ) : activeTeam ? (
           <div className="w-full h-[625px] rounded-[20px] gap-[10px]  bg-[#191919] flex  p-10">
             <div className="text-center">
-              <p className="text-[20px] font-weight-[500]">
-                Select an item to view details
-              </p>
+              <p className="text-[20px] font-weight-[500]">Select an item to view details</p>
             </div>
           </div>
         ) : (
           <div className="w-full h-[625px] rounded-[20px] gap-[10px]  bg-[#191919] flex p-10">
             <div className="text-center">
-              <h1 className="text-[20px] font-weight-[500]">
-                To select the folder, please choose category first
-              </h1>
+              <h1 className="text-[20px] font-weight-[500]">To select the folder, please choose category first</h1>
             </div>
           </div>
         )}
@@ -854,6 +948,7 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
         title="Knowledge Card"
         isLoading={isCardDeleteLoading}
       />
+      <CreateAnnouncement open={openModal} onClose={setOpenModal} selectedCard={selectedCard} />
     </div>
-  );
+  )
 }

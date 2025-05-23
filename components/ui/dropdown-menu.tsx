@@ -74,13 +74,14 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2  px-2 py-1.5 text-sm outline-none transition-colors",
+        "relative flex cursor-default select-none items-center gap-2  px-2 m-2 py-1.5 text-sm outline-none transition-colors",
         "data-[inset]:pl-8",
         "hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer  hover:rounded-xl",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         "data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive",
         className
       )}
+      style={{borderRadius:'4px'}}
       {...props}
     />
   );

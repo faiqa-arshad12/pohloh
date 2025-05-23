@@ -26,7 +26,7 @@ export default function RootLayout({
       <ClerkProvider>
         <UserProvider>
           {/* <GoogleOneTap /> */}
-          <body className={`${urbanist.variable} antialiased`}>
+          <body className={`${urbanist.variable} antialiased font-urbanist`}>
             <div className="relative gradient-background">
               <Image
                 src="/Gradient.png"

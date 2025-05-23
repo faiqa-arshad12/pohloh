@@ -7,7 +7,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="w-full text-white">
+    <div className="w-full text-white font-urbanist">
        <Suspense fallback={<div>Loading...</div>}>
       {children}
        </Suspense>

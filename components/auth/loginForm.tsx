@@ -2,6 +2,9 @@
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useForm} from "react-hook-form";
 import * as z from "zod";
+import {useAuth} from "@clerk/nextjs";
+import {useEffect} from "react";
+
 import {useState} from "react";
 import {useSignIn} from "@clerk/nextjs";
 import {useRouter} from "next/navigation";
@@ -28,15 +31,16 @@ import Loader from "../shared/loader";
 //   remember: z.boolean().optional(),
 // });
 const formSchema = z.object({
-  email: z.string()
+  email: z
+    .string()
     .email("Please enter a valid email address")
     .max(256, "Email must not exceed 256 characters"),
-  password: z.string()
+  password: z
+    .string()
     .min(6, "Password must be at least 6 characters")
     .max(256, "Password must not exceed 256 characters"),
   remember: z.boolean().optional(),
 });
-
 
 export function LoginForm() {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -47,14 +51,20 @@ export function LoginForm() {
       remember: false,
     },
   });
+  const {isSignedIn} = useAuth();
+  const router = useRouter();
 
+  useEffect(() => {
+    if (isSignedIn) {
+      router.replace("/dashboard");
+    }
+  }, [isSignedIn, router]);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<
     "oauth_google" | "oauth_facebook" | "oauth_linkedin_oidc" | null
   >(null);
   const {isLoaded, signIn, setActive} = useSignIn();
-  const router = useRouter();
   const signInWith = async (
     strategy: "oauth_google" | "oauth_facebook" | "oauth_linkedin_oidc"
   ) => {

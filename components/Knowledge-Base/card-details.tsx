@@ -31,6 +31,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import {cn} from "@/lib/utils";
 import {useUser} from "@clerk/nextjs";
+import { apiUrl } from "@/utils/constant";
 
 // Dynamically import ReactQuill to avoid SSR issues
 const ReactQuill = dynamic(() => import("react-quill-new"), {
@@ -86,7 +87,7 @@ export default function CardDetails() {
       try {
         // Fetch user details
         const userResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/users/${user.id}`,
+          `${apiUrl}/users/${user.id}`,
           {
             method: "GET",
             headers: {"Content-Type": "application/json"},
@@ -108,7 +109,7 @@ export default function CardDetails() {
 
         // Fetch teams for the organization
         const teamsResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/teams/organizations/${orgId}`,
+          `${apiUrl}/teams/organizations/${orgId}`,
           {
             method: "GET",
             headers: {"Content-Type": "application/json"},

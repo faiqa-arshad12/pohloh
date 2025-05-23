@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {CardType} from "@/utils/constant";
+import {apiUrl, CardType} from "@/utils/constant";
 import {useRouter} from "next/navigation";
 import {stripHtml} from "@/lib/stripeHtml";
 import {ShowToast} from "../shared/show-toast";
@@ -31,6 +31,7 @@ type UnverifiedCard = {
     last_name: string;
     profile_picture: string;
   };
+  verificationperiod?:Date|string
 };
 
 const filters = ["Monthly", "Weekly", "Yearly"];
@@ -95,18 +96,25 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
   const handleFilterChange = (value: string) => {
     setSelectedFilter(value);
   };
-  const handleVerifyCard = async (cardId: string) => {
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/api/cards/${cardId}`;
+  const handleVerifyCard = async (cardId: string, date?: Date | string) => {
+    const url = `${apiUrl}/cards/${cardId}`;
 
     try {
+      // ✅ Check if the verification date is in the past
+      if (date && new Date(date) < new Date()) {
+        ShowToast("Cannot verify. Verification period has expired.", "error");
+        return;
+      }
+
       setCardId(cardId);
       setIsVerifying(true);
+
       const response = await fetch(url, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({is_verified: true}),
+        body: JSON.stringify({ is_verified: true }),
         credentials: "include",
       });
 
@@ -119,12 +127,12 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
 
       const data = await response.json();
       ShowToast("Card verified successfully!");
-
       return data;
+
     } catch (error: any) {
       console.error("Error verifying card:", error.message || error);
       ShowToast(
-        `Error verifying card:, ${error.message} || ${error.message}`,
+        `Error verifying card: ${error.message || "Unknown error"}`,
         "error"
       );
       throw error;
@@ -133,6 +141,7 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
       setCardId(null);
     }
   };
+
 
   return (
     <div
@@ -201,7 +210,7 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
                       variant="outline"
                       className="w-full border-white text-white hover:bg-[#333435] hover:text-white bg-[#333435] !h-[27.58] !cursor-pointer px-9"
                       onClick={() => {
-                        handleVerifyCard(card.id);
+                        handleVerifyCard(card.id, card.verificationperiod);
                       }}
                     >
                       {isVerifying && cardId === card.id ? (

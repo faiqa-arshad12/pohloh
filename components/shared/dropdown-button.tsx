@@ -1,12 +1,4 @@
 import React, {useEffect, useRef, useState} from "react";
-import {
-  ChevronDown,
-  BookOpen,
-  FileText,
-  Megaphone,
-  FileSearch,
-  FolderOpen,
-} from "lucide-react";
 import {Button} from "../ui/button";
 import {useRouter} from "next/navigation";
 import CreateAnnouncement from "../dashboard/modals/create-announcemnet";
@@ -137,7 +129,7 @@ const CreateCardDropdown: React.FC = () => {
               isSelected={selectedItem === "Create Learning Path"}
             />
 
-            <DropdownItem
+            {/* <DropdownItem
               icon={
                 <Image
                   alt="Chevron Down"
@@ -155,7 +147,7 @@ const CreateCardDropdown: React.FC = () => {
                 )
               }
               isSelected={selectedItem === "Create Announcement"}
-            />
+            /> */}
           </div>
           <div className="py-2 mx-[10px]">
             <DropdownItem
@@ -197,7 +189,7 @@ const CreateCardDropdown: React.FC = () => {
         </div>
       )}
 
-      <CreateAnnouncement open={Openmodal} onClose={setOpenModal} />
+      {/* <CreateAnnouncement open={Openmodal} onClose={setOpenModal} /> */}
     </div>
   );
 };

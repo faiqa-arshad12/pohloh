@@ -21,6 +21,7 @@ import {ShowToast} from "@/components/shared/show-toast";
 import {iconCategories, iconComponents, renderIcon} from "@/lib/renderIcon";
 import {IconName} from "@/types/types";
 import {Skeleton} from "@/components/ui/skeleton";
+import { apiUrl } from "@/utils/constant";
 
 // Types
 type KnowledgeCard = {
@@ -166,7 +167,7 @@ export function ManageCategory() {
     try {
       // Fetch user details
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/users/${user?.id}`,
+        `${apiUrl}/users/${user?.id}`,
         {
           method: "GET",
           headers: {
@@ -182,13 +183,17 @@ export function ManageCategory() {
 
       // Fetch teams/categories
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/teams/organizations/categories/${userData.user.organizations?.id}`,
+        `${apiUrl}/teams/organizations/categories/${userData.user.organizations?.id}`,
         {
-          method: "GET",
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           credentials: "include",
+          body: JSON.stringify({
+            role: userData.user.role,
+            userId: userData.user.id,
+          }),
         }
       );
 
@@ -266,7 +271,7 @@ export function ManageCategory() {
       setError(null);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/teams`,
+        `${apiUrl}/teams`,
         {
           method: "POST",
           headers: {
@@ -329,7 +334,7 @@ export function ManageCategory() {
       setError(null);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/sub-categories`,
+        `${apiUrl}/sub-categories`,
         {
           method: "POST",
           headers: {
@@ -376,9 +381,9 @@ export function ManageCategory() {
       let endpoint = "";
 
       if (itemToDelete.type === "category") {
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/teams/${itemToDelete.id}`;
+        endpoint = `${apiUrl}/teams/${itemToDelete.id}`;
       } else if (itemToDelete.type === "subcategory") {
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/sub-categories/${itemToDelete.id}`;
+        endpoint = `${apiUrl}/sub-categories/${itemToDelete.id}`;
       } else {
         return;
       }
@@ -441,10 +446,10 @@ export function ManageCategory() {
       const body: any = {name: editName};
 
       if (editingItem.type === "category") {
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/teams/update/${editingItem.id}`;
+        endpoint = `${apiUrl}/teams/update/${editingItem.id}`;
         body.icon = editIcon;
       } else if (editingItem.type === "subcategory") {
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/sub-categories/${editingItem.id}`;
+        endpoint = `${apiUrl}/sub-categories/${editingItem.id}`;
         body.team_id = editingItem.parentId;
       } else {
         return;
@@ -844,7 +849,7 @@ export function ManageCategory() {
         onClick={() => setOpen(true)}
         className="w-[232px] h-[48px] flex items-center justify-center gap-1 bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black font-medium rounded-[8px] border border-black/10 px-4 py-3 cursor-pointer"
       >
-        Manage Categories
+        Manage Departments
       </Button>
 
       <Dialog.Root open={open} onOpenChange={setOpen}>
@@ -853,7 +858,7 @@ export function ManageCategory() {
           <Dialog.Content className="fixed z-[101] pt-[40px] p-6 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E1E1E] text-white rounded-lg w-[90vw] max-w-[836px] h-[90vh] max-h-[800px] overflow-y-auto shadow-xl">
             <div className="flex justify-between items-center mb-6">
               <Dialog.Title className="font-bold text-2xl md:text-3xl text-white">
-                Manage Categories
+                Manage Departments
               </Dialog.Title>
               <Dialog.Close asChild>
                 <button className="rounded-full h-8 w-8 flex items-center justify-center hover:bg-gray-700/50 transition-colors cursor-pointer">
@@ -877,7 +882,7 @@ export function ManageCategory() {
             <div className="space-y-6">
               <div>
                 <h3 className="font-semibold text-xl text-[#F9DB6F] mb-3">
-                  Add Categories
+                  Add Departments
                 </h3>
 
                 {openInput ? (
@@ -964,7 +969,7 @@ export function ManageCategory() {
                       disabled={isLoading || isEditMode}
                     >
                       <Plus className="h-5 w-5" />
-                      <span>Add Category</span>
+                      <span>Add Department</span>
                     </Button>
 
                     <Button
@@ -993,7 +998,7 @@ export function ManageCategory() {
 
               <div className="pt-2">
                 <h3 className="font-semibold text-xl text-[#F9DB6F] mb-3">
-                  Manage Existing Categories
+                  Manage Existing Departments
                 </h3>
 
                 {isInitialLoad ? (

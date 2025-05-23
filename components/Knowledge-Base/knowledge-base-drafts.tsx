@@ -1,16 +1,7 @@
 "use client";
 
 import {useState, useEffect, useCallback} from "react";
-import {
-  ArrowUpToLine,
-  Edit,
-  MoreHorizontal,
-  FilterIcon as Funnel,
-  MoveLeft,
-  Trash2,
-  ArrowLeft,
-  Pencil,
-} from "lucide-react";
+import {MoreHorizontal, FilterIcon as Funnel, Trash2} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,12 +13,14 @@ import Table from "@/components/ui/table";
 import {useRouter} from "next/navigation";
 import SearchInput from "@/components/shared/search-input";
 import {useUser} from "@clerk/nextjs";
-import {CardStatus} from "@/utils/constant";
+import {apiUrl, CardStatus} from "@/utils/constant";
 import {Skeleton} from "../ui/skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import {toast} from "sonner";
 import ArrowBack from "../shared/ArrowBack";
 import DeleteConfirmationModal from "./delete-card";
+import {Icon} from "@iconify/react";
+import { useUserHook } from "@/hooks/useUser";
 
 type Card = {
   id: string;
@@ -69,7 +62,7 @@ export function KnowledgeBaseDraft({
     null
   );
   const [isProcessing, setIsProcessing] = useState(false);
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const {userData} = useUserHook();
 
   // Helper function to parse boolean values that might be strings
   const parseBooleanValue = (value: any): boolean => {
@@ -79,39 +72,53 @@ export function KnowledgeBaseDraft({
   };
 
   const fetchCards = useCallback(async () => {
-    if (!user?.id) return;
+    if (!userData) return;
 
     setIsLoading(true);
+
     try {
       // Fetch user data
-      const userRes = await fetch(`${apiUrl}/api/users/${user.id}`, {
-        method: "GET",
-        headers: {"Content-Type": "application/json"},
-        credentials: "include",
-      });
 
-      if (!userRes.ok) throw new Error("Failed to fetch user");
-
-      const userData = await userRes.json();
-      const orgId = userData?.user?.organizations?.id;
-      if (!orgId) return;
+      if (!userData?.orgId) return;
 
       // Fetch cards for the org
-      const cardsRes = await fetch(
-        `${apiUrl}/api/cards/organizations/${orgId}`,
-        {
-          method: "GET",
-          headers: {"Content-Type": "application/json"},
-          credentials: "include",
-        }
-      );
+      // const cardsRes = await fetch(`${apiUrl}/api/cards/organizations/${orgId}`, {
+      //   method: "GET",
+      //   headers: { "Content-Type": "application/json" },
+      //   credentials: "include",
+      // });
+      const cardsRes = await fetch(`${apiUrl}/cards/organizations/${userData?.orgId}`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+        body: JSON.stringify({
+          role: userData.user?.role,
+          userId: userData.user?.id,
+        }),
+      });
 
       if (!cardsRes.ok) throw new Error("Failed to fetch cards");
 
       const {cards} = await cardsRes.json();
-      let filteredCards = cards;
+      let filteredCards = cards || [];
 
-      // Apply filters
+      // // Role-based filtering
+      // const userId = userData.user.id;
+      // const teamId = userData.user.team_id;
+      // const role = userData.user.role;
+
+      // if (role === "user") {
+      //   filteredCards = filteredCards.filter((card:any) =>
+      //     card.card_owner_id?.id === userId
+      //   );
+      // } else if (role === "admin") {
+      //   filteredCards = filteredCards.filter((card:any) =>
+      //     card.card_owner_id?.id === userId || card.category_id?.id === teamId
+      //   );
+      // }
+      // // owner sees all, so no filtering needed
+
+      // // Additional query param-based filtering
       if (status) {
         filteredCards = filteredCards.filter(
           (card: Card) => card.card_status === status
@@ -125,8 +132,8 @@ export function KnowledgeBaseDraft({
         );
       }
 
-      setCards(filteredCards || []);
-      setFilteredCards(filteredCards || []);
+      setCards(filteredCards);
+      setFilteredCards(filteredCards);
     } catch (err) {
       console.error("Error fetching cards:", err);
       toast.error("Failed to load cards");
@@ -185,7 +192,7 @@ export function KnowledgeBaseDraft({
           throw new Error("Failed to publish card");
         }
       } else if (action === "delete") {
-        const res = await fetch(`${apiUrl}/api/cards/${id}`, {
+        const res = await fetch(`${apiUrl}/cards/${id}`, {
           method: "DELETE",
           headers: {"Content-Type": "application/json"},
           credentials: "include",
@@ -241,19 +248,18 @@ export function KnowledgeBaseDraft({
 
         <div className="mt-4 overflow-x-auto">
           {isLoading ? (
-           <div className="space-y-4">
-           {Array.from({ length: 5 }).map((_, i) => {
-             const widthPercent = Math.floor(70 + Math.random() * 30); // between 70% and 100%
-             return (
-               <Skeleton
-                 key={i}
-                 className="h-[28px]"
-                 style={{ width: `${widthPercent}%` }}
-               />
-             );
-           })}
-         </div>
-
+            <div className="space-y-4">
+              {Array.from({length: 5}).map((_, i) => {
+                const widthPercent = Math.floor(70 + Math.random() * 30); // between 70% and 100%
+                return (
+                  <Skeleton
+                    key={i}
+                    className="h-[28px]"
+                    style={{width: `${widthPercent}%`}}
+                  />
+                );
+              })}
+            </div>
           ) : filteredCards.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               {searchTerm ? "No matching cards found" : "No data found."}
@@ -277,13 +283,18 @@ export function KnowledgeBaseDraft({
                         <MoreHorizontal className="h-5 w-5 text-white" />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="min-w-[160px] bg-[#222] rounded-md shadow-lg py-2 p-2 z-50">
+                    <DropdownMenuContent className="min-w-[160px] bg-[#222] rounded-md shadow-lg py-2 p-2 z-50 w-[154px]">
                       <DropdownMenuItem
                         className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer"
                         onClick={() => handleCardAction(row.id, "publish")}
                         disabled={isProcessing}
                       >
-                        <ArrowUpToLine className="h-4 w-4 hover:bg-[#F9DB6F33] hover:text-[#F9DB6F]" />
+                        <Icon
+                          icon="material-symbols:publish-rounded"
+                          width="24"
+                          height="24"
+                        />
+
                         <span>Publish</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
@@ -291,7 +302,11 @@ export function KnowledgeBaseDraft({
                         onClick={() => handleCardAction(row.id, "edit")}
                         disabled={isProcessing}
                       >
-                        <Pencil className="h-4 w-4 hover:bg-[#F9DB6F33] hover:text-[#F9DB6F]" />
+                        <Icon
+                          icon="iconamoon:edit-light"
+                          width="24"
+                          height="24"
+                        />
                         <span>Edit</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem

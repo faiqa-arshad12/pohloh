@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/form";
 import {Input} from "@/components/ui/input";
 import {useUser} from "@clerk/nextjs";
-import {user_roles, users} from "@/utils/constant";
+import {apiUrl, user_roles, users} from "@/utils/constant";
 import {Plus, PlusIcon} from "lucide-react";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
 import {ScrollArea} from "@/components/ui/scroll-area";
@@ -223,7 +223,7 @@ const EditProfileModal = ({
       };
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/${users}/${user.id}`,
+        `${apiUrl}/${users}/${user.id}`,
         {
           method: "PUT",
           headers: {
@@ -264,13 +264,13 @@ const EditProfileModal = ({
     if (!userData?.team_id) return null;
 
     try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/teams/${userData.team_id}`;
+      const apiRoute = `${apiUrl}/teams/${userData.team_id}`;
 
-      if (!apiUrl) {
+      if (!apiRoute) {
         throw new Error("API URL is not configured");
       }
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(apiRoute, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -300,13 +300,13 @@ const EditProfileModal = ({
       setIsLoading(true);
       setFetchError(null);
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/teams/organizations/${userData?.organizations.id}`;
+      const api = `${apiUrl}/teams/organizations/${userData?.organizations.id}`;
 
-      if (!apiUrl) {
+      if (!api) {
         throw new Error("API URL is not configured");
       }
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(api, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -336,9 +336,9 @@ const EditProfileModal = ({
 
     try {
       setIsLoadingTeamMembers(true);
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/organizations/${userData?.organizations.id}`;
+      const api = `${apiUrl}/users/organizations/${userData?.organizations.id}`;
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(api, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -379,9 +379,9 @@ const EditProfileModal = ({
 
     try {
       setIsLoadingOrgUsers(true);
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/organizations/${userData?.organizations.id}`;
+      const api = `${apiUrl}/users/organizations/${userData?.organizations.id}`;
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(api, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -413,9 +413,9 @@ const EditProfileModal = ({
     if (!currentTeamId || !newUser) return;
 
     try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${newUser.user_id}`;
+      const api = `${apiUrl}/users/${newUser.user_id}`;
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(api, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -450,9 +450,9 @@ const EditProfileModal = ({
     if (!userId) return;
 
     try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${userId}`;
+      const api = `${apiUrl}/users/${userId}`;
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(api, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

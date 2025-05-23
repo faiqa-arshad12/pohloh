@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import {StepIndicator} from "../shared/stepIndicator";
 import {useUser} from "@clerk/nextjs";
-import {nameRegex, user_roles, usernameRegex, users} from "@/utils/constant";
+import {apiUrl, nameRegex, user_roles, usernameRegex, users} from "@/utils/constant";
 import {ShowToast} from "../shared/show-toast";
 import {UserStatus} from "@/types/enum";
 import {useRouter} from "next/navigation";
@@ -319,7 +319,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
             profilePictureUrl || initialData?.profile_picture || "",
         };
         // updateProfile(profileData);
-        const checkUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/${users}/${user?.id}`;
+        const checkUrl = `${apiUrl}/${users}/${user?.id}`;
         const checkResponse = await fetch(checkUrl, {
           method: "PUT",
           headers: {"Content-Type": "application/json"},

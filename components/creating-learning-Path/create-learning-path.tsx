@@ -2,8 +2,8 @@
 
 import type React from "react";
 
-import {forwardRef, useState, useEffect} from "react";
-import {Minus, Plus, ArrowLeft, PlusIcon, X} from "lucide-react";
+import {useState, useEffect, useMemo} from "react";
+import {useRouter, useSearchParams} from "next/navigation";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {
@@ -13,209 +13,319 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import {useRouter} from "next/navigation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {Textarea} from "@/components/ui/textarea";
-import {ShowToast} from "../shared/show-toast";
+import {Minus, Plus, X, ArrowLeft, PlusIcon} from "lucide-react";
 import {useUser} from "@clerk/nextjs";
+import VerificationPeriodPicker from "./verification-picker";
+import {apiUrl} from "@/utils/constant";
 import ArrowBack from "../shared/ArrowBack";
-import VerificationPeriodPickerForm from "../shared/dateField";
-import VerificationPeriodPicker from "./date-field";
-// import {toast} from "@/components/ui/use-toast";
+import {ShowToast} from "../shared/show-toast";
 
-// Define types for the API responses
-interface Team {
-  id: string;
-  name: string;
-  org_id: string;
-  lead_id: string | null;
-  user_id: string | null;
-  created_at: string;
-  icon: string | null;
-}
-
-interface User {
-  id: string;
-  created_at: string;
-  user_name: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  user_id: string;
-  org_id: string;
-  role: string;
-  user_role: string;
-  location: string;
-  status: string;
-  profile_picture: string;
-  num_of_days: any[];
-  num_of_questions: number;
-  num_of_card: number;
-  week_days: string[] | null;
-  team_id: string | null;
-  users_team: any | null;
-}
-
-interface Question {
+// Types
+type Question = {
   id: string;
   question: string;
   answer: string;
-  source: string;
-  type: "Multiple Choice" | "Short Answer";
+  type: "multiple" | "short";
   options?: string[];
-}
+};
 
-export default function CreateLearningPath() {
+type PathFormData = {
+  title: string;
+  path_owner: string;
+  category: string;
+  category_id: string;
+  num_of_questions: number;
+  question_type: "multiple" | "short";
+  cardsSelected: number;
+  totalQuestions: number;
+  verification_period: string;
+  customDate: Date | null;
+};
+
+export default function LearningPathPage() {
   const router = useRouter();
-  const [selectedCard, setSelectedCard] = useState<{
-    card: any;
-    // title?: string;
-  } | null>(null);
 
-  // State for teams and users data
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [pathId, setPathId] = useState<any>();
+  const isEditing = !!pathId;
+  const {user} = useUser();
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setPathId(params.get("id"));
+  }, []);
+  // State management
+  const [selectedCards, setSelectedCards] = useState<any[] | null>(null);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Form data state
-  const [formData, setFormData] = useState({
-    pathTitle: "",
-    owner: "",
-    ownerId: "",
+  const [orgId, setOrgId] = useState<string>("");
+  const [apiData, setApiData] = useState<any>(null);
+  const [formData, setFormData] = useState<PathFormData>({
+    title: "",
+    path_owner: "",
     category: "",
-    categoryId: "",
-    questionsPerCard: 5,
-    questionStyle: "Multiple Choice",
+    category_id: "",
+    num_of_questions: 5,
+    question_type: "multiple",
     cardsSelected: 10,
     totalQuestions: 50,
+    verification_period: "",
+    customDate: null,
   });
-
-  // Questions state
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [questions, setQuestions] = useState<Question[]>([]);
-
-  // Question modal state
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
-  const [newQuestion, setNewQuestion] = useState<Partial<Question>>({
+  const [currentQuestion, setCurrentQuestion] = useState<Question>({
+    id: "",
     question: "",
     answer: "",
-    source: "",
-    type: "Multiple Choice",
+    type: "multiple",
     options: ["", "", "", ""],
   });
-
-  // UI-specific states
-  const [questionCount, setQuestionCount] = useState(2);
-  const [selectedPeriod, setSelectedPeriod] = useState<
-    "current" | "custom" | null
-  >(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [pathGenerated, setPathGenerated] = useState(false);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const {user} = useUser();
-  const [verificationPeriod, setVerificationPeriod] = useState("");
-  const [customDate, setCustomDate] = useState<Date | null>(null);
-  // Fetch teams and users data on component mount
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  // Memoized values
+  const totalQuestionsNeeded = useMemo(() => {
+    return formData.cardsSelected * formData.num_of_questions;
+  }, [formData.cardsSelected, formData.num_of_questions]);
+
+  const questionsRemaining = useMemo(() => {
+    return totalQuestionsNeeded - questions.length;
+  }, [totalQuestionsNeeded, questions.length]);
+
+  const isAllQuestionsAdded = useMemo(() => {
+    return questions.length >= formData.num_of_questions;
+  }, [questions.length, formData.num_of_questions]);
+
+  // Toast function
+  const showToast = (message: string, type: "success" | "error") => {
+    // You can replace this with your actual toast implementation
+    console.log(`[${type}] ${message}`);
+    ShowToast(message, type);
+  };
+
+  // Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
 
-      const fetchWithAuth = async (url: string) => {
-        const res = await fetch(url, {
+      try {
+        setLoading(true);
+
+        // Fetch user data to get organization ID
+        const userResponse = await fetch(`${apiUrl}/users/${user.id}`, {
           method: "GET",
           headers: {"Content-Type": "application/json"},
           credentials: "include",
         });
 
-        if (!res.ok) throw new Error(`Failed to fetch from ${url}`);
-        return res.json();
-      };
+        if (!userResponse.ok) {
+          throw new Error("Failed to fetch user data");
+        }
 
-      try {
-        const userData = await fetchWithAuth(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/users/${user.id}`
-        );
+        const userData = await userResponse.json();
+        const userOrgId = userData.user.organizations?.id;
 
-        const orgId = userData.user.organizations?.id;
-        if (!orgId) {
+        if (!userOrgId) {
           console.error("No organization ID found");
           return;
         }
 
-        const [usersData, teamsData] = await Promise.all([
-          fetchWithAuth(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/users/organizations/${orgId}`
-          ),
-          fetchWithAuth(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/teams/organizations/${orgId}`
-          ),
+        setOrgId(userOrgId);
+
+        // Fetch teams and users data in parallel
+        const [usersResponse, teamsResponse] = await Promise.all([
+          fetch(`${apiUrl}/users/organizations/${userOrgId}`, {
+            method: "GET",
+            headers: {"Content-Type": "application/json"},
+            credentials: "include",
+          }),
+          fetch(`${apiUrl}/teams/organizations/${userOrgId}`, {
+            method: "GET",
+            headers: {"Content-Type": "application/json"},
+            credentials: "include",
+          }),
         ]);
+
+        if (!usersResponse.ok || !teamsResponse.ok) {
+          throw new Error("Failed to fetch users or teams data");
+        }
+
+        const usersData = await usersResponse.json();
+        const teamsData = await teamsResponse.json();
 
         setUsers(usersData.data);
         setTeams(teamsData.teams);
 
-        if (teamsData.teams.length > 0) {
-          setFormData((prev) => ({
-            ...prev,
-            category: teamsData.teams[0].name,
-            categoryId: teamsData.teams[0].id,
-          }));
+        // If editing, fetch the learning path data
+        if (pathId) {
+          await fetchLearningPath(pathId);
+        } else {
+          // Check for selected cards in localStorage for new paths
+          const savedCards = localStorage.getItem("selectedLearningPathCards");
+          if (savedCards) {
+            setSelectedCards(JSON.parse(savedCards));
+          }
         }
-
-        const savedCard = localStorage.getItem("selectedLearningPathCard");
-        if (savedCard) {
-          setSelectedCard(JSON.parse(savedCard));
-        }
-
-        setLoading(false);
       } catch (error) {
-        console.error(error);
+        console.error("Error fetching initial data:", error);
+        showToast(
+          error instanceof Error
+            ? error.message
+            : "Failed to load initial data",
+          "error"
+        );
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
-  }, [user]);
+  }, [user, pathId]);
+
+  // Fetch learning path data
+  const fetchLearningPath = async (id: string) => {
+    try {
+      const pathResponse = await fetch(`${apiUrl}/learning-paths/${id}`, {
+        method: "GET",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+      });
+
+      if (!pathResponse.ok) {
+        throw new Error("Failed to fetch learning path data");
+      }
+
+      const pathData = await pathResponse.json();
+      const {learningPath, cardLearningPaths} = pathData.path;
+
+      // Set API data for reference
+      setApiData(learningPath);
+
+      // Set form data from API response
+      setFormData({
+        title: learningPath.title || "",
+        path_owner: learningPath.path_owner?.id || "",
+        category: learningPath.category?.name || "",
+        category_id: learningPath.category?.id || "",
+        num_of_questions: learningPath.num_of_questions || 5,
+        question_type: learningPath.question_type || "multiple",
+        cardsSelected: cardLearningPaths?.length || 0,
+        totalQuestions:
+          (learningPath.num_of_questions || 5) *
+          (cardLearningPaths?.length || 0),
+        verification_period: learningPath.verification_period ? "custom" : "",
+        customDate: learningPath.verification_period
+          ? new Date(learningPath.verification_period)
+          : null,
+      });
+
+      // Set questions from API data
+      if (learningPath.questions) {
+        setQuestions(learningPath.questions);
+      }
+
+      // Set selected cards from API data
+      if (cardLearningPaths) {
+        setSelectedCards(cardLearningPaths);
+      }
+
+      // Set path as generated since we're editing
+      setPathGenerated(true);
+    } catch (error) {
+      console.error("Error fetching learning path:", error);
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch learning path",
+        "error"
+      );
+    }
+  };
 
   // Update total questions when relevant values change
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,
-      totalQuestions: prev.cardsSelected * prev.questionsPerCard,
+      totalQuestions: prev.cardsSelected * prev.num_of_questions,
     }));
-  }, [formData.cardsSelected, formData.questionsPerCard]);
+  }, [formData.cardsSelected, formData.num_of_questions]);
 
+  // Update cardsSelected when cards are selected
+  useEffect(() => {
+    if (selectedCards) {
+      setFormData((prev) => ({
+        ...prev,
+        cardsSelected: selectedCards.length,
+      }));
+    }
+  }, [selectedCards]);
+
+  // Form validation
   const validateForm = () => {
     const errors: Record<string, string> = {};
 
-    if (!formData.pathTitle.trim()) {
-      errors.pathTitle = "Learning Path Title is required";
+    if (!formData.title.trim()) {
+      errors.title = "Learning Path Title is required";
+    } else if (formData.title.trim().length < 4) {
+      errors.title = "Title must be at least 4 characters long";
+    } else if (formData.title.trim().length > 50) {
+      errors.title = "Title must be no more than 50 characters long";
     }
 
-    if (!formData.ownerId) {
-      errors.owner = "Path Owner is required";
+    if (!formData.path_owner) {
+      errors.path_owner = "Path Owner is required";
     }
 
-    if (!formData.categoryId) {
-      errors.category = "Category is required";
+    if (!formData.category_id) {
+      errors.category_id = "Category is required";
     }
 
-    if (!selectedPeriod) {
-      errors.period = "Verification Period is required";
+    if (!formData.verification_period) {
+      errors.verification_period = "Verification Period is required";
     }
 
-    if (!selectedCard) {
+    if (!selectedCards || selectedCards.length === 0) {
       errors.trainingContent = "Please select at least one training card";
     }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
+  };
+
+  // Form input handlers
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const {name, value} = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    // Validate title field
+    if (name === "title") {
+      validateTitleField(value);
+    }
+  };
+
+  const validateTitleField = (value: string) => {
+    if (!value.trim()) {
+      setFormErrors((prev) => ({
+        ...prev,
+        title: "Learning Path Title is required",
+      }));
+    } else if (value.trim().length < 4) {
+      setFormErrors((prev) => ({
+        ...prev,
+        title: "Title must be at least 4 characters long",
+      }));
+    } else if (value.trim().length > 50) {
+      setFormErrors((prev) => ({
+        ...prev,
+        title: "Title must be no more than 50 characters long",
+      }));
+    } else {
+      setFormErrors((prev) => ({...prev, title: ""}));
+    }
   };
 
   const handleSelectChange = (name: string, value: string) => {
@@ -225,22 +335,16 @@ export default function CreateLearningPath() {
         setFormData((prev) => ({
           ...prev,
           category: value,
-          categoryId: selectedTeam.id,
+          category_id: selectedTeam.id,
         }));
-        setFormErrors((prev) => ({...prev, category: ""}));
+        setFormErrors((prev) => ({...prev, category_id: ""}));
       }
     } else if (name === "owner") {
-      const selectedUser = users.find(
-        (user) => `${user.first_name} ${user.last_name}` === value
-      );
-      if (selectedUser) {
-        setFormData((prev) => ({
-          ...prev,
-          owner: value,
-          ownerId: selectedUser.id,
-        }));
-        setFormErrors((prev) => ({...prev, owner: ""}));
-      }
+      setFormData((prev) => ({
+        ...prev,
+        path_owner: value,
+      }));
+      setFormErrors((prev) => ({...prev, path_owner: ""}));
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -249,177 +353,354 @@ export default function CreateLearningPath() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const {name, value} = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-    if (name === "pathTitle") {
-      setFormErrors((prev) => ({...prev, pathTitle: ""}));
-    }
-  };
-
   const incrementQuestions = () => {
-    setQuestionCount((prev) => prev + 1);
-    setFormData((prev) => ({
-      ...prev,
-      questionsPerCard: prev.questionsPerCard + 1,
-    }));
+    if (formData.num_of_questions < 20) {
+      setFormData((prev) => ({
+        ...prev,
+        num_of_questions: prev.num_of_questions + 1,
+      }));
+    }
   };
 
   const decrementQuestions = () => {
-    if (questionCount > 1) {
-      setQuestionCount((prev) => prev - 1);
+    if (formData.num_of_questions > 1) {
       setFormData((prev) => ({
         ...prev,
-        questionsPerCard: Math.max(1, prev.questionsPerCard - 1),
+        num_of_questions: Math.max(1, prev.num_of_questions - 1),
       }));
     }
   };
 
-  const handlePeriodChange = (value: "current" | "custom") => {
-    setSelectedPeriod(value);
-    setFormErrors((prev) => ({...prev, period: ""}));
-    if (value === "current") {
-      // Default to 1 week when selecting current period
-    } else if (value === "custom") {
-      // Initialize with current date
-      setSelectedDate(new Date());
-    }
-  };
-
-  const handleQuestionStyleChange = (style: string) => {
+  const handleQuestionStyleChange = (style: "multiple" | "short") => {
     setFormData((prev) => ({
       ...prev,
-      questionStyle: style,
+      question_type: style,
     }));
-
-    // Update the new question type if the modal is open
-    if (isQuestionModalOpen) {
-      setNewQuestion((prev) => ({
-        ...prev,
-        type: style as "Multiple Choice" | "Short Answer",
-        options: style === "Multiple Choice" ? ["", "", "", ""] : undefined,
-      }));
-    }
   };
 
-  const handleGeneratePath = () => {
-    if (!validateForm()) {
-      ShowToast("Please fill in all required fields", "error");
+  // Prepare data for API
+  const prepareLearningPathData = (
+    status: "draft" | "generated" | "published"
+  ) => {
+    // Format the verification period date
+    let verificationPeriod = null;
+    if (formData.verification_period === "custom" && formData.customDate) {
+      verificationPeriod = formData.customDate.toISOString();
+    } else if (formData.verification_period) {
+      const today = new Date();
+      switch (formData.verification_period) {
+        case "1week":
+          verificationPeriod = new Date(
+            today.setDate(today.getDate() + 7)
+          ).toISOString();
+          break;
+        case "2week":
+          verificationPeriod = new Date(
+            today.setDate(today.getDate() + 14)
+          ).toISOString();
+          break;
+        case "1month":
+          verificationPeriod = new Date(
+            today.setMonth(today.getMonth() + 1)
+          ).toISOString();
+          break;
+        case "6months":
+          verificationPeriod = new Date(
+            today.setMonth(today.getMonth() + 6)
+          ).toISOString();
+          break;
+        case "12months":
+          verificationPeriod = new Date(
+            today.setFullYear(today.getFullYear() + 1)
+          ).toISOString();
+          break;
+      }
+    }
 
+    // Prepare the learning path data
+    return {
+      title: formData.title,
+      path_owner: formData.path_owner,
+      category: formData.category_id,
+      num_of_questions: formData.num_of_questions,
+      question_type: formData.question_type,
+      verification_period: verificationPeriod,
+      status: status,
+      org_id: orgId,
+      questions: questions,
+      cards: selectedCards?.map((card) => card.id || card.card?.id) || [],
+    };
+  };
+
+  // API actions
+  const handleGeneratePath = async () => {
+    if (!validateForm()) {
+      showToast("Please fix the errors in the form", "error");
       return;
     }
 
-    const savedCard = localStorage.getItem("selectedLearningPathCard");
-    if (savedCard) {
-      setSelectedCard(JSON.parse(savedCard));
-      localStorage.removeItem("selectedLearningPathCard"); // Clear after loading
-    }
-    setPathGenerated(true);
+    try {
+      setLoading(true);
 
-    ShowToast("Path Generated Successfully", "success");
+      // For editing, we don't need to generate a new path
+      if (isEditing) {
+        setPathGenerated(true);
+        showToast("Path ready for editing", "success");
+        return;
+      }
+
+      // Prepare data for submission
+      const learningPathData = prepareLearningPathData("generated");
+
+      // Submit to API
+      const response = await fetch(`${apiUrl}/learning-paths`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(learningPathData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to generate path");
+      }
+
+      const result = await response.json();
+
+      // If we get a path ID back, update the URL
+      if (result && result.id) {
+        router.push(`/learning-path?id=${result.id}`);
+      }
+
+      setPathGenerated(true);
+      showToast("Path Generated Successfully", "success");
+    } catch (error) {
+      console.error("Error generating path:", error);
+      showToast(
+        error instanceof Error ? error.message : "Failed to generate path",
+        "error"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Question modal handlers
+  const handlePublish = async () => {
+    setIsPublishing(true);
+
+    if (questions.length < formData.num_of_questions) {
+      showToast(
+        `Please add at least ${formData.num_of_questions} questions before publishing`,
+        "error"
+      );
+      setIsPublishing(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Prepare data for submission
+      const learningPathData = prepareLearningPathData("published");
+
+      // If we're updating an existing path, include the ID
+      // if (pathId) {
+      //   learningPathData.id = pathId
+      // }
+
+      // Submit to API
+      const response = await fetch(
+        `${apiUrl}/learning-paths${pathId ? `/${pathId}` : ""}`,
+        {
+          method: pathId ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(learningPathData),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to publish path");
+      }
+
+      showToast(
+        pathId
+          ? "Learning path updated successfully!"
+          : "Learning path published successfully!",
+        "success"
+      );
+
+      // Redirect to the learning paths page
+      router.push("/tutor/explore-learning-paths");
+    } catch (error) {
+      console.error("Error publishing path:", error);
+      showToast(
+        error instanceof Error ? error.message : "Failed to publish path",
+        "error"
+      );
+    } finally {
+      setLoading(false);
+      setIsPublishing(false);
+    }
+  };
+
+  const handleSaveAsDraft = async () => {
+    if (!validateForm()) {
+      showToast("Please fix the errors in the form", "error");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Prepare data for submission
+      const learningPathData = prepareLearningPathData("draft");
+
+      // If we're updating an existing path, include the ID
+      // if (pathId) {
+      //   learningPathData.id = pathId
+      // }
+
+      // Submit to API
+      const response = await fetch(
+        `${apiUrl}/learning-paths${pathId ? `/${pathId}` : ""}`,
+        {
+          method: pathId ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(learningPathData),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to save draft");
+      }
+
+      showToast("Learning path saved as draft", "success");
+      router.push("/tutor/drafts");
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      showToast(
+        error instanceof Error ? error.message : "Failed to save draft",
+        "error"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Question management
   const openQuestionModal = () => {
-    setIsQuestionModalOpen(true);
-    setNewQuestion({
+    if (questions.length >= totalQuestionsNeeded) {
+      showToast(
+        `You've reached the maximum number of questions (${totalQuestionsNeeded})`,
+        "error"
+      );
+      return;
+    }
+
+    setCurrentQuestion({
+      id: crypto.randomUUID(),
       question: "",
       answer: "",
-      source: selectedCard?.card.name,
-      type: formData.questionStyle as "Multiple Choice" | "Short Answer",
+      type: formData.question_type,
       options:
-        formData.questionStyle === "Multiple Choice"
-          ? ["", "", "", ""]
-          : undefined,
+        formData.question_type === "multiple" ? ["", "", "", ""] : undefined,
     });
+
+    setIsQuestionModalOpen(true);
   };
 
   const closeQuestionModal = () => {
     setIsQuestionModalOpen(false);
-    setNewQuestion({
-      question: "",
-      answer: "",
-      source: selectedCard?.card.name,
-      type: formData.questionStyle as "Multiple Choice" | "Short Answer",
-      options:
-        formData.questionStyle === "Multiple Choice"
-          ? ["", "", "", ""]
-          : undefined,
-    });
   };
 
-  const handleQuestionInputChange = (
+  const handleQuestionChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const {name, value} = e.target;
-    setNewQuestion((prev) => ({
+    setCurrentQuestion((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
   const handleOptionChange = (index: number, value: string) => {
-    setNewQuestion((prev) => {
-      const updatedOptions = [...(prev.options || ["", "", "", ""])];
-      updatedOptions[index] = value;
+    setCurrentQuestion((prev) => {
+      const newOptions = [...(prev.options || [])];
+      newOptions[index] = value;
       return {
         ...prev,
-        options: updatedOptions,
+        options: newOptions,
       };
     });
   };
 
-  const handleQuestionTypeChange = (
-    type: "Multiple Choice" | "Short Answer"
-  ) => {
-    setNewQuestion((prev) => ({
+  const handleQuestionTypeChange = (type: "multiple" | "short") => {
+    setCurrentQuestion((prev) => ({
       ...prev,
       type,
-      options: type === "Multiple Choice" ? ["", "", "", ""] : undefined,
+      options: type === "multiple" ? ["", "", "", ""] : undefined,
     }));
   };
 
   const addQuestion = () => {
-    if (!newQuestion.question || !newQuestion.answer) return;
+    if (!currentQuestion.question.trim()) {
+      showToast("Question text is required", "error");
+      return;
+    }
 
-    const questionToAdd: Question = {
-      id: `question_${Date.now()}`,
-      question: newQuestion.question || "",
-      answer: newQuestion.answer || "",
-      source: newQuestion.source || "",
-      type: newQuestion.type as "Multiple Choice" | "Short Answer",
-      options:
-        newQuestion.type === "Multiple Choice"
-          ? newQuestion.options
-          : undefined,
-    };
+    if (!currentQuestion.answer.trim()) {
+      showToast("Answer is required", "error");
+      return;
+    }
 
-    setQuestions((prev) => [...prev, questionToAdd]);
+    if (
+      currentQuestion.type === "multiple" &&
+      (!currentQuestion.options ||
+        currentQuestion.options.filter((o) => o.trim()).length < 2)
+    ) {
+      showToast(
+        "At least two options are required for multiple choice questions",
+        "error"
+      );
+      return;
+    }
+
+    if (questions.length >= totalQuestionsNeeded) {
+      showToast(
+        `You've reached the maximum number of questions (${totalQuestionsNeeded})`,
+        "error"
+      );
+      return;
+    }
+
+    setQuestions((prev) => [...prev, currentQuestion]);
     closeQuestionModal();
   };
 
   const removeQuestion = (id: string) => {
     setQuestions((prev) => prev.filter((q) => q.id !== id));
+    setIsPublishing(false); // Reset publishing state when questions change
   };
 
-  const CustomInput = forwardRef<
-    HTMLInputElement,
-    {value?: string; onClick?: () => void}
-  >(({value, onClick}, ref) => (
-    <input
-      className="w-full p-2 bg-[#2C2D2E] border-none text-white rounded-md focus:ring-0"
-      onClick={onClick}
-      ref={ref}
-      value={value}
-      readOnly
-      placeholder="Select date"
-    />
-  ));
+  // Helper functions
+  const getOwnerDisplayName = (ownerId: string) => {
+    const owner = users.find((user) => user.id === ownerId);
+    return owner ? `${owner.first_name} ${owner.last_name}` : "";
+  };
 
-  CustomInput.displayName = "CustomInput";
+  const displayQuestionType = (type: "multiple" | "short") => {
+    return type === "multiple" ? "Multiple Choice" : "Short Answer";
+  };
 
   if (loading) {
     return (
@@ -430,13 +711,14 @@ export default function CreateLearningPath() {
   }
 
   return (
-    <div className="min-h-screen  text-white">
+    <div className="min-h-screen text-white">
       <div className="mx-auto py-4">
+        {/* Header */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-3">
           <div className="flex flex-wrap items-center gap-4 sm:gap-7 cusror-pointer">
             <ArrowBack link="/tutor" />
-            <h1 className="font-urbanist font-medium text-2xl sm:text-3xl leading-tight">
-              {"Creat Learning Path"}
+            <h1 className="font-urbanist font-medium text-2xl sm:text-3xl leading-tight mb-3">
+              {"Create Learning Path"}
             </h1>
           </div>
 
@@ -444,50 +726,43 @@ export default function CreateLearningPath() {
             <Button
               variant="outline"
               className="h-[41px] w-[242px] border border-[#F9DB6F] text-black bg-[#F9DB6F] hover:bg-[#F9DB6F] hover:text-black rounded-md font-medium transition-colors duration-200 cursor-pointer"
-              onClick={() => {}}
+              onClick={handlePublish}
             >
+              {/* {isEditing ? "Update & Publish" : "Publish"} */}
               Publish
             </Button>
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-[350px_1fr] gap-6 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-[450px_1fr] gap-6 w-full">
           {/* Form Section */}
-          <div className="bg-[#1a1a1a] rounded-lg p-6 space-y-5">
+          <div className="bg-[#1a1a1a] rounded-lg p-6 space-y-5 font-urbanist  rounded-[20px]">
+            {/* Title */}
             <div className="space-y-2">
-              <label htmlFor="pathTitle" className="block text-sm">
+              <label htmlFor="title" className="block text-sm">
                 Learning Path Title
               </label>
               <Input
-                id="pathTitle"
-                name="pathTitle"
+                id="title"
+                name="title"
                 placeholder="Insert Title"
-                value={formData.pathTitle}
+                value={formData.title}
                 onChange={handleInputChange}
                 className="bg-[#2a2a2a] h-[44px] border-0 text-white rounded-md"
               />
-              {formErrors.pathTitle && (
-                <p className="text-red-500 text-xs">{formErrors.pathTitle}</p>
+              {formErrors.title && (
+                <p className="text-red-500 text-xs">{formErrors.title}</p>
               )}
             </div>
 
+            {/* Path Owner */}
             <div className="space-y-2">
-              <label htmlFor="owner" className="block text-sm">
+              <label htmlFor="path_owner" className="block text-sm">
                 Enter Path Owner
               </label>
               <Select
-                value={formData.ownerId}
-                onValueChange={(value) => {
-                  const selectedUser = users.find((user) => user.id === value);
-                  if (selectedUser) {
-                    setFormData((prev) => ({
-                      ...prev,
-                      owner: `${selectedUser.first_name} ${selectedUser.last_name}`,
-                      ownerId: selectedUser.id,
-                    }));
-                    setFormErrors((prev) => ({...prev, owner: ""}));
-                  }
-                }}
+                value={formData.path_owner}
+                onValueChange={(value) => handleSelectChange("owner", value)}
               >
                 <SelectTrigger
                   className="w-full text-white border-none bg-[#2C2D2E] text-[#FFFFFF52]"
@@ -495,7 +770,7 @@ export default function CreateLearningPath() {
                 >
                   <SelectValue placeholder="Select path owner" />
                 </SelectTrigger>
-                <SelectContent className=" bg-[#2C2D2E] border-none text-white">
+                <SelectContent className="bg-[#2C2D2E] border-none text-white">
                   {users.map((user) => (
                     <SelectItem
                       key={user.id}
@@ -507,166 +782,79 @@ export default function CreateLearningPath() {
                   ))}
                 </SelectContent>
               </Select>
-              {formErrors.owner && (
-                <p className="text-red-500 text-xs">{formErrors.owner}</p>
+              {formErrors.path_owner && (
+                <p className="text-red-500 text-xs">{formErrors.path_owner}</p>
               )}
             </div>
 
+            {/* Category */}
             <div className="space-y-2">
               <label htmlFor="category" className="block text-sm">
                 Select Category
               </label>
-              <div className="relative">
-                <Select
-                  value={formData.category}
-                  onValueChange={(value) => {
-                    handleSelectChange("category", value);
-                    setFormErrors((prev) => ({...prev, category: ""}));
-                  }}
+              <Select
+                value={formData.category}
+                onValueChange={(value) => handleSelectChange("category", value)}
+              >
+                <SelectTrigger
+                  className="w-full text-white border-none bg-[#2C2D2E] text-[#FFFFFF52]"
+                  style={{height: "44px"}}
                 >
-                  <SelectTrigger
-                    className="w-full text-white border-none bg-[#2C2D2E] text-[#FFFFFF52]"
-                    style={{height: "44px"}}
-                  >
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent className=" bg-[#2C2D2E] border-none text-white">
-                    {teams.map((team) => (
-                      <SelectItem key={team.id} value={team.name} className="">
-                        {team.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {formErrors.category && (
-                <p className="text-red-500 text-xs">{formErrors.category}</p>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#2C2D2E] border-none text-white">
+                  {teams.map((team) => (
+                    <SelectItem key={team.id} value={team.name}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {formErrors.category_id && (
+                <p className="text-red-500 text-xs">{formErrors.category_id}</p>
               )}
             </div>
 
-            {/* <div className="space-y-2">
-              <label className="block text-sm font-medium">
-                Select Verification Period
-              </label>
-              <div className="space-y-2">
-                {!selectedPeriod ? (
-                  <Select
-                    onValueChange={(value) => {
-                      handlePeriodChange(value as "current" | "custom");
-                      setFormErrors((prev) => ({...prev, period: ""}));
-                    }}
-                  >
-                    <SelectTrigger
-                      className="bg-[#2a2a2a] w-full border-none text-white"
-                      style={{height: "44px"}}
-                    >
-                      <SelectValue placeholder="Select period" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#2a2a2a] w-full border-none text-white">
-                      <SelectItem
-                        className="hover:bg-[#333333] hover:text-[#F9DB6F] focus:bg-[#333333] focus:text-[#F9DB6F]"
-                        value="current"
-                      >
-                        Current Period
-                      </SelectItem>
-                      <SelectItem
-                        className="hover:bg-[#333333] hover:text-[#F9DB6F] focus:bg-[#333333] focus:text-[#F9DB6F]"
-                        value="custom"
-                      >
-                        Custom Date
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="w-full flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedPeriod(null)}
-                        className="text-gray-400 hover:text-white hover:bg-transparent"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                      </Button>
-                      <span className="text-sm text-gray-300">
-                        {selectedPeriod === "current"
-                          ? "Current Period"
-                          : "Custom Date"}
-                      </span>
-                    </div>
-
-                    {selectedPeriod === "current" && (
-                      <Select defaultValue="1">
-                        <SelectTrigger className="bg-[#2a2a2a] w-full border-none text-white h-12">
-                          <SelectValue placeholder="Select weeks" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#2a2a2a] w-full border-none text-white">
-                          {[1, 2, 3, 4].map((week) => (
-                            <SelectItem
-                              className="hover:bg-[#333333] hover:text-[#F9DB6F] focus:bg-[#333333] focus:text-[#F9DB6F]"
-                              key={week}
-                              value={week.toString()}
-                            >
-                              {week} Week{week !== 1 ? "s" : ""}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-
-                    {selectedPeriod === "custom" && (
-                      <div className="w-full">
-                        <DatePicker
-                          selected={selectedDate as Date}
-                          onChange={(date) => date && setSelectedDate(date)}
-                          className="w-full"
-                          wrapperClassName="w-full"
-                          customInput={<CustomInput />}
-                          popperClassName="bg-[#2C2D2E] border-none text-white"
-                          calendarClassName="bg-[#2C2D2E] border-none text-white"
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              {formErrors.period && (
-                <p className="text-red-500 text-xs">{formErrors.period}</p>
-              )}
-            </div> */}
-            {/* <div className="space-y-2">
-            <VerificationPeriodPickerForm/>
-
-            </div> */}
+            {/* Verification Period */}
             <div className="space-y-2">
               <VerificationPeriodPicker
-                value={verificationPeriod}
+                value={formData.verification_period}
                 onChange={(value) => {
-                  setVerificationPeriod(value);
-                  setFormErrors((prev) => ({...prev, period: ""}));
+                  setFormData((prev) => ({
+                    ...prev,
+                    verification_period: value,
+                  }));
+                  setFormErrors((prev) => ({...prev, verification_period: ""}));
                 }}
-                dateValue={customDate}
-                onDateChange={setCustomDate}
+                dateValue={formData.customDate}
+                onDateChange={(date) =>
+                  setFormData((prev) => ({...prev, customDate: date}))
+                }
+                error={formErrors.verification_period}
               />
             </div>
 
+            {/* Training Content */}
             <div className="space-y-2">
               <label className="block text-sm">Choose Training Content</label>
               <Button
                 variant="outline"
                 className="border bg-[#FFFFFF14] border-[#f0d568] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#F9DB6F]/10 h-10 rounded-md cursor-pointer"
                 onClick={() => {
-                  // Store current selection to return to
-                  router.push("/knowledge-base?selectForLearningPath=true");
+                  // Pass the current path ID if editing
+                  const url = pathId
+                    ? `/knowledge-base?selectForLearningPath=true&pathId=${pathId}`
+                    : "/knowledge-base?selectForLearningPath=true";
+                  router.push(url);
                 }}
               >
                 Select Cards
               </Button>
-              {/* {selectedCard && (
+              {selectedCards && selectedCards.length > 0 && (
                 <p className="text-green-500 text-xs">
-                  Card selected: {selectedCard.title}
+                  Cards selected: {selectedCards.length}
                 </p>
-              )} */}
+              )}
               {formErrors.trainingContent && (
                 <p className="text-red-500 text-xs">
                   {formErrors.trainingContent}
@@ -674,6 +862,7 @@ export default function CreateLearningPath() {
               )}
             </div>
 
+            {/* Questions per card */}
             <div className="space-y-2">
               <label className="block text-sm">
                 Number of Questions per card
@@ -683,196 +872,296 @@ export default function CreateLearningPath() {
                   variant="outline"
                   size="icon"
                   className="h-6 w-6 m-3 border-transparent bg-[#191919] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#191919] cursor-pointer"
-                  onClick={incrementQuestions}
+                  onClick={decrementQuestions}
+                  disabled={formData.num_of_questions <= 1}
                 >
-                  <Plus size={16} />
+                  <Minus size={16} />
                 </Button>
-                <div className="h-6 w-8 m-3 flex items-center justify-center text-[#f0d568] hover:text-[#f0d568] cursor-pointer">
-                  {formData.questionsPerCard}
+                <div className="h-6 w-8 m-3 flex items-center justify-center text-[#f0d568]">
+                  {formData.num_of_questions}
                 </div>
                 <Button
                   variant="outline"
                   size="icon"
-                  disabled={formData.questionsPerCard <= 5}
                   className="h-6 w-6 m-3 border-transparent bg-[#191919] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#191919] cursor-pointer"
-                  onClick={decrementQuestions}
+                  onClick={incrementQuestions}
+                  disabled={formData.num_of_questions >= 20}
                 >
-                  <Minus size={16} />
+                  <Plus size={16} />
                 </Button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm">
-                Choose Questions per style
-              </label>
-              <div className="flex gap-2">
+            {/* Question style */}
+            <div className="space-y-2 w-full">
+              <label className="block text-sm">Choose Questions style</label>
+              {/* <div className="flex gap-4">
                 <Button
                   variant={
-                    formData.questionStyle === "Multiple Choice"
+                    formData.question_type === "multiple"
                       ? "default"
                       : "outline"
                   }
                   className={
-                    formData.questionStyle === "Multiple Choice"
-                      ? "border border-[#f0d568] bg-[#f0d568]/10 text-[#f0d568] hover:bg-[#f0d568]/10 rounded-md cursor-pointer"
-                      : "border border-gray-600 bg-transparent text-white hover:text-white hover:opacity-90 rounded-md hover:bg-transparent"
+                    formData.question_type === "multiple"
+                      ? "border border-[#F9DB6F] bg-[#f0d568]/10 text-[#f0d568] hover:bg-[#f0d568]/10 rounded-md w-auto cursor-pointer h-[44px] px-6 cursor-pointer"
+                      : "border-0 bg-[#222222] text-white hover:text-white hover:opacity-90 rounded-md hover:bg-transparent h-[44px] px-6 cursor-pointer w-auto"
                   }
-                  onClick={() => handleQuestionStyleChange("Multiple Choice")}
+                  onClick={() => handleQuestionStyleChange("multiple")}
                 >
                   Multiple Choice
                 </Button>
                 <Button
                   variant={
-                    formData.questionStyle === "Short Answer"
-                      ? "default"
-                      : "outline"
+                    formData.question_type === "short" ? "default" : "outline"
                   }
                   className={
-                    formData.questionStyle === "Short Answer"
-                      ? "border border-[#f0d568] bg-[#f0d568]/10 text-[#f0d568] hover:bg-[#f0d568]/10 hover:text-[#f0d568] rounded-md cursor-pointer"
-                      : "border border-gray-600 bg-transparent text-white hover:text-white hover:opacity-90 rounded-md hover:bg-transparent"
+                    formData.question_type === "short"
+                      ? "border border-[#F9DB6F] bg-[#191919]  text-[#f0d568] hover:bg-[#f0d568]/10 hover:text-[#f0d568] rounded-md cursor-pointer h-[44px]  px-6 cursor-pointer w-auto"
+                      : " border-0 bg-[#FFFFFF0F] text-white hover:text-white hover:opacity-90 rounded-md hover:bg-transparent h-[44px] px-6 cursor-pointer w-auto"
                   }
-                  onClick={() => handleQuestionStyleChange("Short Answer")}
+                  onClick={() => handleQuestionStyleChange("short")}
                 >
                   Short Answer
                 </Button>
+              </div> */}
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  // onClick={handleClose}
+                  className={`w-full h-[48px] rounded-md  text-white font-urbanist font-semibold bg-[#333435]  transition cursor-pointer ${
+                    formData.question_type === "multiple"
+                      ? "border border-[#F9DB6F] bg-[#f0d568]/10 text-[#f0d568] hover:bg-[#f0d568]/10"
+                      : "border-0 bg-[#333435] "
+                  }`}
+                  onClick={() => handleQuestionStyleChange("multiple")}
+
+                  // disabled={isLoading}
+                >
+                  Multiple Choice
+                </button>
+                <button
+                  type="submit"
+                  className={`w-full h-[48px] rounded-md  text-whitebg-[#333435]  font-urbanist font-semibold  transition cursor-pointer ${
+                    formData.question_type === "short"
+                      ? "border border-[#F9DB6F] bg-[#f0d568]/10 text-[#f0d568] hover:bg-[#f0d568]/10"
+                      : "border-0 bg-[#333435] "
+                  }`}
+                  onClick={() => handleQuestionStyleChange("short")}
+                >
+                  {/* {isLoading ? (
+                                <div className="flex flex-row justify-center items-center">
+                                  <Loader />
+                                </div>
+                              ) : (
+                                "Create Announcement"
+                              )} */}
+                  Short Answer
+                </button>
               </div>
             </div>
 
+            {/* Action buttons */}
             <div className="flex flex-col pt-4 space-y-3 justify-center items-center">
               <Button
                 className="w-full bg-[#f0d568] hover:bg-[#e0c558] text-black font-medium h-12 rounded-md cursor-pointer"
                 onClick={handleGeneratePath}
+                disabled={loading}
               >
-                Generate Path
+                {/* {isEditing ? "Update Path" : "Generate Path"} */}
+                {"Generate Path"}
               </Button>
+              {/* {!isEditing && ( */}
               <Button
                 variant="outline"
                 className="w-full border bg-[#333435] border-[#ffffff] text-white hover:bg-[#333435] hover:text-white h-12 rounded-md cursor-pointer"
-                onClick={() => router.push("/tutor/drafts")}
+                onClick={handleSaveAsDraft}
+                disabled={loading}
               >
                 Save as Draft
               </Button>
+              {/* )} */}
             </div>
           </div>
 
           {/* Preview Section */}
-          <div className="h-full w-full py-8">
-            <div className="w-full bg-[#1a1a1a] rounded-lg  md:p-10 relative h-full min-h-[400px]">
+          <div className="h-full w-full">
+            <div className="w-full bg-[#1a1a1a] rounded-lg p-6 relative h-full min-h-[400px]  rounded-[20px]">
               {pathGenerated ? (
-                <div className="w-full bg-[#1a1a1a] rounded-lg p-6 text-white min-h-[500px]">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-medium">
-                      Preview -{" "}
-                      <span className="text-gray-400">
-                        [ {formData.pathTitle || "Learning Path"} ]
-                      </span>
-                    </h2>
-                    <Button
-                      variant="outline"
-                      className="border border-white bg-[#333435] text-white hover:text-white hover:bg-[#333435] hover:opacity-90 h-12 rounded-md flex items-center gap-2 cursor-pointer"
-                      onClick={openQuestionModal}
-                    >
-                      <PlusIcon size={16} /> Add Questions
-                    </Button>
-                  </div>
+                <div className="flex flex-col">
+                  <div className="flex flex-row justify-between p-4">
+                    {/* Question Counter */}
 
-                  <div className="font-medium text-[36px] text-[#7C7C7C] mb-4">
-                    [ {formData.category || "Select a category"} ]
-                  </div>
+                    {/* Path Preview */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <h2 className="text-[40px] font-medium">
+                          {"Preview"} -{" "}
+                          <span className="text-white">
+                            [ {formData.title || "Learning Path"} ]
+                          </span>
+                        </h2>
+                      </div>
 
-                  <div className="mb-6">
-                    <h3 className="font-medium text-[32px] text-[#f0d568] mb-4">
-                      Requirements:
-                    </h3>
-                    <div className="space-y-1 text-gray-200">
-                      <p>
-                        &gt; Number of Cards selected : {formData.cardsSelected}
-                      </p>
-                      <p>
-                        &gt; Questions per card : {formData.questionsPerCard}
-                      </p>
-                      <p>
-                        &gt; Total Path Questions: {formData.totalQuestions}
-                      </p>
-                      <p>&gt; Questions Styles: {formData.questionStyle}</p>
-                      {formData.owner && (
-                        <p>&gt; Path Owner: {formData.owner}</p>
-                      )}
+                      <div className="font-medium text-[36px] text-[#7C7C7C] mb-4">
+                        [ {formData.category || "Select a category"} ]
+                      </div>
+
+                      <div className="mb-6">
+                        <h3 className="font-medium text-[32px] text-[#f0d568] mb-4">
+                          Requirements:
+                        </h3>
+                        <div className="space-y-1 text-[#FFFFFF] text-[20px]">
+                          <p>
+                            &gt; Number of Cards selected:{" "}
+                            {formData.cardsSelected}
+                          </p>
+                          <p>
+                            &gt; Questions per card: {formData.num_of_questions}
+                          </p>
+                          <p>
+                            &gt; Total Path Questions: {formData.totalQuestions}
+                          </p>
+                          <p>
+                            &gt; Questions Style:{" "}
+                            {displayQuestionType(formData.question_type)}
+                          </p>
+                          {/* {formData.path_owner && (
+                            <p>
+                              &gt; Path Owner:{" "}
+                              {getOwnerDisplayName(formData.path_owner)}
+                            </p>
+                          )}
+                          {apiData?.id && <p>&gt; Path ID: {apiData.id}</p>} */}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      {/* <div className="text-sm">
+                      <span className="text-gray-400">Questions: </span>
+                      <span className="text-white">{questions.length}</span>
+                      <span className="text-gray-400"> / Required: </span>
+                      <span className=F"text-white">{formData.num_of_questions}</span>
+                      <span className="text-gray-400"> / Total: </span>
+                      <span className="text-white">{formData.totalQuestions}</span>
+                    </div> */}
+                      <Button
+                        variant="outline"
+                        className="border border-white bg-[#333435] text-white hover:text-white hover:bg-[#333435] hover:opacity-90 h-10 rounded-md flex items-center gap-2 cursor-pointer !px-8"
+                        onClick={openQuestionModal}
+                        disabled={questions.length >= formData.totalQuestions}
+                      >
+                        <PlusIcon size={16} /> Add Questions
+                      </Button>
                     </div>
                   </div>
-
-                  <div>
-                    <h3 className="font-medium text-[32px] text-[#f0d568] mb-4">
-                      Training Content:
-                    </h3>
-                    <div className="space-y-4">
-                      {questions.map((q, index) => (
-                        <div
-                          key={q.id}
-                          className="bg-[#222222] rounded-lg p-5 space-y-4 relative"
-                        >
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute top-2 right-2 text-gray-400 hover:text-white hover:bg-transparent"
-                            onClick={() => removeQuestion(q.id)}
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-medium text-[32px] text-[#f0d568] mb-4">
+                        Training Content:
+                      </h3>
+                      {/* <div className="text-sm">
+                        {questions.length >= formData.totalQuestions ? (
+                          <span className="text-green-500">
+                            All required questions added ({questions.length}/
+                            {formData.totalQuestions})
+                          </span>
+                        ) : (
+                          <span
+                            className={
+                              isPublishing &&
+                              questions.length < formData.num_of_questions
+                                ? "text-red-500"
+                                : "text-yellow-500"
+                            }
                           >
-                            <X size={16} />
-                          </Button>
-                          <div>
-                            <h4 className="font-medium mb-2">
-                              Question {index + 1}:
-                            </h4>
-                            <p className="mb-1">{q.question}</p>
-                            {/* {q.type === "Short Answer" && (
-                              <p className="text-gray-400 italic">
-                                Type your answer below
-                              </p>
-                            )} */}
-                            {q.type === "Multiple Choice" && q.options && (
-                              <div className="mt-2 space-y-2">
-                                {q.options.map((option, i) => (
-                                  <div
-                                    key={i}
-                                    className="flex items-center gap-2"
-                                  >
-                                    <div className="w-4 h-4 rounded-full border border-gray-400"></div>
-                                    <span>{option}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                            {formData.totalQuestions - questions.length} more
+                            question
+                            {formData.totalQuestions - questions.length !== 1
+                              ? "s"
+                              : ""}{" "}
+                            needed
+                          </span>
+                        )}
+                      </div> */}
+                    </div>
 
-                          <div>
-                            <p className="font-medium">
-                              Answer:{" "}
-                              <span className="font-normal">{q.answer}</span>
-                            </p>
-                          </div>
-
-                          {/* <div>
-                            <p className="font-medium">
-                              Source:{" "}
-                              <span className="text-[#f0d568]">{q.source}</span>
-                            </p>
-                          </div> */}
-
-                          <div>
-                            <p className="font-medium">
-                              Type:{" "}
-                              <span className="font-normal">{q.type}</span>
-                            </p>
-                          </div>
+                    {isPublishing &&
+                      questions.length < formData.num_of_questions && (
+                        <div className="bg-red-500/20 border border-red-500 rounded-md p-3 mb-4 text-red-200">
+                          <p>
+                            You need to add at least {formData.num_of_questions}{" "}
+                            questions before publishing.
+                          </p>
                         </div>
-                      ))}
+                      )}
+
+                    {/* Questions Display */}
+                    <div className="space-y-4">
+                      {questions.length === 0 ? (
+                        <div className="bg-[#222222] rounded-lg p-5 text-center">
+                          <p className="text-gray-400">
+                            No questions added yet. Click "Add Questions" to get
+                            started.
+                          </p>
+                        </div>
+                      ) : (
+                        questions.map((q, index) => (
+                          <div
+                            key={q.id}
+                            className="bg-[#222222] rounded-lg p-5 space-y-4 relative"
+                          >
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute top-2 right-2 text-gray-400 hover:text-white hover:bg-transparent"
+                              onClick={() => removeQuestion(q.id)}
+                            >
+                              <X size={16} />
+                            </Button>
+                            <div>
+                              <h4 className="font-medium mb-2">
+                                Question {index + 1}:
+                              </h4>
+                              <p className="mb-1">{q.question}</p>
+                              {q.type === "multiple" && q.options && (
+                                <div className="mt-2 space-y-2">
+                                  {q.options.map((option, i) => (
+                                    <div
+                                      key={i}
+                                      className="flex items-center gap-2"
+                                    >
+                                      <div className="w-4 h-4 rounded-full border border-gray-400"></div>
+                                      <span>{option}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            <div>
+                              <p className="font-medium">
+                                Answer:{" "}
+                                <span className="font-normal">{q.answer}</span>
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="font-medium">
+                                Type:{" "}
+                                <span className="font-normal">
+                                  {displayQuestionType(q.type)}
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
               ) : (
-                <p className="text-white text-lg">
+                <p className="text-white text-lg p-6">
                   A preview will appear once path is generated.
                 </p>
               )}
@@ -880,137 +1169,79 @@ export default function CreateLearningPath() {
           </div>
         </div>
 
-        {/* Add Question Modal */}
-        <Dialog
-          open={isQuestionModalOpen}
-          onOpenChange={setIsQuestionModalOpen}
-        >
-          <DialogContent className="bg-[#1a1a1a] text-white border-[#333] max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-medium">
-                Add New Question
-              </DialogTitle>
-            </DialogHeader>
+        {/* Question Modal */}
+        {isQuestionModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-[#1a1a1a] rounded-lg p-6 w-full max-w-xl">
+              <h2 className="text-xl font-medium mb-4">Add Question</h2>
 
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <label htmlFor="question" className="block text-sm font-medium">
-                  Question
-                </label>
-                <Textarea
-                  id="question"
-                  name="question"
-                  placeholder="Enter your question"
-                  value={newQuestion.question}
-                  onChange={handleQuestionInputChange}
-                  className="bg-[#2a2a2a] border-[#333] text-white min-h-[100px]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium">
-                  Question Type
-                </label>
-                <div className="flex gap-2">
-                  <Button
-                    variant={
-                      newQuestion.type === "Multiple Choice"
-                        ? "default"
-                        : "outline"
-                    }
-                    className={
-                      newQuestion.type === "Multiple Choice"
-                        ? "border border-[#f0d568] bg-[#f0d568]/10 text-[#f0d568] hover:bg-[#f0d568]/10 rounded-md cursor-pointer"
-                        : "border border-gray-600 bg-transparent text-white hover:text-white hover:opacity-90 rounded-md hover:bg-transparent"
-                    }
-                    onClick={() => handleQuestionTypeChange("Multiple Choice")}
-                  >
-                    Multiple Choice
-                  </Button>
-                  <Button
-                    variant={
-                      newQuestion.type === "Short Answer"
-                        ? "default"
-                        : "outline"
-                    }
-                    className={
-                      newQuestion.type === "Short Answer"
-                        ? "border border-[#f0d568] bg-[#f0d568]/10 text-[#f0d568] hover:bg-[#f0d568]/10 hover:text-[#f0d568] rounded-md cursor-pointer"
-                        : "border border-gray-600 bg-transparent text-white hover:text-white hover:opacity-90 rounded-md hover:bg-transparent"
-                    }
-                    onClick={() => handleQuestionTypeChange("Short Answer")}
-                  >
-                    Short Answer
-                  </Button>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="question" className="block text-sm mb-1">
+                    Question
+                  </label>
+                  <textarea
+                    id="question"
+                    name="question"
+                    value={currentQuestion.question}
+                    onChange={handleQuestionChange}
+                    className="w-full bg-[#2a2a2a] border-0 text-white rounded-md p-2 min-h-[100px]"
+                    placeholder="Enter your question here"
+                  />
                 </div>
-              </div>
 
-              {newQuestion.type === "Multiple Choice" && (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium">Options</label>
-                  {newQuestion.options?.map((option, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full border border-gray-400"></div>
-                      <Input
-                        value={option}
-                        onChange={(e) =>
-                          handleOptionChange(index, e.target.value)
-                        }
-                        placeholder={`Option ${index + 1}`}
-                        className="bg-[#2a2a2a] border-[#333] text-white"
-                      />
+                {currentQuestion.type === "multiple" && (
+                  <div>
+                    <label className="block text-sm mb-1">Options</label>
+                    <div className="space-y-2">
+                      {currentQuestion.options?.map((option, index) => (
+                        <Input
+                          key={index}
+                          value={option}
+                          onChange={(e) =>
+                            handleOptionChange(index, e.target.value)
+                          }
+                          className="bg-[#2a2a2a] h-[44px] border-0 text-white rounded-md"
+                          placeholder={`Option ${index + 1}`}
+                        />
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                )}
+
+                <div>
+                  <label htmlFor="answer" className="block text-sm mb-1">
+                    Answer
+                  </label>
+                  <Input
+                    id="answer"
+                    name="answer"
+                    value={currentQuestion.answer}
+                    onChange={handleQuestionChange}
+                    className="bg-[#2a2a2a] h-[44px] border-0 text-white rounded-md"
+                    placeholder="Enter the correct answer"
+                  />
                 </div>
-              )}
 
-              <div className="space-y-2">
-                <label htmlFor="answer" className="block text-sm font-medium">
-                  Correct Answer
-                </label>
-                <Input
-                  id="answer"
-                  name="answer"
-                  placeholder="Enter the correct answer"
-                  value={newQuestion.answer}
-                  onChange={handleQuestionInputChange}
-                  className="bg-[#2a2a2a] border-[#333] text-white"
-                />
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    className="border border-gray-600 bg-transparent text-white hover:text-white hover:opacity-90 rounded-md hover:bg-transparent"
+                    onClick={closeQuestionModal}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="bg-[#f0d568] hover:bg-[#e0c558] text-black font-medium rounded-md cursor-pointer"
+                    onClick={addQuestion}
+                  >
+                    Add Question
+                  </Button>
+                </div>
               </div>
-
-              {/* <div className="space-y-2">
-                <label htmlFor="source" className="block text-sm font-medium">
-                  Source
-                </label>
-                <Input
-                  id="source"
-                  name="source"
-                  placeholder="Enter the source"
-                  value={newQuestion.source}
-                  onChange={handleQuestionInputChange}
-                  className="bg-[#2a2a2a] border-[#333] text-white"
-                />
-              </div> */}
             </div>
-
-            <DialogFooter className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={closeQuestionModal}
-                className="border-gray-600 text-white hover:bg-[#333] hover:text-white"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={addQuestion}
-                className="bg-[#f0d568] text-black hover:bg-[#e0c558]"
-                disabled={!newQuestion.question || !newQuestion.answer}
-              >
-                Add Question
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </div>
+        )}
       </div>
     </div>
   );
