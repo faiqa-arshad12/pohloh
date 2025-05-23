@@ -47,16 +47,16 @@ export default clerkMiddleware(async (auth, req) => {
 
     try {
       // Set default role if not set
-      if (!user.unsafeMetadata?.role && !user.publicMetadata?.role) {
-        const role = searchParams.get('role') || 'owner';
-        await clerk.users.updateUser(userId, {
-          unsafeMetadata: {
-            ...user.unsafeMetadata,
-            role: role,
-            status: UserStatus.Pending
-          }
-        });
-      }
+      // if (!user.unsafeMetadata?.role && !user.publicMetadata?.role) {
+      //   const role = searchParams.get('role') || 'owner';
+      //   await clerk.users.updateUser(userId, {
+      //     unsafeMetadata: {
+      //       ...user.unsafeMetadata,
+      //       role: role,
+      //       status: UserStatus.Pending
+      //     }
+      //   });
+      // }
 
       const isApproved = user.unsafeMetadata?.status === UserStatus.approved ||
         user?.publicMetadata?.status === UserStatus.approved;
