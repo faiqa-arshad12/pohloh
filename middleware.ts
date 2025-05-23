@@ -122,7 +122,7 @@ export default clerkMiddleware(async (auth, req) => {
     }
 
     // Redirect unauthenticated users to login
-    return NextResponse.redirect(new URL("/login", origin));
+    return NextResponse.redirect(new URL("/login", origin))
   } catch (error) {
     console.error("Middleware error:", error);
     return new NextResponse("Middleware error", { status: 500 });
