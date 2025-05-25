@@ -22,7 +22,7 @@ const Feedback: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{
     topics?: string;
-    feedback?: string;
+    feedback?: string
   }>({});
   const {userData} = useUserHook();
 
