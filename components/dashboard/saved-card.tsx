@@ -29,6 +29,7 @@ export function SavedCards({cards}: SavedCardsProp) {
   const [displayedCard, setDisplayedCard] = useState<any | null>(null);
   const [savedCards, setSavedCards] = useState<Card[]>([]);
   const router = useRouter();
+  console.log(cards, "cards");
 
   useEffect(() => {
     // Filter saved cards and set initial state
@@ -36,8 +37,7 @@ export function SavedCards({cards}: SavedCardsProp) {
       const filteredCards = cards?.filter(
         (card: any) =>
           card?.card_status === CardStatus.SAVED &&
-          card.type === CardType.CARD &&
-          card.is_verified
+           card.is_verified
       );
       setSavedCards(filteredCards || []);
 

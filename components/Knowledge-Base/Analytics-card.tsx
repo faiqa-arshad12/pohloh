@@ -268,6 +268,8 @@ export default function AnalyticsCard({ cardId }: AnalyticsCardProps) {
           }
 
           const mockData = await res.json()
+          console.log(mockData,'reseponse')
+
           setTeams(mockData.teams || [])
 
           const initialExpandedState: Record<string, boolean> = {}

@@ -20,7 +20,7 @@ import {toast} from "sonner";
 import ArrowBack from "../shared/ArrowBack";
 import DeleteConfirmationModal from "./delete-card";
 import {Icon} from "@iconify/react";
-import { useUserHook } from "@/hooks/useUser";
+import {useUserHook} from "@/hooks/useUser";
 
 type Card = {
   id: string;
@@ -79,7 +79,7 @@ export function KnowledgeBaseDraft({
     try {
       // Fetch user data
 
-      if (!userData?.orgId) return;
+      if (!userData?.org_id) return;
 
       // Fetch cards for the org
       // const cardsRes = await fetch(`${apiUrl}/api/cards/organizations/${orgId}`, {
@@ -87,15 +87,18 @@ export function KnowledgeBaseDraft({
       //   headers: { "Content-Type": "application/json" },
       //   credentials: "include",
       // });
-      const cardsRes = await fetch(`${apiUrl}/cards/organizations/${userData?.orgId}`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        // credentials: "include",
-        body: JSON.stringify({
-          role: userData.user?.role,
-          userId: userData.user?.id,
-        }),
-      });
+      const cardsRes = await fetch(
+        `${apiUrl}/cards/organizations/${userData?.org_id}`,
+        {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          // credentials: "include",
+          body: JSON.stringify({
+            role: userData?.role,
+            userId: userData?.id,
+          }),
+        }
+      );
 
       if (!cardsRes.ok) throw new Error("Failed to fetch cards");
 
@@ -134,17 +137,22 @@ export function KnowledgeBaseDraft({
 
       setCards(filteredCards);
       setFilteredCards(filteredCards);
+      setIsLoading(false);
+
     } catch (err) {
       console.error("Error fetching cards:", err);
       toast.error("Failed to load cards");
+      setIsLoading(false);
+
     } finally {
       setIsLoading(false);
     }
-  }, [user, status, verified, apiUrl]);
+  }, [user, status, verified, apiUrl, userData]);
 
   useEffect(() => {
+    if(userData)
     fetchCards();
-  }, [fetchCards]);
+  }, [fetchCards, userData]);
 
   // Filter cards based on search term
   useEffect(() => {

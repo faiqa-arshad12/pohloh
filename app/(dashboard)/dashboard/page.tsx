@@ -86,24 +86,22 @@ const Page = () => {
 
   useEffect(() => {
     const fetchCards = async () => {
-      if (!isUserLoaded || !user?.id) return;
 
       try {
         setIsLoading(true);
-
-        if (!userData?.orgId) {
+        if (!userData?.org_id) {
           setCards([]);
           return;
         }
         const cardsRes = await fetch(
-          `${apiUrl}/cards/organizations/${userData?.orgId}`,
+          `${apiUrl}/cards/organizations/${userData?.org_id}`,
           {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             // credentials: "include",
             body: JSON.stringify({
-              role: userData.user?.role,
-              userId: userData.user?.id,
+              role: userData?.role,
+              userId: userData?.id,
             }),
           }
         );
@@ -137,9 +135,12 @@ const Page = () => {
         setIsLoading(false);
       }
     };
+if(userData)
+{
+  fetchCards();
 
-    fetchCards();
-  }, [user, isUserLoaded]);
+}
+  }, [userData]);
 
   const generateMonths = (count: number) => {
     const months = [];
