@@ -61,7 +61,7 @@ export function AnnouncementCard({userData}: AnnouncementCardProps) {
         const response = await fetch(url, {
           method: "GET",
           headers: {"Content-Type": "application/json"},
-          credentials: "include",
+          // credentials: "include",
         });
 
         if (!response.ok) throw new Error("Failed to fetch announcements");

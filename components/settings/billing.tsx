@@ -328,7 +328,7 @@ export default function Billing() {
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include",
+            // credentials: "include",
           }
         );
 

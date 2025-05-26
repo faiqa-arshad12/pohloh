@@ -230,7 +230,7 @@ const EditProfileModal = ({
             "Content-Type": "application/json",
           },
           body: JSON.stringify(updatedUserData),
-          credentials: "include",
+          // // credentials: "include",
         }
       );
 
@@ -275,7 +275,7 @@ const EditProfileModal = ({
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        // // credentials: "include",
       });
 
       if (!response.ok) {
@@ -311,7 +311,7 @@ const EditProfileModal = ({
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        // // credentials: "include",
       });
 
       if (!response.ok) {
@@ -343,7 +343,7 @@ const EditProfileModal = ({
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -386,7 +386,7 @@ const EditProfileModal = ({
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -421,7 +421,7 @@ const EditProfileModal = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({team_id: currentTeamId}),
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -458,7 +458,7 @@ const EditProfileModal = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({team_id: null}),
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) {

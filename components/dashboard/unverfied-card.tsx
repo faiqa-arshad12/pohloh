@@ -115,7 +115,7 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ is_verified: true }),
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) {

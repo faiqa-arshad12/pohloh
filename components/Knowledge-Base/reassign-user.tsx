@@ -56,7 +56,7 @@ export function ReassignUserModal({
         {
           method: "GET",
           headers: {"Content-Type": "application/json"},
-          credentials: "include",
+          // // credentials: "include",
         }
       );
 
@@ -82,7 +82,7 @@ export function ReassignUserModal({
           method: "PUT",
           headers: {"Content-Type": "application/json"},
           body: JSON.stringify({card_owner_id: userId}),
-          credentials: "include",
+          // // credentials: "include",
         });
 
         setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));

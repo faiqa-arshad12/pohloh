@@ -40,7 +40,7 @@ export default function ClientLayout({children}: {children: React.ReactNode}) {
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include",
+            // credentials: "include",
           }
         );
 

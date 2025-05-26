@@ -126,7 +126,7 @@ export default function AnalyticsCard({ cardId }: AnalyticsCardProps) {
       const res = await fetch(`${apiUrl}/cards/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        // credentials: "include",
         body: JSON.stringify({
           ...cardData,
         }),
@@ -215,7 +215,7 @@ export default function AnalyticsCard({ cardId }: AnalyticsCardProps) {
       const res = await fetch(`${apiUrl}/cards/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        // credentials: "include",
       })
 
       if (!res.ok) {
@@ -242,7 +242,7 @@ export default function AnalyticsCard({ cardId }: AnalyticsCardProps) {
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include",
+            // credentials: "include",
           })
 
           if (!response.ok) {
@@ -256,7 +256,7 @@ export default function AnalyticsCard({ cardId }: AnalyticsCardProps) {
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include",
+            // credentials: "include",
             body: JSON.stringify({
               role: userData.user.role,
               userId: userData.user.id,
@@ -325,7 +325,7 @@ export default function AnalyticsCard({ cardId }: AnalyticsCardProps) {
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include",
+            // credentials: "include",
           })
 
           if (!response.ok) {
@@ -341,7 +341,7 @@ export default function AnalyticsCard({ cardId }: AnalyticsCardProps) {
               headers: {
                 "Content-Type": "application/json",
               },
-              credentials: "include",
+              // credentials: "include",
             })
 
             if (subcategoryResponse.ok) {
@@ -353,7 +353,7 @@ export default function AnalyticsCard({ cardId }: AnalyticsCardProps) {
                 headers: {
                   "Content-Type": "application/json",
                 },
-                credentials: "include",
+                // credentials: "include",
               })
 
               if (teamResponse.ok) {

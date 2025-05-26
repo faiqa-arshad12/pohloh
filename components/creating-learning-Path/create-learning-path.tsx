@@ -116,7 +116,7 @@ export default function LearningPathPage() {
         const userResponse = await fetch(`${apiUrl}/users/${user.id}`, {
           method: "GET",
           headers: {"Content-Type": "application/json"},
-          credentials: "include",
+          // credentials: "include",
         });
 
         if (!userResponse.ok) {
@@ -138,12 +138,12 @@ export default function LearningPathPage() {
           fetch(`${apiUrl}/users/organizations/${userOrgId}`, {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-            credentials: "include",
+            // credentials: "include",
           }),
           fetch(`${apiUrl}/teams/organizations/${userOrgId}`, {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-            credentials: "include",
+            // credentials: "include",
           }),
         ]);
 
@@ -189,7 +189,7 @@ export default function LearningPathPage() {
       const pathResponse = await fetch(`${apiUrl}/learning-paths/${id}`, {
         method: "GET",
         headers: {"Content-Type": "application/json"},
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!pathResponse.ok) {
@@ -458,7 +458,7 @@ export default function LearningPathPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        // credentials: "include",
         body: JSON.stringify(learningPathData),
       });
 
@@ -518,7 +518,7 @@ export default function LearningPathPage() {
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include",
+          // credentials: "include",
           body: JSON.stringify(learningPathData),
         }
       );
@@ -574,7 +574,7 @@ export default function LearningPathPage() {
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include",
+          // credentials: "include",
           body: JSON.stringify(learningPathData),
         }
       );

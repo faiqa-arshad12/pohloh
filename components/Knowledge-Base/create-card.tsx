@@ -281,7 +281,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
       const response = await fetch(`${apiUrl}/cards/${cardId}`, {
         method: "GET",
         headers: {"Content-Type": "application/json"},
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) throw new Error("Failed to fetch card data");
@@ -321,7 +321,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           const response = await fetch(`${apiUrl}/cards/users/${cardId}`, {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-            credentials: "include",
+            // credentials: "include",
           });
 
           if (!response.ok) throw new Error("Failed to fetch card data");
@@ -371,7 +371,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         const userResponse = await fetch(`${apiUrl}/users/${user.id}`, {
           method: "GET",
           headers: {"Content-Type": "application/json"},
-          credentials: "include",
+          // credentials: "include",
         });
 
         if (!userResponse.ok) throw new Error("Failed to fetch user details");
@@ -390,12 +390,12 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           fetch(`${apiUrl}/users/organizations/${orgId}`, {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-            credentials: "include",
+            // credentials: "include",
           }),
           fetch(`${apiUrl}/teams/organizations/${orgId}`, {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-            credentials: "include",
+            // credentials: "include",
           }),
         ]);
 
@@ -459,7 +459,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-            credentials: "include",
+            // credentials: "include",
           }
         );
 
@@ -533,7 +533,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         method,
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(cardData),
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -607,7 +607,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(cardData),
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) {

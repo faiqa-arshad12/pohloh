@@ -82,7 +82,7 @@ export default function Account() {
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include",
+            // credentials: "include",
           }
         );
 
@@ -119,7 +119,7 @@ export default function Account() {
     }
   };
 
-  
+
   const [dailyQuestions, setDailyQuestions] = useState<string>("0");
   const [weeklyCards, setWeeklyCards] = useState<string>("0");
   const [workDays, setWorkDays] = useState<WorkDaysState>(defaultWorkDays);
@@ -172,7 +172,7 @@ export default function Account() {
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include",
+          // credentials: "include",
         });
 
         if (!res.ok) {
@@ -304,7 +304,7 @@ export default function Account() {
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include",
+            // credentials: "include",
           }
         );
 
@@ -334,7 +334,7 @@ export default function Account() {
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include",
+            // credentials: "include",
           }
         );
 
@@ -468,7 +468,7 @@ export default function Account() {
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include",
+          // credentials: "include",
         });
 
         if (!res.ok) {

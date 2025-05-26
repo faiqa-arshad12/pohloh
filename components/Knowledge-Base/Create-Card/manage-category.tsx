@@ -173,7 +173,7 @@ export function ManageCategory() {
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include",
+          // credentials: "include",
         }
       );
 
@@ -189,7 +189,7 @@ export function ManageCategory() {
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include",
+          // credentials: "include",
           body: JSON.stringify({
             role: userData.user.role,
             userId: userData.user.id,
@@ -277,7 +277,7 @@ export function ManageCategory() {
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include",
+          // credentials: "include",
           body: JSON.stringify({
             name: newItemName,
             org_id: userDetails.user.organizations?.id,
@@ -340,7 +340,7 @@ export function ManageCategory() {
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include",
+          // credentials: "include",
           body: JSON.stringify({
             name: newItemName,
             team_id: selectedCategoryId,
@@ -393,7 +393,7 @@ export function ManageCategory() {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) throw new Error(`Failed to delete ${itemToDelete.type}`);
@@ -460,7 +460,7 @@ export function ManageCategory() {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        // credentials: "include",
         body: JSON.stringify(body),
       });
 

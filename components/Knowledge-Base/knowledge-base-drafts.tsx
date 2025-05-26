@@ -90,7 +90,7 @@ export function KnowledgeBaseDraft({
       const cardsRes = await fetch(`${apiUrl}/cards/organizations/${userData?.orgId}`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        credentials: "include",
+        // credentials: "include",
         body: JSON.stringify({
           role: userData.user?.role,
           userId: userData.user?.id,
@@ -177,7 +177,7 @@ export function KnowledgeBaseDraft({
         const res = await fetch(`${apiUrl}/api/cards/${id}`, {
           method: "PUT",
           headers: {"Content-Type": "application/json"},
-          credentials: "include",
+          // credentials: "include",
           body: JSON.stringify({
             card_status: CardStatus.PUBLISH,
             is_verified: true,
@@ -195,7 +195,7 @@ export function KnowledgeBaseDraft({
         const res = await fetch(`${apiUrl}/cards/${id}`, {
           method: "DELETE",
           headers: {"Content-Type": "application/json"},
-          credentials: "include",
+          // credentials: "include",
         });
 
         if (res.ok) {

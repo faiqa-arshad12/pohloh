@@ -19,7 +19,7 @@ export const useUserHook = () => {
         const response = await fetch(`${apiUrl}/users/${user?.id}`, {
           method: "GET",
           headers: {"Content-Type": "application/json"},
-          credentials: "include",
+          // credentials: "include",
         });
 
         if (!response.ok) throw new Error("Failed to fetch user");

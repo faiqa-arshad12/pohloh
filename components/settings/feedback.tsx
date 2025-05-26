@@ -70,7 +70,7 @@ const Feedback: React.FC = () => {
     try {
       setIsSubmitting(true);
 
-      const response = await fetch(`${apiUrl}/feebacks`, {
+      const response = await fetch(`${apiUrl}/feedbacks`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

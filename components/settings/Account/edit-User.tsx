@@ -110,7 +110,7 @@ export function EditUserModal({
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        // // credentials: "include",
       });
 
       if (!response.ok) {
@@ -147,7 +147,7 @@ export function EditUserModal({
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -180,7 +180,7 @@ export function EditUserModal({
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -224,7 +224,7 @@ export function EditUserModal({
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -259,7 +259,7 @@ export function EditUserModal({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({team_id: currentTeamId}),
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -296,7 +296,7 @@ export function EditUserModal({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({team_id: null}),
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -387,7 +387,7 @@ export function EditUserModal({
           "Content-Type": "application/json",
         },
         body: JSON.stringify(values),
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -412,7 +412,7 @@ export function EditUserModal({
             "Content-Type": "application/json",
           },
           body: JSON.stringify(teamData),
-          credentials: "include",
+          // credentials: "include",
         });
 
         if (!teamResponse.ok) {

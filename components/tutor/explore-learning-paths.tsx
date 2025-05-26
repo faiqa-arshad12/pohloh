@@ -202,7 +202,7 @@ export default function ExploreLearningPath() {
       const response = await fetch(`${apiUrl}/learning-paths/users`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        credentials: "include",
+        // credentials: "include",
         body: JSON.stringify({
           user_id: userData.id,
           learning_path_id: id,
@@ -254,7 +254,7 @@ export default function ExploreLearningPath() {
         const response = await fetch(`${apiUrl}/learning-paths/${id}`, {
           method: "delete",
           headers: {"Content-Type": "application/json"},
-          credentials: "include",
+          // credentials: "include",
         });
         ShowToast(`Successfully deleted!`);
         fetchData();

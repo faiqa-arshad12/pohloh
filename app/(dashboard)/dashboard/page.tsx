@@ -100,7 +100,7 @@ const Page = () => {
           {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            credentials: "include",
+            // credentials: "include",
             body: JSON.stringify({
               role: userData.user?.role,
               userId: userData.user?.id,

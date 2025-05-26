@@ -91,7 +91,7 @@ export default function CardDetails() {
           {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-            credentials: "include",
+            // // // credentials: "include",
           }
         );
 
@@ -113,7 +113,7 @@ export default function CardDetails() {
           {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-            credentials: "include",
+            // // // credentials: "include",
           }
         );
 
