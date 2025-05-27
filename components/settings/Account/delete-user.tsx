@@ -9,7 +9,7 @@ import {Button} from "@/components/ui/button";
 import {ShowToast} from "@/components/shared/show-toast";
 import Loader from "@/components/shared/loader";
 import {AlertTriangle} from "lucide-react";
-import {deleetUsr} from "@/actions/auth";
+import {deleteUser} from "@/actions/auth";
 
 interface DeleteUserModalProps {
   open: boolean;
@@ -26,13 +26,27 @@ export function DeleteUserModal({
 
   // Handle user deletion
   const handleDeleteUser = async () => {
+    if (!UserDetails?.user_id) {
+      ShowToast("Invalid user ID.", "error");
+      return;
+    }
+
     setIsDeleting(true);
     try {
-      await deleetUsr(UserDetails.user_id);
-      ShowToast("User deleted successfully", "success");
+      const res = await deleteUser(UserDetails.user_id);
+      console.log("Delete Response:", res);
+      console.log("User Details:", UserDetails);
+      if (res.success) {
+        ShowToast("User deleted successfully", "success");
+        onOpenChange(false);
+      } else {
+        ShowToast(res.message || "Failed to delete user", "error");
+      }
+
+      // ShowToast("User deleted successfully", "success");
       onOpenChange(false);
-    } catch (error) {
-      console.error("Error deleting user:", error);
+    } catch (error: any) {
+      console.error("Error deleting user:", error?.message || error);
       ShowToast("Failed to delete user. Please try again.", "error");
     } finally {
       setIsDeleting(false);

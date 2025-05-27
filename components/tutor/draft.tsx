@@ -331,9 +331,9 @@ export default function Drafts() {
             <Button
               variant="outline"
               size="icon"
-              className="bg-[#f0d568] hover:bg-[#e0c558] text-black rounded-md cursor-pointer"
+              className="bg-[#f0d568] hover:bg-[#e0c558] text-black rounded-md cursor-pointer w-[51px] h-[50px]"
             >
-              <Funnel className="h-[24px] w-[24px]" />
+              <Funnel className=" " />
             </Button>
           </div>
         </div>

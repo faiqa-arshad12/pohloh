@@ -366,7 +366,7 @@ export default function ExploreLearningPath() {
             <Button
               variant="outline"
               size="icon"
-              className="bg-[#f0d568] hover:bg-[#e0c558] text-black rounded-md"
+              className="bg-[#f0d568] hover:bg-[#e0c558] text-black rounded-md w-[51px] h-[50px] cursor-pointer"
             >
               <SlidersHorizontal size={16} />
             </Button>

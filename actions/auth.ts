@@ -1,7 +1,7 @@
 "use server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { supabase } from "@/supabase/client";
-import { createClerkClient } from "@clerk/backend";
+import {auth, clerkClient} from "@clerk/nextjs/server";
+import {supabase} from "@/supabase/client";
+import {createClerkClient} from "@clerk/backend";
 
 // export async function inviteUser(email: string, role: string, org_id: string) {
 //     try {
@@ -35,12 +35,12 @@ export async function setUserRole(id: string, role: string) {
 
   try {
     const res = await client.users.updateUser(id, {
-      unsafeMetadata: { role: role },
+      unsafeMetadata: {role: role},
     });
-    return { message: res.unsafeMetadata };
+    return {message: res.unsafeMetadata};
   } catch (err) {
     console.log(err, "err");
-    return { message: err };
+    return {message: err};
   }
 }
 export async function removeRole(formData: FormData) {
@@ -50,18 +50,18 @@ export async function removeRole(formData: FormData) {
     const res = await client.users.updateUserMetadata(
       formData.get("id") as string,
       {
-        unsafeMetadata: { role: null },
+        unsafeMetadata: {role: null},
       }
     );
-    return { message: res.publicMetadata };
+    return {message: res.publicMetadata};
   } catch (err) {
-    return { message: err };
+    return {message: err};
   }
 }
 
 export async function inviteUser(email: string, role: string, user_id: string) {
   try {
-    const { userId } = await auth();
+    const {userId} = await auth();
     if (userId) {
       const user = await getUserDetails(userId);
       if (user) {
@@ -70,7 +70,7 @@ export async function inviteUser(email: string, role: string, user_id: string) {
         const invitation = await client.invitations.createInvitation({
           emailAddress: email,
           // redirectUrl:''
-          redirectUrl: "http://localhost:3000/signup-link",
+          redirectUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/signup`,
 
           publicMetadata: {
             role,
@@ -91,7 +91,7 @@ export async function inviteUser(email: string, role: string, user_id: string) {
     }
   } catch (error) {
     console.error("Error inviting user:", error);
-    return { success: false, error };
+    return {success: false, error};
   }
 }
 
@@ -132,7 +132,7 @@ export async function getUserDetails(userId: string) {
       throw new Error("Not authenticated");
     }
 
-    const { data, error } = await supabase
+    const {data, error} = await supabase
       .from("users")
 
       .select(
@@ -165,9 +165,9 @@ export async function getTotalUser(orgId: string) {
       throw new Error("Not authenticated");
     }
 
-    const { count, error } = await supabase
+    const {count, error} = await supabase
       .from("users")
-      .select("*", { count: "exact", head: true })
+      .select("*", {count: "exact", head: true})
       .eq("org_id", orgId);
 
     if (error) {
@@ -181,19 +181,22 @@ export async function getTotalUser(orgId: string) {
     };
   }
 }
-export async function deleetUsr(user_id: string) {
+export async function deleteUser(user_id: string): Promise<{ success?: boolean; message?: string }> {
   try {
     if (!user_id) {
-      throw new Error("User is not defined");
+      throw new Error("User ID is not defined.");
     }
 
     const client = await clerkClient();
+    const resp = await client.users.deleteUser(user_id);
+    console.log("Delete response:", resp);
 
-    await client.users.deleteUser(user_id);
-
-    return { success: "true" };
-  } catch (err) {
-    return { message: err };
+    return { success: true };
+  } catch (err: any) {
+    console.error("Error in deleteUser:", err);
+    return {
+      success: false,
+      message: err?.message || "An unexpected error occurred while deleting the user.",
+    };
   }
-
 }
