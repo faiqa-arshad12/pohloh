@@ -31,7 +31,7 @@ type UnverifiedCard = {
     last_name: string;
     profile_picture: string;
   };
-  verificationperiod?:Date|string
+  verificationperiod?: Date | string;
 };
 
 const filters = ["Monthly", "Weekly", "Yearly"];
@@ -51,9 +51,7 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
 
   useEffect(() => {
     if (cards) {
-      const unverifiedCards = cards.filter(
-        (card) => !card.is_verified
-      );
+      const unverifiedCards = cards.filter((card) => !card.is_verified);
 
       const now = new Date();
       let filtered = unverifiedCards;
@@ -114,7 +112,7 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ is_verified: true }),
+        body: JSON.stringify({is_verified: true}),
         // credentials: "include",
       });
 
@@ -128,7 +126,6 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
       const data = await response.json();
       ShowToast("Card verified successfully!");
       return data;
-
     } catch (error: any) {
       console.error("Error verifying card:", error.message || error);
       ShowToast(
@@ -141,7 +138,6 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
       setCardId(null);
     }
   };
-
 
   return (
     <div
@@ -244,6 +240,7 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
           onClick={() => {
             router.push("/knowledge-base/cards?verified=false");
           }}
+          disabled={filteredCards.length === 0}
         >
           View All ({filteredCards.length})
         </Button>
