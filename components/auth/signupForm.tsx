@@ -142,7 +142,7 @@ export function SignupForm() {
       // await setActive({session: result.createdSessionId});
       const verifyemail = await signUp.prepareEmailAddressVerification({
         strategy: "email_link",
-        redirectUrl: `http://localhost:3000/owner/onboarding?role=${role}`, // replace this with your actual redirect URL
+        redirectUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/owner/onboarding?role=${role}`, // replace this with your actual redirect URL
       });
       // signUp.update({
       //   unsafeMetadata: {
