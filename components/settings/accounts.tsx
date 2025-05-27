@@ -603,7 +603,7 @@ export default function Account() {
                             bodyClassName="py-3 px-4 font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0] "
                             cellClassName="border-t border-[#E0EAF5] py-3 px-4 align-middle whitespace-nowrap "
                             itemsPerPageOptions={[5, 10, 20, 100]}
-                            defaultItemsPerPage={10}
+                            defaultItemsPerPage={5}
                             renderCell={(
                               column: string,
                               row: {[x: string]: any}
