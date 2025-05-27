@@ -60,7 +60,7 @@ const OnboardingPage = () => {
   }
 
   return (
-    <div className="h-screen w-full relative">
+    <div className="w-full relative">
       <div className="absolute top-0 left-0 z-50 flex items-center px-4 py-3 w-full">
         <div className="mr-2 rounded-full p-2">
           <img src="/file2.png" alt="Logo" className="h-8 w-8" />

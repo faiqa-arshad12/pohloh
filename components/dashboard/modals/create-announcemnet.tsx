@@ -46,12 +46,16 @@ type RenewSubscriptionProps = {
 const formSchema = z.object({
   title: z
     .string()
-    .min(4, "Title is required")
-    .max(60, "Title must be less than 100 characters"),
+    .min(3, "Title must be at least 3 characters")
+    .max(30, "Title must be less than 30 characters")
+    .regex(
+      /^[a-zA-Z0-9\s\-_]+$/,
+      "Title can only contain letters, numbers, spaces, hyphens and underscores"
+    ),
   description: z
     .string()
-    .min(1, "Description is required")
-    .max(500, "Description must be less than 500 characters"),
+    .min(10, "Description must be at least 10 characters")
+    .max(300, "Description must be less than 300 characters"),
   teams: z.array(z.string()).min(1, "Please select at least one team"),
   expiry_date: z
     .string()
@@ -62,7 +66,7 @@ const formSchema = z.object({
       today.setHours(0, 0, 0, 0);
       return selectedDate >= today;
     }, "Expiry date must be today or in the future"),
-  card_id: z.string().optional(), // Added validation for the card selection
+  card_id: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -135,7 +139,7 @@ function CreateAnnouncement({
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include",
+          // credentials: "include",
         });
 
         if (!userResponse.ok) {
@@ -157,7 +161,7 @@ function CreateAnnouncement({
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include",
+            // credentials: "include",
             body: JSON.stringify({
               role: userDataa.user.role,
               userId: userDataa.user.id,
@@ -257,7 +261,7 @@ function CreateAnnouncement({
           "Content-Type": "application/json",
         },
         body: JSON.stringify(cardData),
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -390,7 +394,7 @@ function CreateAnnouncement({
                     <Textarea
                       {...field}
                       placeholder="Enter Description"
-                      className="w-full min-h-[80px] rounded-md border border-[#FFFFFF14] bg-[#FFFFFF14] text-white font-urbanist font-semibold"
+                      className="w-full min-h-[125px] rounded-md border border-[#FFFFFF14] bg-[#FFFFFF14] text-white font-urbanist font-semibold"
                       required
                     />
                   </FormControl>

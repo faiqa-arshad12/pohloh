@@ -172,7 +172,7 @@ export default function Drafts() {
         const response = await fetch(`${apiUrl}/learning-paths/${id}`, {
           method: "delete",
           headers: {"Content-Type": "application/json"},
-          credentials: "include",
+          // credentials: "include",
         });
         ShowToast(`Successfully deleted!`);
         fetchData();

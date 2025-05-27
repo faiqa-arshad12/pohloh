@@ -196,11 +196,11 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
                     <div className="bg-[#F9DB6F] p-2 rounded-full">
                       <Info size={16} className="text-black" />
                     </div>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col">
                       <h3 className="text-[20px] font-semibold">
                         {card.title}
                       </h3>
-                      <span className="text-[11px] text-white ml-1">
+                      <span className="text-[11px] text-white">
                         {card?.category_id?.name}
                       </span>
                     </div>

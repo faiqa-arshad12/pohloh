@@ -23,10 +23,9 @@ import Image from "next/image";
 import {InviteUserModal} from "./Account/Invite-User";
 import {EditUserModal} from "./Account/edit-User";
 import {useRole} from "../ui/Context/UserContext";
-import {apiUrl, DEPARTMENTS, organizations} from "@/utils/constant";
+import {apiUrl} from "@/utils/constant";
 import {ShowToast} from "../shared/show-toast";
 import Loader from "../shared/loader";
-import {supabase} from "@/supabase/client";
 import {defaultWorkDays, Weekday, WorkDaysState, User} from "@/types/types";
 import {DeleteUserModal} from "./Account/delete-user";
 import {useRouter, useSearchParams} from "next/navigation";
@@ -48,11 +47,9 @@ export default function Account() {
   const [openEdit, setOpenEdit] = useState(false);
   const [openEditlead, setOpenEditlead] = useState(false);
   const [steps, setStep] = useState<number>();
-  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [userDetails, setUserDetails] = useState<any | null>(null);
   const [loading, setloading] = useState<boolean>(false);
 
-  const [org_loading, setOrg_loading] = useState<boolean>(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [isInviteLoading, setIsInviteLoading] = useState(false);
   const [isLoadeding, setIsLoading] = useState(false);
@@ -119,7 +116,6 @@ export default function Account() {
     }
   };
 
-
   const [dailyQuestions, setDailyQuestions] = useState<string>("0");
   const [weeklyCards, setWeeklyCards] = useState<string>("0");
   const [workDays, setWorkDays] = useState<WorkDaysState>(defaultWorkDays);
@@ -148,7 +144,7 @@ export default function Account() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(updatedUserData),
-        credentials: "include",
+        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -212,6 +208,7 @@ export default function Account() {
       fetchUserDetails();
     }
   }, [user?.id, isLoaded]);
+
   const columns = [
     {Header: "Name", accessor: "user_name"},
     {Header: "Seat Type", accessor: "role"},
@@ -316,6 +313,7 @@ export default function Account() {
         }
 
         const result = await response.json();
+        console.log(result, "resu");
         setUsers(result.data);
       } catch (err) {
         console.error("Error fetching user:", err);
@@ -357,107 +355,11 @@ export default function Account() {
     if (userDetails && userDetails?.role === "owner") fetchUsers();
     else if (userDetails && userDetails.role === "admin") fetchUsersByTeam();
   }, [user, userDetails]);
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFileToUpload(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
-  const removeImage = () => {
-    setProfileImage("/organization-logo.png");
-  };
   const getNestedValue = (obj: any, path: string) => {
     return path.split(".").reduce((prev, curr) => {
       return prev ? prev[curr] : null;
     }, obj);
-  };
-  const uploadFileToSupabase = async (file: File): Promise<string | null> => {
-    try {
-      if (!file || !user) return null;
-
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `profile-pictures/${fileName}`;
-
-      const {data, error} = await supabase.storage
-        .from("images")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (error) {
-        console.error("Error uploading file:", error);
-        ShowToast("Failed to upload profile picture", "error");
-        return null;
-      }
-
-      const {
-        data: {publicUrl},
-      } = supabase.storage.from("images").getPublicUrl(filePath);
-      return publicUrl;
-    } catch (error) {
-      console.error("Error in file upload:", error);
-      return null;
-    }
-  };
-
-  const submitOrganizationDetails = async () => {
-    try {
-      setOrg_loading(true);
-      console.log("sdhjd");
-      // ✅ Get form values
-      if (!user) return;
-      // const customerId = user?.id;
-
-      let profilePictureUrl = profileImage || "";
-
-      if (fileToUpload) {
-        const uploadedUrl = await uploadFileToSupabase(fileToUpload);
-        if (uploadedUrl) {
-          profilePictureUrl = uploadedUrl;
-        }
-      }
-
-      const payload = {
-        name: organizationName, // form field
-        departments: selectedDepartments, // form field (array)
-        num_of_seat: seats, // form field
-        // customer_id: customerId,
-        org_picture: profilePictureUrl,
-      };
-
-      const response = await fetch(
-        `${apiUrl}/${organizations}/${userDetails?.organizations.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-          redirect: "follow",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const result = await response.json();
-      ShowToast("organization data has been updated successfully!");
-      setOrg_loading(false);
-      return result; // Return the result if needed
-    } catch (error) {
-      setOrg_loading(false);
-      ShowToast("An error occured with updating organization", "error");
-      console.error("Error creating organization:", error);
-    }
   };
 
   useEffect(() => {
@@ -690,7 +592,7 @@ export default function Account() {
 
                         <div className="overflow-x-auto">
                           <Table
-                            columns={columns.slice(0, -1)} // Exclude the Action column as we're using renderActions
+                            columns={columns.slice(0, -1)}
                             data={users}
                             renderActions={(row) =>
                               renderRowActions(row as User)
@@ -700,7 +602,8 @@ export default function Account() {
                             headerClassName="bg-[#F9DB6F] text-black text-left font-urbanist font-medium text-[16px] leading-[21.9px] tracking-[0]"
                             bodyClassName="py-3 px-4 font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0] "
                             cellClassName="border-t border-[#E0EAF5] py-3 px-4 align-middle whitespace-nowrap "
-                            isLoading={userDataLoading}
+                            itemsPerPageOptions={[5, 10, 20, 100]}
+                            defaultItemsPerPage={10}
                             renderCell={(
                               column: string,
                               row: {[x: string]: any}

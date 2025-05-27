@@ -74,7 +74,6 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
   const [activeSubcategory, setActiveSubcategory] =
     useState<Subcategory | null>(null);
   const [activeItem, setActiveItem] = useState<KnowledgeCard | null>(null);
-  console.log(activeItem, "sksjk");
   const [expandedSubcategories, setExpandedSubcategories] = useState<
     Record<string, boolean>
   >({});
@@ -91,7 +90,6 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [card, setCard] = useState<string | null>(null);
   const [canEdit, setCanEdit] = useState(false);
-  const [announcemnetCard, setAnnouncementCard] = useState<string | null>(null);
 
   const [isOpen, setIsOpen] = useState(false);
   const [openModal, setOpenModal] = useState(false);
@@ -146,7 +144,12 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
         throw new Error("Failed to save card");
       }
 
-      ShowToast("Card saved successfully");
+      ShowToast(
+        is_verified ? "Card verified successfully" : "Card Saved successfully"
+      );
+      // setActiveItem(null);
+      // fetchData();
+      // if (!is_verified) router.push("/dashboard");
     } catch (err) {
       console.error("Error saving card:", err);
       ShowToast("Something went wrong while saving the card", "error");
@@ -246,65 +249,62 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
       setIsCardDeleting(false);
     }
   };
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      if (user) {
+        const response = await fetch(`${apiUrl}/users/${user?.id}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // credentials: "include",
+        });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        if (user) {
-          const response = await fetch(`${apiUrl}/users/${user?.id}`, {
-            method: "GET",
+        if (!response.ok) {
+          throw new Error("Failed to fetch user details");
+        }
+
+        const userData = await response.json();
+        setUserDetails(userData);
+        const res = await fetch(
+          `${apiUrl}/teams/organizations/categories/${userData.user.organizations?.id}`,
+          {
+            method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             // credentials: "include",
-          });
-
-          if (!response.ok) {
-            throw new Error("Failed to fetch user details");
+            body: JSON.stringify({
+              role: userData.user.role,
+              userId: userData.user.id,
+            }),
           }
+        );
 
-          const userData = await response.json();
-          setUserDetails(userData);
-          const res = await fetch(
-            `${apiUrl}/teams/organizations/categories/${userData.user.organizations?.id}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              // credentials: "include",
-              body: JSON.stringify({
-                role: userData.user.role,
-                userId: userData.user.id,
-              }),
-            }
-          );
-
-          if (!res.ok) {
-            throw new Error("Failed to fetch teams");
-          }
-
-          const mockData = await res.json();
-          console.log(mockData, "reseponse");
-
-          setTeams(mockData.teams || []);
-
-          const initialExpandedState: Record<string, boolean> = {};
-          mockData.teams?.forEach((team: Team) => {
-            team.subcategories?.forEach((subcategory: Subcategory) => {
-              initialExpandedState[subcategory.id] = false;
-            });
-          });
-          setExpandedSubcategories(initialExpandedState);
+        if (!res.ok) {
+          throw new Error("Failed to fetch teams");
         }
-      } catch (err) {
-        console.error("Error fetching data:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
+        const mockData = await res.json();
+
+        setTeams(mockData.teams || []);
+
+        const initialExpandedState: Record<string, boolean> = {};
+        mockData.teams?.forEach((team: Team) => {
+          team.subcategories?.forEach((subcategory: Subcategory) => {
+            initialExpandedState[subcategory.id] = false;
+          });
+        });
+        setExpandedSubcategories(initialExpandedState);
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  useEffect(() => {
     if (isUserLoaded) {
       fetchData();
     }
@@ -648,9 +648,9 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
         )}
       </div>
 
-      <div className="h-full flex flex-1 gap-[32px]">
+      <div className="h-full flex flex-col lg:flex-row flex-1 gap-[32px]">
         {/* Left Sidebar */}
-        <div className="w-auto h-[633px] flex flex-col">
+        <div className="w-full lg:w-auto h-auto lg:h-[633px] flex flex-col">
           {/* Top Button */}
           <div className="py-2">
             <button
@@ -717,7 +717,7 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
 
         {/* Middle Sidebar */}
         {activeTeam ? (
-          <div className="w-full max-w-xs rounded-[20px] gap-[24px] pt-[30px] pb-[54px] px-[24px] bg-[#191919] justify-center items-center max-h-[80vh] overflow-auto">
+          <div className="w-full lg:max-w-xs rounded-[20px] gap-[24px] pt-[30px] pb-[54px] px-[24px] bg-[#191919] justify-center items-center max-h-[80vh] overflow-auto">
             {activeTeam.subcategories && activeTeam.subcategories.length > 0 ? (
               activeTeam.subcategories.map((subcategory) => (
                 <div key={subcategory.id} className="flex flex-col gap-1">
@@ -731,34 +731,20 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                   {expandedSubcategories[subcategory.id] &&
                     subcategory.knowledge_card &&
                     subcategory.knowledge_card.length > 0 && (
-                      <div className="mx-5 mt-2 space-y-3 max-h-[450px] overflow-auto pr-2">
+                      <div className="mx-5 mt-2 space-y-3 max-h-[450px] overflow-auto flex flex-col items-center">
+                        {" "}
                         {subcategory.knowledge_card.map((item) => (
                           <div
                             key={item.id}
-                            className="flex items-center gap-2"
+                            className="w-full max-w-[250px] flex items-center justify-center gap-2"
                           >
-                            {/* {card === "true" && (
-                              <div
-                                className="cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  toggleCardSelection(item)
-                                }}
-                              >
-                                {isCardSelected(item.id) ? (
-                                  <CheckCircle className="h-5 w-5 text-[#F9DB6F]" />
-                                ) : (
-                                  <Circle className="h-5 w-5 text-white" />
-                                )}
-                              </div>
-                            )} */}
                             <div className="flex-1">
                               <SubcategoryItem
                                 label={item.title}
                                 active={activeItem?.id === item.id}
                                 highlight={
                                   card === "true"
-                                    ? card === "true" && isCardSelected(item.id)
+                                    ? isCardSelected(item.id)
                                     : activeItem?.id === item.id
                                 }
                                 onClick={() => handleItemClick(item)}
@@ -985,11 +971,11 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                 {activeSubcategory?.name}
               </h3>
 
-              <div className="font-urbanist font-medium text-[20px] leading-[40px] align-middle flex-grow overflow-auto">
+              <div className="font-urbanist font-medium text-[20px] leading-[40px] align-middle flex-grow overflow-auto h-[300px]">
                 <p className="mb-4">{stripHtml(activeItem.content)}</p>
               </div>
 
-              <div className="mt-auto py-4 ">
+              <div className="mt-auto pt-4 ">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <FileText className="h-[40px] w-[40px]" />
@@ -997,11 +983,16 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                       {activeItem.title}.pdf
                     </span>
                   </div>
-                  <div>
+                  <div className="p-2">
+                    {/* <Tag
+                      initialTags={activeItem.tags || []}
+                      onTagsChange={() => {}}
+                      className="w-full"
+                    /> */}
                     <div
                       className={`w-full max-w-xl relative h-[24px] cursor-pointer p-2`}
                     >
-                      <div className="flex flex-wrap items-start rounded-[6px] px-3 py-2 bg-[#FFFFFF0F] gap-2">
+                      <div className="flex flex-wrap items-start rounded-[6px] px-3 py-2 bg-[#FFFFFF0F] gap-2 overflow-auto h-[50px] !max-w-xl">
                         {activeItem?.tags?.map((tag, index) => (
                           <div
                             key={index}
@@ -1014,8 +1005,9 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                               type="button"
                               variant="ghost"
                               size="icon"
-                              disabled
                               className="w-4 h-4 ml-1 p-0 text-black text-right hover:bg-black/10 hover:text-black focus-visible:ring-0 focus-visible:ring-offset-0 cursor-pointer"
+                              disabled
+                              // onClick={() => removeTag(index)}
                             >
                               <X className="w-3 h-3" />
                             </Button>

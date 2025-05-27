@@ -412,7 +412,7 @@ export function ManageCategory() {
       }
 
       ShowToast(
-        `${itemToDelete.type === "category" ? "Category" : "Subcategory"} "${
+        `${itemToDelete.type === "category" ? "Department" : "Subcategory"} "${
           itemToDelete.name
         }" has been deleted successfully`
       );

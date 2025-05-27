@@ -3,9 +3,13 @@ import {Search} from "lucide-react";
 
 interface SearchInputProps {
   onChange: (value: string) => void;
+  placeholder?: string;
 }
 
-export default function SearchInput({ onChange }: SearchInputProps) {
+export default function SearchInput({
+  onChange,
+  placeholder = "Search",
+}: SearchInputProps) {
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -27,7 +31,7 @@ export default function SearchInput({ onChange }: SearchInputProps) {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search"
+            placeholder={placeholder}
             className="bg-transparent outline-none text-white placeholder-zinc-400 w-full"
             onChange={handleInputChange}
             onBlur={() => setIsOpen(false)}
@@ -38,7 +42,7 @@ export default function SearchInput({ onChange }: SearchInputProps) {
           onClick={() => setIsOpen(true)}
           className="p-4 rounded-full border border-zinc-700 hover:bg-zinc-800 transition !cusror-pointer"
         >
-          <Search className="w-5 h-5 text-white cursor-pointer"  />
+          <Search className="w-5 h-5 text-white cursor-pointer" />
         </button>
       )}
     </div>

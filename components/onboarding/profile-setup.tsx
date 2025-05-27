@@ -297,16 +297,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
       } else {
         // await submitProfile();
         // if (updateProfile) {
-        await user?.update({
-          firstName: values.first_name,
-          lastName: values.last_name,
-          unsafeMetadata: {
-            ...user.unsafeMetadata,
 
-            status: UserStatus.approved,
-            isProfileComplete: true, // New role
-          },
-        });
         const profileData = {
           user_role: values.user_role,
           first_name: values.first_name,
@@ -329,6 +320,16 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
         if (!checkResponse.ok) {
           throw new Error("Failed to create subscription");
         }
+        await user?.update({
+          firstName: values.first_name,
+          lastName: values.last_name,
+          unsafeMetadata: {
+            ...user.unsafeMetadata,
+
+            status: UserStatus.approved,
+            isProfileComplete: true, // New role
+          },
+        });
         // ShowToast("user profile has been saved!");
         // router.push("/dashboard");
       }
@@ -365,7 +366,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
   }, [form, updateProfile, initialData, profilePictureUrl, user?.id]);
 
   return (
-    <div className="flex flex-col items-center justify-center text-white p-4">
+    <div className="flex flex-col items-center justify-center text-white min-h-screen">
       <div className="w-full max-w-2xl flex flex-col items-center">
         {/* Header Section */}
         <div className="w-full max-w-2xl text-center mb-4">

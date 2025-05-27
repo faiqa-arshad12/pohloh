@@ -1,16 +1,24 @@
 "use client";
 
 import {useState, useEffect, useCallback} from "react";
-import {MoreHorizontal, FilterIcon as Funnel, Trash2} from "lucide-react";
+import {MoreHorizontal, FilterIcon as Funnel, Trash2, X} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {Button} from "@/components/ui/button";
 import Table from "@/components/ui/table";
-import {useRouter} from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 import SearchInput from "@/components/shared/search-input";
 import {useUser} from "@clerk/nextjs";
 import {apiUrl, CardStatus} from "@/utils/constant";
@@ -46,13 +54,27 @@ type KnowledgeBaseDraftProps = {
   verified?: boolean | string;
 };
 
+type FilterState = {
+  searchTerm: string;
+};
+
 export function KnowledgeBaseDraft({
   status,
   verified,
 }: KnowledgeBaseDraftProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {user} = useUser();
-  const [searchTerm, setSearchTerm] = useState("");
+
+  // Initialize filters from URL params or props
+  const getInitialFilters = () => {
+    const search = searchParams.get("search") || "";
+    return {
+      searchTerm: search,
+    };
+  };
+
+  const [filters, setFilters] = useState<FilterState>(getInitialFilters());
   const [cards, setCards] = useState<Card[]>([]);
   const [filteredCards, setFilteredCards] = useState<Card[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,22 +99,13 @@ export function KnowledgeBaseDraft({
     setIsLoading(true);
 
     try {
-      // Fetch user data
-
       if (!userData?.org_id) return;
 
-      // Fetch cards for the org
-      // const cardsRes = await fetch(`${apiUrl}/api/cards/organizations/${orgId}`, {
-      //   method: "GET",
-      //   headers: { "Content-Type": "application/json" },
-      //   credentials: "include",
-      // });
       const cardsRes = await fetch(
         `${apiUrl}/cards/organizations/${userData?.org_id}`,
         {
           method: "POST",
           headers: {"Content-Type": "application/json"},
-          // credentials: "include",
           body: JSON.stringify({
             role: userData?.role,
             userId: userData?.id,
@@ -105,23 +118,7 @@ export function KnowledgeBaseDraft({
       const {cards} = await cardsRes.json();
       let filteredCards = cards || [];
 
-      // // Role-based filtering
-      // const userId = userData.user.id;
-      // const teamId = userData.user.team_id;
-      // const role = userData.user.role;
-
-      // if (role === "user") {
-      //   filteredCards = filteredCards.filter((card:any) =>
-      //     card.card_owner_id?.id === userId
-      //   );
-      // } else if (role === "admin") {
-      //   filteredCards = filteredCards.filter((card:any) =>
-      //     card.card_owner_id?.id === userId || card.category_id?.id === teamId
-      //   );
-      // }
-      // // owner sees all, so no filtering needed
-
-      // // Additional query param-based filtering
+      // Apply initial status filter if provided
       if (status) {
         filteredCards = filteredCards.filter(
           (card: Card) => card.card_status === status
@@ -138,36 +135,70 @@ export function KnowledgeBaseDraft({
       setCards(filteredCards);
       setFilteredCards(filteredCards);
       setIsLoading(false);
-
     } catch (err) {
       console.error("Error fetching cards:", err);
       toast.error("Failed to load cards");
       setIsLoading(false);
-
     } finally {
       setIsLoading(false);
     }
   }, [user, status, verified, apiUrl, userData]);
 
   useEffect(() => {
-    if(userData)
-    fetchCards();
+    if (userData) fetchCards();
   }, [fetchCards, userData]);
 
-  // Filter cards based on search term
-  useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setFilteredCards(cards);
-    } else {
-      const filtered = cards.filter((card) =>
-        card.title.toLowerCase().includes(searchTerm.toLowerCase())
+  // Simplified filtering logic
+  const applyFilters = useCallback((cards: Card[], filters: FilterState) => {
+    return cards.filter((card) => {
+      // Search term filter (for dynamic fields)
+      const searchTermLower = filters.searchTerm.toLowerCase();
+      return (
+        filters.searchTerm === "" ||
+        card.title.toLowerCase().includes(searchTermLower) ||
+        card.category_id.name.toLowerCase().includes(searchTermLower) ||
+        card.folder_id.name.toLowerCase().includes(searchTermLower) ||
+        card.tags.some((tag) => tag.toLowerCase().includes(searchTermLower))
       );
-      setFilteredCards(filtered);
-    }
-  }, [searchTerm, cards]);
+    });
+  }, []);
 
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
+  // Update filtered cards when filters change
+  useEffect(() => {
+    if (cards.length > 0) {
+      setFilteredCards(applyFilters(cards, filters));
+    }
+  }, [cards, filters, applyFilters]);
+
+  // Update URL when filters change
+  const updateUrl = useCallback(
+    (newFilters: FilterState) => {
+      const params = new URLSearchParams();
+
+      if (newFilters.searchTerm) {
+        params.set("search", newFilters.searchTerm);
+      }
+
+      const newUrl = `${window.location.pathname}${
+        params.toString() ? `?${params.toString()}` : ""
+      }`;
+      router.push(newUrl, {scroll: false});
+    },
+    [router]
+  );
+
+  const handleFilterChange = (key: keyof FilterState, value: string) => {
+    const newFilters = {...filters, [key]: value};
+    setFilters(newFilters);
+    updateUrl(newFilters);
+  };
+
+  const clearFilters = () => {
+    const newFilters = {
+      searchTerm: "",
+    };
+    setFilters(newFilters);
+    updateUrl(newFilters);
   };
 
   const handleCardAction = async (
@@ -182,7 +213,7 @@ export function KnowledgeBaseDraft({
     setIsProcessing(true);
     try {
       if (action === "publish") {
-        const res = await fetch(`${apiUrl}/api/cards/${id}`, {
+        const res = await fetch(`${apiUrl}/cards/${id}`, {
           method: "PUT",
           headers: {"Content-Type": "application/json"},
           // credentials: "include",
@@ -242,17 +273,48 @@ export function KnowledgeBaseDraft({
 
           <div className="flex items-center gap-2">
             <SearchInput
-              onChange={handleSearch}
-              // placeholder="Search by title..."
+              onChange={(term) => handleFilterChange("searchTerm", term)}
+              placeholder="Search by title, department, tags..."
             />
-            <Button
-              className="bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black p-2 rounded-md"
-              aria-label="Filter"
-            >
-              <Funnel className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  className="bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black rounded-md  w-[52px] h-[50px] cursor-pointer"
+                  aria-label="Filter"
+                >
+                  <Funnel className="h-8 w-8" />
+                </Button>
+              </DropdownMenuTrigger>
+              {/* <DropdownMenuContent className="w-56 bg-[#222] text-white">
+                <div className="p-2">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F]"
+                    onClick={clearFilters}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Clear filters
+                  </Button>
+                </div>
+              </DropdownMenuContent> */}
+            </DropdownMenu>
           </div>
         </header>
+
+        {/* Active filters display - only show when user has searched */}
+        {/* {filters.searchTerm && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            <div className="flex items-center gap-2 bg-[#F9DB6F33] text-[#F9DB6F] px-3 py-1 rounded-full">
+              <span>Search: {filters.searchTerm}</span>
+              <button
+                onClick={() => handleFilterChange("searchTerm", "")}
+                className="hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )} */}
 
         <div className="mt-4 overflow-x-auto">
           {isLoading ? (
@@ -270,7 +332,9 @@ export function KnowledgeBaseDraft({
             </div>
           ) : filteredCards.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
-              {searchTerm ? "No matching cards found" : "No data found."}
+              {filters.searchTerm
+                ? "No matching cards found"
+                : "No data found."}
             </div>
           ) : (
             <Table
@@ -292,19 +356,21 @@ export function KnowledgeBaseDraft({
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="min-w-[160px] bg-[#222] rounded-md shadow-lg py-2 p-2 z-50 w-[154px]">
-                      <DropdownMenuItem
-                        className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer"
-                        onClick={() => handleCardAction(row.id, "publish")}
-                        disabled={isProcessing}
-                      >
-                        <Icon
-                          icon="material-symbols:publish-rounded"
-                          width="24"
-                          height="24"
-                        />
+                      {row.card_status !== CardStatus.PUBLISH && (
+                        <DropdownMenuItem
+                          className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer"
+                          onClick={() => handleCardAction(row.id, "publish")}
+                          disabled={isProcessing}
+                        >
+                          <Icon
+                            icon="material-symbols:publish-rounded"
+                            width="24"
+                            height="24"
+                          />
 
-                        <span>Publish</span>
-                      </DropdownMenuItem>
+                          <span>Publish</span>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer"
                         onClick={() => handleCardAction(row.id, "edit")}

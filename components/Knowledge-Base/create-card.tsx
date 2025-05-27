@@ -35,7 +35,10 @@ import Loader from "../shared/loader";
 import {ShowToast} from "../shared/show-toast";
 import {
   apiUrl,
+  calculateDateFromPeriod,
   CardStatus,
+  determinePeriodType,
+  formatPeriodDisplay,
   visibilityLabels,
   visibilityOptions,
 } from "@/utils/constant";
@@ -105,26 +108,29 @@ const formSchema = z.object({
   title: z
     .string()
     .min(4, {message: "Title must be at least 4 characters"})
-    .max(50, {message: "Title must not be greater than 50 characters"})
+    .max(30, {message: "Title must not be greater than 30 characters"})
     .regex(/^[a-zA-Z0-9\s\-_.,!?()]+$/, {
       message:
         "Title can only contain letters, numbers, spaces, and basic punctuation",
+    })
+    .refine((val) => val.trim().length >= 4, {
+      message: "Title cannot be empty or just whitespace",
     }),
-  category_id: z.string().min(1, {message: "Category is required"}),
-  folder_id: z.string().min(1, {message: "Folder is required"}),
-  card_owner_id: z.string().min(1, {message: "Owner is required"}),
+  category_id: z.string().min(1, {message: "Please select a category"}),
+  folder_id: z.string().min(1, {message: "Please select a folder"}),
+  card_owner_id: z.string().min(1, {message: "Please select a card owner"}),
   verificationperiod: z.date().min(new Date(), {
     message: "Verification date must be in the future",
   }),
   verificationPeriodType: z.string().optional(),
   team_to_announce_id: z
     .string()
-    .min(1, {message: "Notifying team is required"}),
+    .min(1, {message: "Please select a notifying team"}),
   content: z
     .string()
     .min(10, {message: "Content must be at least 10 characters"}),
   tags: z.array(z.string()).optional(),
-  visibility: z.string().min(1, {message: "Card visibility is required"}),
+  visibility: z.string().min(1, {message: "Please select card visibility"}),
 });
 export default function CreateCard({cardId}: {cardId?: string}) {
   const router = useRouter();
@@ -139,12 +145,17 @@ export default function CreateCard({cardId}: {cardId?: string}) {
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [org_id, setOrganizationId] = useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+
   const [originalCardData, setOriginalCardData] = useState<any>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isTeamModalOpen, setIsTeamOpen] = useState(false);
   const [isUserModalOpen, setIsUserOpen] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isDrafting, setIsDrafting] = useState(false);
+
   const [team, setTeam] = useState<any>();
   const [selectedUsers, setSelectedUsers] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -165,7 +176,6 @@ export default function CreateCard({cardId}: {cardId?: string}) {
     users: null as string | null,
     form: null as string | null,
   });
-  console.log(attachedFiles, "dkj");
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -204,71 +214,6 @@ export default function CreateCard({cardId}: {cardId?: string}) {
     }
   }, [visibility]);
 
-  const calculateDateFromPeriod = (period: string): Date => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0); // Normalize to start of day
-
-    switch (period) {
-      case "2week":
-        const twoWeeks = new Date(now);
-        twoWeeks.setDate(now.getDate() + 14);
-        return twoWeeks;
-      case "1month":
-        const oneMonth = new Date(now);
-        oneMonth.setMonth(now.getMonth() + 1);
-        return oneMonth;
-      case "6months":
-        const sixMonths = new Date(now);
-        sixMonths.setMonth(now.getMonth() + 6);
-        return sixMonths;
-      case "12months":
-        const oneYear = new Date(now);
-        oneYear.setFullYear(now.getFullYear() + 1);
-        return oneYear;
-      default:
-        return now;
-    }
-  };
-
-  const determinePeriodType = (date: Date): string => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-
-    const twoWeeks = new Date(now);
-    twoWeeks.setDate(now.getDate() + 14);
-
-    const oneMonth = new Date(now);
-    oneMonth.setMonth(now.getMonth() + 1);
-
-    const sixMonths = new Date(now);
-    sixMonths.setMonth(now.getMonth() + 6);
-
-    const oneYear = new Date(now);
-    oneYear.setFullYear(now.getFullYear() + 1);
-
-    if (date.getTime() === twoWeeks.getTime()) return "2week";
-    if (date.getTime() === oneMonth.getTime()) return "1month";
-    if (date.getTime() === sixMonths.getTime()) return "6months";
-    if (date.getTime() === oneYear.getTime()) return "12months";
-    return "custom";
-  };
-
-  const formatPeriodDisplay = (periodType: string): string => {
-    switch (periodType) {
-      case "2week":
-        return "2 Weeks";
-      case "1month":
-        return "1 Month";
-      case "6months":
-        return "6 Months";
-      case "12months":
-        return "1 Year";
-      case "custom":
-        return "Custom Date";
-      default:
-        return "Select period";
-    }
-  };
   const onTeamSelect = async (team: any) => {
     setTeam(team);
     setIsTeamOpen(false);
@@ -511,19 +456,44 @@ export default function CreateCard({cardId}: {cardId?: string}) {
       return;
     }
 
+    // Validate all form fields
+    const isValid = await form.trigger();
+    if (!isValid) {
+      // Show toast with specific validation errors
+      const errors = form.formState.errors;
+      const errorMessages = Object.entries(errors)
+        .map(([field, error]) => `${field}: ${error.message}`)
+        .join("\n");
+      ShowToast("Please fix the following errors:\n" + errorMessages, "error");
+      return;
+    }
+
+    // Additional title validation
+    if (!values.title || values.title.trim().length < 4) {
+      form.setError("title", {
+        type: "manual",
+        message: "Title must be at least 4 characters",
+      });
+      ShowToast("Please fix the title validation error", "error");
+      return;
+    }
+
     if (!editorContent || editorContent === "<p></p>") {
       form.setError("content", {
         type: "manual",
         message: "Content is required",
       });
+      ShowToast("Please add some content to the card", "error");
       return;
     }
 
     setLoading("submitting", true);
+    setIsPublishing(true);
     setError("form", null);
     try {
       const cardData = {
         ...values,
+        title: values.title.trim(), // Ensure title is trimmed
         verificationperiod: values.verificationperiod.toISOString(),
         org_id,
         ...(!cardId && {card_status: CardStatus.PUBLISH}),
@@ -583,6 +553,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
       );
     } finally {
       setLoading("submitting", false);
+      setIsPublishing(false);
     }
   };
 
@@ -592,11 +563,22 @@ export default function CreateCard({cardId}: {cardId?: string}) {
       return;
     }
 
+    // Validate required fields for draft
+    const isValid = await form.trigger(["title", "content"]);
+    if (!isValid) {
+      ShowToast(
+        "Please fix the validation errors before saving draft",
+        "error"
+      );
+      return;
+    }
+
     if (!editorContent || editorContent === "<p></p>") {
       form.setError("content", {
         type: "manual",
         message: "Content is required",
       });
+      ShowToast("Please add some content to the card", "error");
       return;
     }
 
@@ -604,6 +586,8 @@ export default function CreateCard({cardId}: {cardId?: string}) {
     setError("form", null);
 
     try {
+      setIsDrafting(true);
+
       const values = form.getValues();
       const cardData = {
         ...values,
@@ -648,6 +632,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
       );
     } finally {
       setLoading("submitting", false);
+      setIsDrafting(false);
     }
   };
 
@@ -866,10 +851,10 @@ export default function CreateCard({cardId}: {cardId?: string}) {
   };
 
   return (
-    <div className="text-white py-4 md:py-6">
-      <div className="w-full">
+    <div className="text-white py-4 md:py-6 min-h-screen flex flex-col">
+      <div className="w-full flex-1">
         <div className="flex mb-6 md:mb-8 justify-between">
-          <div className="flex flex-wrap items-center gap-4 sm:gap-7 cusror-pointer">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-7 cursor-pointer">
             <ArrowBack link="/knowledge-base" />
             <h1 className="font-urbanist font-medium text-2xl sm:text-3xl leading-tight">
               {isEditMode ? "Edit Knowledge Card" : "Create Knowledge Card"}
@@ -894,13 +879,14 @@ export default function CreateCard({cardId}: {cardId?: string}) {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col lg:flex-row gap-4 md:gap-8">
+          <div className="flex flex-col lg:flex-row gap-4 md:gap-8 h-[calc(100vh-200px)]">
+            {/* Left Side - Form */}
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="w-full lg:w-[350px] xl:w-[431px]"
+                className="w-full lg:w-[350px] xl:w-[431px] flex-shrink-0"
               >
-                <div className="w-full bg-[#191919] rounded-[20px] p-6 space-y-6 mb-6 lg:mb-0">
+                <div className="w-full bg-[#191919] rounded-[20px] p-6 space-y-6 h-full overflow-y-auto">
                   {/* Category Select */}
                   <div>
                     <div className="flex justify-between items-center mb-2">
@@ -918,7 +904,13 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                             value={field.value}
                           >
                             <FormControl>
-                              <SelectTrigger className="cursor-pointer w-full h-[44px] bg-[#2C2D2E] text-[#FFFFFF52] border border-white/10 rounded-[6px] px-4 py-3 justify-between">
+                              <SelectTrigger
+                                className={cn(
+                                  "cursor-pointer w-full h-[44px] bg-[#2C2D2E] text-[#FFFFFF52] border border-white/10 rounded-[6px] px-4 py-3 justify-between",
+                                  form.formState.errors.category_id &&
+                                    "border-red-500"
+                                )}
+                              >
                                 {loadingStates.teams
                                   ? "Loading categories..."
                                   : field.value && teams.length > 0
@@ -934,7 +926,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                               ))}
                             </SelectContent>
                           </Select>
-                          <FormMessage />
+                          <FormMessage className="text-red-400 text-sm mt-1" />
                         </FormItem>
                       )}
                     />
@@ -1174,19 +1166,26 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                     <Button
                       type="submit"
                       className="w-[232px] h-[48px] flex items-center justify-center gap-1 bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black font-medium rounded-[8px] border border-black/10 px-4 py-3 cursor-pointer"
-                      disabled={isAnyLoading}
+                      disabled={
+                        isAnyLoading ||
+                        isExtracting ||
+                        isDrafting ||
+                        isPublishing
+                      }
                     >
                       {loadingStates.submitting ? (
                         <div className="flex items-center">
                           <Loader />
                           <span>
-                            {isEditMode ? "Updating..." : "Publishing..."}
+                            {/* {isEditMode ? "Updating..." : "Publishing..."} */}
                           </span>
                         </div>
-                      ) : isAnyLoading && !loadingStates.submitting ? (
+                      ) : isAnyLoading &&
+                        !loadingStates.submitting &&
+                        isPublishing ? (
                         <div className="flex items-center">
                           <Loader />
-                          <span>Loading...</span>
+                          {/* <span>Loading...</span> */}
                         </div>
                       ) : isEditMode ? (
                         "Update"
@@ -1200,12 +1199,17 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                       onClick={onSaveAsDraft}
                       variant="outline"
                       className="w-[232px] h-[48px] flex items-center justify-center gap-1 bg-[#333435] text-white font-medium rounded-[8px] border border-white px-4 py-3 hover:bg-[#333435] hover:text-white opacity-100 cursor-pointer"
-                      disabled={isAnyLoading}
+                      disabled={
+                        isAnyLoading ||
+                        isExtracting ||
+                        isDrafting ||
+                        isPublishing
+                      }
                     >
-                      {loadingStates.submitting ? (
+                      {loadingStates.submitting && isDrafting ? (
                         <div className="flex items-center">
                           <Loader />
-                          <span>Saving...</span>
+                          {/* <span>Saving...</span> */}
                         </div>
                       ) : (
                         "Save as Draft"
@@ -1217,7 +1221,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
             </Form>
 
             {/* Right Side - Content Editor */}
-            <div className="flex-1 bg-[#191919] rounded-[20px] p-6 md:p-10 flex flex-col min-h-[600px] max-h-[90vh] overflow-y-auto">
+            <div className="flex-1 bg-[#191919] rounded-[20px] p-6 md:p-10 flex flex-col h-full">
               <Form {...form}>
                 <div className="w-full bg-[#191919] rounded-[20px] flex flex-col h-full">
                   {/* Title */}
@@ -1234,8 +1238,16 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                                   <Input
                                     {...field}
                                     aria-label="Card title"
-                                    className="bg-transparent border-none p-0 focus-visible:ring-0 focus-visible:ring-offset-0
-                        font-medium text-xl sm:text-2xl md:text-[32px] leading-[24px] text-center align-middle text-white hover:bg-transparent w-auto"
+                                    className={cn(
+                                      "bg-transparent border-none p-0 focus-visible:ring-0 focus-visible:ring-offset-0 font-medium text-xl sm:text-2xl md:text-[32px] leading-[24px] text-center align-middle text-white hover:bg-transparent w-auto",
+                                      form.formState.errors.title &&
+                                        "border-b border-red-500"
+                                    )}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      field.onChange(value);
+                                      form.trigger("title");
+                                    }}
                                   />
                                 </FormControl>
                                 <Button
@@ -1248,14 +1260,14 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                                 </Button>
                               </div>
                             </div>
-                            <FormMessage className="text-center" />
+                            <FormMessage className="text-red-400 text-sm mt-1 text-center" />
                           </FormItem>
                         )}
                       />
                     </div>
                   </div>
 
-                  {/* Content Editor - Takes remaining space */}
+                  {/* Content Editor */}
                   <div className="flex-1 overflow-hidden flex flex-col">
                     <FormField
                       control={form.control}
@@ -1264,7 +1276,9 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                         <FormItem className="flex-1 flex flex-col">
                           <div
                             className={cn(
-                              "flex-1 w-full border rounded-[20px] flex items-center justify-center p-2 border-none overflow-auto"
+                              "flex-1 w-full border rounded-[20px] flex items-center justify-center p-2 border-none overflow-auto",
+                              form.formState.errors.content &&
+                                "border border-red-500"
                             )}
                           >
                             {isMounted && (
@@ -1273,6 +1287,8 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                                 onChange={handleEditorContentChange}
                                 isContentEmpty={isContentEmpty}
                                 onUploadClick={handleUploadClick}
+                                isExtracting={isExtracting}
+                                setIsExtracting={setIsExtracting}
                               />
                             )}
                             <input
@@ -1291,8 +1307,9 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                   </div>
 
                   {/* Bottom Actions - Fixed at bottom */}
-                  <div className="mt-4 sticky bottom-0 bg-[#191919] pt-4 pb-2 h-auto">
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between">
+                  <div className="mt-4 sticky bottom-0 bg-[#191919] pt-4 pb-2">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
+                      {/* Attach Files Section */}
                       <div className="flex flex-col gap-2 w-full sm:w-auto">
                         <input
                           type="file"
@@ -1320,18 +1337,16 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                                 src="/icons/paper-file.svg"
                                 height={20}
                                 width={16}
-                                className={cn(
-                                  "mr-2 transition-transform duration-200"
-                                )}
+                                className="mr-2"
                               />
                               Attach Files
                             </>
                           )}
                         </Button>
 
-                        {/* Display attached files with scroll if needed */}
+                        {/* Attached Files List */}
                         {attachedFiles.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-2  overflow-y-auto">
+                          <div className="mt-2 flex flex-wrap gap-2 max-h-[120px] overflow-y-auto">
                             {attachedFiles.map((file, index) => (
                               <div key={index} className="flex-shrink-0">
                                 <FilePreview file={file} />
@@ -1340,15 +1355,15 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                           </div>
                         )}
                       </div>
-                      <div className="w-full sm:w-auto h-full">
-                        <div className="">
-                          <div className="flex flex-wrap min-h-[100px] overflow-y-auto">
-                            <Tag
-                              initialTags={tags}
-                              onTagsChange={handleTagsChange}
-                              className="w-auto"
-                            />
-                          </div>
+
+                      {/* Tags Section */}
+                      <div className="w-full sm:w-auto">
+                        <div className="flex flex-wrap gap-2 h-[50px] overflow-y-auto">
+                          <Tag
+                            initialTags={tags}
+                            onTagsChange={handleTagsChange}
+                            className="w-auto"
+                          />
                         </div>
                       </div>
                     </div>
@@ -1359,6 +1374,8 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           </div>
         )}
       </div>
+
+      {/* Modals */}
       <ChooseTeamModal
         isOpen={isTeamModalOpen}
         onClose={() => setIsTeamOpen(false)}
@@ -1372,7 +1389,6 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         team={team}
         onConfirm={(users: any) => {
           setSelectedUsers(users);
-          console.log("Selected users:", users);
         }}
       />
       <SelectUserModal
@@ -1380,7 +1396,6 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         onClose={() => setIsOpen(false)}
         onConfirm={(users: any) => {
           setSelectedUsers(users);
-          console.log("Selected users:", users);
         }}
         org={org_id}
       />

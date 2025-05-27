@@ -116,39 +116,41 @@ export function SubcategoryItem({
     <div
       onClick={onClick}
       className={`
-      h-[58px]
-      rounded-[6px]
-      text-center
-      border
-      flex
-      items-center
-      justify-center
-      cursor-pointer
-      transition-colors
-      ${
-        highlight
-          ? "bg-[#F9DB6F] text-black border-[#F9DB6F]"
-          : active
-          ? "bg-[#2C2D2E] border-[#3A3B3C]"
-          : "bg-[#FFFFFF14] border-[#3A3B3C]"
-      }
-
-            ${!active ? "opacity-80 hover:opacity-100" : ""}
-`}
+        h-[58px]
+        min-w-[100px]  // Add minimum width
+        max-w-[250px]  // Add maximum width
+        px-3           // Add horizontal padding
+        rounded-[6px]
+        text-center
+        border
+        flex
+        items-center
+        justify-center
+        cursor-pointer
+        transition-colors
+        ${
+          highlight
+            ? "bg-[#F9DB6F] text-black border-[#F9DB6F]"
+            : active
+            ? "bg-[#2C2D2E] border-[#3A3B3C]"
+            : "bg-[#FFFFFF14] border-[#3A3B3C]"
+        }
+        ${!active ? "opacity-80 hover:opacity-100" : ""}
+      `}
     >
       <span
         className="
-        font-urbanist
-        font-medium
-        text-[18px]
-        leading-[20px]
-        align-middle
-        text-center
-        truncate
-        overflow-hidden
-        whitespace-nowrap
-        max-w-full
-      "
+          font-urbanist
+          font-medium
+          text-[18px]
+          leading-[20px]
+          align-middle
+          text-center
+          truncate
+          overflow-hidden
+          whitespace-nowrap
+          w-full         // Make span take full width
+        "
       >
         {label}
       </span>
