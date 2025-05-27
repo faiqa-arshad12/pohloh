@@ -254,27 +254,10 @@ const TipTapEditor = ({
     }
   };
 
-  // Empty state with upload button
-  if (isContentEmpty) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full w-full text-center p-4 border border-dashed border-gray-600 rounded-[20px]">
-        <p className="text-white mb-4 text-[20px] font-urbanist">{placeholder}</p>
-        <button
-          onClick={onUploadClick}
-          className="bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black px-4 py-2 rounded-md flex gap-2 items-center justify-center w-[200px] cursor-pointer"
-        >
-          <img src="/upload-image.png" alt="user" />
-
-          <span className="">Upload</span>
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="tiptap-editor w-full h-full flex flex-col p-2">
       {/* Toolbar */}
-      <div className="toolbar flex items-center gap-2">
+      <div className="toolbar flex items-center gap-2 p-4">
         {/* Paragraph Style Dropdown */}
         <div
           ref={paragraphDropdownRef}
@@ -480,8 +463,23 @@ const TipTapEditor = ({
       </div>
 
       {/* Editor Content */}
-      <div className="flex-grow rounded-[20px] bg-[#191919] overflow-auto !border !bborder-gray-600 !border-dashed  mt-8 p-4">
-        <EditorContent editor={editor} />
+      <div className="flex-grow rounded-[20px] bg-[#191919] overflow-auto !border !bborder-gray-600 !border-dashed mt-4 p-4">
+        {isContentEmpty ? (
+          <div className="flex flex-col items-center justify-center h-full w-full text-center">
+            <p className="text-white mb-4 text-[20px] font-urbanist">
+              {placeholder}
+            </p>
+            <button
+              onClick={onUploadClick}
+              className="bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black px-4 py-2 rounded-md flex gap-2 items-center justify-center w-[200px] cursor-pointer"
+            >
+              <img src="/upload-image.png" alt="user" />
+              <span className="">Upload</span>
+            </button>
+          </div>
+        ) : (
+          <EditorContent editor={editor} />
+        )}
       </div>
 
       {/* Styles for the editor */}

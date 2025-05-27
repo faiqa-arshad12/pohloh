@@ -7,10 +7,11 @@ import dynamic from "next/dynamic";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useForm} from "react-hook-form";
 import * as z from "zod";
-import {Pen, CalendarDays} from "lucide-react";
+import {Pen, CalendarDays, Trash2} from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import {useUser} from "@clerk/nextjs";
+import {supabase} from "@/supabase/client";
 
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
@@ -104,7 +105,7 @@ const formSchema = z.object({
   title: z
     .string()
     .min(4, {message: "Title must be at least 4 characters"})
-    .max(10, {message: "Title must not be greater than 10 characters"})
+    .max(50, {message: "Title must not be greater than 50 characters"})
     .regex(/^[a-zA-Z0-9\s\-_.,!?()]+$/, {
       message:
         "Title can only contain letters, numbers, spaces, and basic punctuation",
@@ -125,7 +126,6 @@ const formSchema = z.object({
   tags: z.array(z.string()).optional(),
   visibility: z.string().min(1, {message: "Card visibility is required"}),
 });
-
 export default function CreateCard({cardId}: {cardId?: string}) {
   const router = useRouter();
   const {user} = useUser();
@@ -148,6 +148,10 @@ export default function CreateCard({cardId}: {cardId?: string}) {
   const [team, setTeam] = useState<any>();
   const [selectedUsers, setSelectedUsers] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<
+    {name: string; url: string; type: string}[]
+  >([]);
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
 
   const [loadingStates, setLoadingStates] = useState({
     teams: false,
@@ -161,7 +165,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
     users: null as string | null,
     form: null as string | null,
   });
-
+  console.log(attachedFiles, "dkj");
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -281,7 +285,6 @@ export default function CreateCard({cardId}: {cardId?: string}) {
       const response = await fetch(`${apiUrl}/cards/${cardId}`, {
         method: "GET",
         headers: {"Content-Type": "application/json"},
-        // credentials: "include",
       });
 
       if (!response.ok) throw new Error("Failed to fetch card data");
@@ -291,6 +294,17 @@ export default function CreateCard({cardId}: {cardId?: string}) {
       if (data.success && data.card) {
         const cardData = data.card;
         setOriginalCardData(cardData);
+
+        // Handle attachments if they exist
+        if (cardData.attachments && Array.isArray(cardData.attachments)) {
+          setAttachedFiles(
+            cardData.attachments.map((attachment: any) => ({
+              name: attachment.name || attachment.file_name,
+              url: attachment.url || attachment.file_url,
+              type: attachment.type || attachment.file_type,
+            }))
+          );
+        }
 
         const extractedData = {
           title: cardData.title || "",
@@ -321,7 +335,6 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           const response = await fetch(`${apiUrl}/cards/users/${cardId}`, {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-            // credentials: "include",
           });
 
           if (!response.ok) throw new Error("Failed to fetch card data");
@@ -371,7 +384,6 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         const userResponse = await fetch(`${apiUrl}/users/${user.id}`, {
           method: "GET",
           headers: {"Content-Type": "application/json"},
-          // credentials: "include",
         });
 
         if (!userResponse.ok) throw new Error("Failed to fetch user details");
@@ -390,12 +402,10 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           fetch(`${apiUrl}/users/organizations/${orgId}`, {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-            // credentials: "include",
           }),
           fetch(`${apiUrl}/teams/organizations/${orgId}`, {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-            // credentials: "include",
           }),
         ]);
 
@@ -459,7 +469,6 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-            // credentials: "include",
           }
         );
 
@@ -521,6 +530,11 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         content: editorContent,
         users: selectedUsers,
         team_access_id: team ? team.id : null,
+        attachments: attachedFiles.map((file) => ({
+          name: file.name,
+          url: file.url,
+          type: file.type,
+        })),
       };
 
       // Remove the period type before sending to backend
@@ -533,7 +547,6 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         method,
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(cardData),
-        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -598,6 +611,11 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         org_id,
         card_status: CardStatus.DRAFT,
         content: editorContent,
+        attachments: attachedFiles.map((file) => ({
+          name: file.name,
+          url: file.url,
+          type: file.type,
+        })),
       };
 
       // Remove the period type before sending to backend
@@ -607,7 +625,6 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(cardData),
-        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -647,8 +664,153 @@ export default function CreateCard({cardId}: {cardId?: string}) {
     if (file) setIsContentEmpty(false);
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    // File handling logic here
+  const uploadFileToSupabase = async (file: File): Promise<string | null> => {
+    try {
+      if (!file) return null;
+
+      // Validate file type
+      const allowedTypes = [
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "application/json",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        ShowToast(
+          "Invalid file type. Please upload PDF, image, JSON, or DOC files only.",
+          "error"
+        );
+        return null;
+      }
+
+      // Validate file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+      if (file.size > maxSize) {
+        ShowToast("File size too large. Maximum size is 10MB.", "error");
+        return null;
+      }
+
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}-${file.name}`;
+      const filePath = `card-attachments/${fileName}`;
+
+      // First check if the bucket exists
+      const {data: buckets} = await supabase.storage.listBuckets();
+      const filesBucket = buckets?.find((bucket) => bucket.name === "files");
+
+      if (!filesBucket) {
+        // Create the bucket if it doesn't exist
+        const {error: createError} = await supabase.storage.createBucket(
+          "files",
+          {
+            public: true,
+            allowedMimeTypes: allowedTypes,
+            fileSizeLimit: maxSize,
+          }
+        );
+
+        if (createError) {
+          console.error("Error creating bucket:", createError);
+          ShowToast("Failed to setup storage. Please try again.", "error");
+          return null;
+        }
+      }
+
+      // Upload the file
+      const {data, error} = await supabase.storage
+        .from("files")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: true, // Allow overwriting if file exists
+        });
+
+      if (error) {
+        console.error("Error uploading file:", error);
+        ShowToast(`Failed to upload ${file.name}. Please try again.`, "error");
+        return null;
+      }
+
+      // Get the public URL for the uploaded file
+      const {
+        data: {publicUrl},
+      } = supabase.storage.from("files").getPublicUrl(filePath);
+
+      if (!publicUrl) {
+        ShowToast(
+          `Failed to get URL for ${file.name}. Please try again.`,
+          "error"
+        );
+        return null;
+      }
+
+      return publicUrl;
+    } catch (error) {
+      console.error("Error in file upload:", error);
+      ShowToast("An unexpected error occurred. Please try again.", "error");
+      return null;
+    }
+  };
+
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploadingFiles(true);
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        try {
+          const url = await uploadFileToSupabase(file);
+          if (url) {
+            return {
+              name: file.name,
+              url: url,
+              type: file.type,
+            };
+          }
+          return null;
+        } catch (error) {
+          console.error(`Error uploading ${file.name}:`, error);
+          ShowToast(
+            `Failed to upload ${file.name}. Please try again.`,
+            "error"
+          );
+          return null;
+        }
+      });
+
+      const uploadedFiles = await Promise.all(uploadPromises);
+      const validFiles = uploadedFiles.filter(
+        (file): file is {name: string; url: string; type: string} =>
+          file !== null
+      );
+
+      if (validFiles.length > 0) {
+        setAttachedFiles((prev) => [...prev, ...validFiles]);
+        ShowToast(
+          `Successfully uploaded ${validFiles.length} file(s)`,
+          "success"
+        );
+      }
+    } catch (error) {
+      console.error("Error handling file uploads:", error);
+      ShowToast("Failed to upload files. Please try again.", "error");
+    } finally {
+      setIsUploadingFiles(false);
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const removeAttachedFile = (index: number) => {
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleEditorContentChange = (html: string) => {
@@ -673,6 +835,35 @@ export default function CreateCard({cardId}: {cardId?: string}) {
   };
 
   const isAnyLoading = Object.values(loadingStates).some((state) => state);
+
+  // Update the FilePreview component to be more compact
+  const FilePreview = ({
+    file,
+  }: {
+    file: {name: string; url: string; type: string};
+  }) => {
+    return (
+      <div className="flex items-center justify-between bg-[#2C2D2E] p-2 rounded-md w-[200px]">
+        <a
+          href={file.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-white truncate flex-1 mr-2 hover:text-[#F9DB6F] cursor-pointer"
+        >
+          {file.name}
+        </a>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => removeAttachedFile(attachedFiles.indexOf(file))}
+          className="text-red-400 hover:text-red-300 p-1 flex-shrink-0 cursor-pointer"
+        >
+          <Trash2 className="cursor-pointer hover:text-red-300 " />
+        </Button>
+      </div>
+    );
+  };
 
   return (
     <div className="text-white py-4 md:py-6">
@@ -1026,9 +1217,9 @@ export default function CreateCard({cardId}: {cardId?: string}) {
             </Form>
 
             {/* Right Side - Content Editor */}
-            <div className="flex-1 bg-[#191919] rounded-[20px] p-6 md:p-10 space-y-6">
+            <div className="flex-1 bg-[#191919] rounded-[20px] p-6 md:p-10 flex flex-col min-h-[600px] max-h-[90vh] overflow-y-auto">
               <Form {...form}>
-                <div className="w-full bg-[#191919] rounded-[20px] space-y-6">
+                <div className="w-full bg-[#191919] rounded-[20px] flex flex-col h-full">
                   {/* Title */}
                   <div className="mb-6">
                     <div className="flex items-center justify-center">
@@ -1044,7 +1235,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                                     {...field}
                                     aria-label="Card title"
                                     className="bg-transparent border-none p-0 focus-visible:ring-0 focus-visible:ring-offset-0
-                                  font-medium text-xl sm:text-2xl md:text-[32px] leading-[24px] text-center align-middle text-white hover:bg-transparent w-auto"
+                        font-medium text-xl sm:text-2xl md:text-[32px] leading-[24px] text-center align-middle text-white hover:bg-transparent w-auto"
                                   />
                                 </FormControl>
                                 <Button
@@ -1064,77 +1255,101 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                     </div>
                   </div>
 
-                  {/* Content Editor */}
-                  <FormField
-                    control={form.control}
-                    name="content"
-                    render={({field}) => (
-                      <FormItem>
-                        <div
-                          className={cn(
-                            "h-[300px] md:h-[446px] w-full border rounded-[20px] flex items-center justify-center p-2 border-none"
-                            // form.formState.errors.content
-                            //   ? "border-red-500 border-dashed"
-                            //   : "border-dashed border-gray-600"
-                          )}
-                        >
-                          {isMounted && (
-                            <TipTapEditor
-                              content={editorContent}
-                              onChange={handleEditorContentChange}
-                              isContentEmpty={isContentEmpty}
-                              onUploadClick={handleUploadClick}
+                  {/* Content Editor - Takes remaining space */}
+                  <div className="flex-1 overflow-hidden flex flex-col">
+                    <FormField
+                      control={form.control}
+                      name="content"
+                      render={({field}) => (
+                        <FormItem className="flex-1 flex flex-col">
+                          <div
+                            className={cn(
+                              "flex-1 w-full border rounded-[20px] flex items-center justify-center p-2 border-none overflow-auto"
+                            )}
+                          >
+                            {isMounted && (
+                              <TipTapEditor
+                                content={editorContent}
+                                onChange={handleEditorContentChange}
+                                isContentEmpty={isContentEmpty}
+                                onUploadClick={handleUploadClick}
+                              />
+                            )}
+                            <input
+                              type="file"
+                              ref={uploadInputRef}
+                              onChange={handleUploadChange}
+                              className="hidden"
+                              accept=".doc,.docx,.pdf,.txt"
+                              aria-label="Upload document"
                             />
-                          )}
-                          <input
-                            type="file"
-                            ref={uploadInputRef}
-                            onChange={handleUploadChange}
-                            className="hidden"
-                            accept=".doc,.docx,.pdf,.txt"
-                            aria-label="Upload document"
-                          />
-                        </div>
-                        <FormMessage className="text-red-400 text-sm mt-2" />
-                      </FormItem>
-                    )}
-                  />
+                          </div>
+                          <FormMessage className="text-red-400 text-sm mt-2" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                  {/* Bottom Actions */}
-                  <div className="flex flex-col sm:flex-row gap-4 mt-4 justify-between">
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        className="hidden"
-                        accept=".doc,.docx,.pdf,.txt,.jpg,.png"
-                        aria-label="Attach files"
-                      />
-                      <Button
-                        type="button"
-                        onClick={handleAttachFile}
-                        className="bg-[#F9DB6F] h-[48px] w-full sm:w-[232px] hover:bg-[#F9DB6F]/90 text-black font-urbanist font-medium text-[14px] leading-[100%] justify-center items-center cursor-pointer"
-                      >
-                        <Image
-                          alt="Paperclip icon"
-                          src="/icons/paper-file.svg"
-                          height={20}
-                          width={16}
-                          className={cn(
-                            "mr-2 transition-transform duration-200"
+                  {/* Bottom Actions - Fixed at bottom */}
+                  <div className="mt-4 sticky bottom-0 bg-[#191919] pt-4 pb-2 h-auto">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-between">
+                      <div className="flex flex-col gap-2 w-full sm:w-auto">
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleFileChange}
+                          className="hidden"
+                          accept=".pdf,.jpg,.jpeg,.png,.json,.doc,.docx"
+                          multiple
+                          aria-label="Attach files"
+                        />
+                        <Button
+                          type="button"
+                          onClick={handleAttachFile}
+                          className="bg-[#F9DB6F] h-[48px] w-full sm:w-[232px] hover:bg-[#F9DB6F]/90 text-black font-urbanist font-medium text-[14px] leading-[100%] justify-center items-center cursor-pointer"
+                          disabled={isUploadingFiles}
+                        >
+                          {isUploadingFiles ? (
+                            <div className="flex items-center">
+                              <Loader />
+                            </div>
+                          ) : (
+                            <>
+                              <Image
+                                alt="Paperclip icon"
+                                src="/icons/paper-file.svg"
+                                height={20}
+                                width={16}
+                                className={cn(
+                                  "mr-2 transition-transform duration-200"
+                                )}
+                              />
+                              Attach Files
+                            </>
                           )}
-                        />
-                        Attach Files
-                      </Button>
-                    </div>
-                    <div>
-                      <div className="p-2">
-                        <Tag
-                          initialTags={tags}
-                          onTagsChange={handleTagsChange}
-                          className="w-full"
-                        />
+                        </Button>
+
+                        {/* Display attached files with scroll if needed */}
+                        {attachedFiles.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2  overflow-y-auto">
+                            {attachedFiles.map((file, index) => (
+                              <div key={index} className="flex-shrink-0">
+                                <FilePreview file={file} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="w-full sm:w-auto h-full">
+                        <div className="">
+                          <div className="flex flex-wrap min-h-[100px] overflow-y-auto">
+                            <Tag
+                              initialTags={tags}
+                              onTagsChange={handleTagsChange}
+                              className="w-auto"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
