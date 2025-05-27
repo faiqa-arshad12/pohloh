@@ -46,7 +46,7 @@ export default function ChooseUserModal({
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include",
+            // credentials: "include",
           }
         );
 
