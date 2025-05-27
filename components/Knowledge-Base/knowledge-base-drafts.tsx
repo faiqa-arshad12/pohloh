@@ -9,13 +9,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {Button} from "@/components/ui/button";
 import Table from "@/components/ui/table";
 import {useRouter, useSearchParams} from "next/navigation";
@@ -63,14 +56,12 @@ export function KnowledgeBaseDraft({
   verified,
 }: KnowledgeBaseDraftProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const {user} = useUser();
 
-  // Initialize filters from URL params or props
+  // Initialize filters without URL params
   const getInitialFilters = () => {
-    const search = searchParams.get("search") || "";
     return {
-      searchTerm: search,
+      searchTerm: "",
     };
   };
 
@@ -170,27 +161,9 @@ export function KnowledgeBaseDraft({
     }
   }, [cards, filters, applyFilters]);
 
-  // Update URL when filters change
-  const updateUrl = useCallback(
-    (newFilters: FilterState) => {
-      const params = new URLSearchParams();
-
-      if (newFilters.searchTerm) {
-        params.set("search", newFilters.searchTerm);
-      }
-
-      const newUrl = `${window.location.pathname}${
-        params.toString() ? `?${params.toString()}` : ""
-      }`;
-      router.push(newUrl, {scroll: false});
-    },
-    [router]
-  );
-
   const handleFilterChange = (key: keyof FilterState, value: string) => {
     const newFilters = {...filters, [key]: value};
     setFilters(newFilters);
-    updateUrl(newFilters);
   };
 
   const clearFilters = () => {
@@ -198,7 +171,6 @@ export function KnowledgeBaseDraft({
       searchTerm: "",
     };
     setFilters(newFilters);
-    updateUrl(newFilters);
   };
 
   const handleCardAction = async (
