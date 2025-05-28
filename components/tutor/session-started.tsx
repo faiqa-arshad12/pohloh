@@ -80,7 +80,7 @@ export default function SessionStarted() {
   console.log(sessionData);
 
   return (
-    <div className="h-[725px] w-full bg-[#191919] flex flex-col text-white ">
+    <div className="h-[725px] w-full bg-[#191919] flex flex-col text-white overflow-auto">
       <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none]">
         {sessionData.map((q: SessionQuestion) => (
           <div key={q.id} className="mb-10">

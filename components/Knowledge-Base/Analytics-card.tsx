@@ -97,11 +97,17 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
 
   const [isCardDeleteLoading, setIsCardDeleting] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState("");
+  const [pathId, setPathId] = useState<null|string>(null);
+
   const [selectedCards, setSelectedCards] = useState<KnowledgeCard[]>([]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setCard(params.get("selectForLearningPath") === "true" ? "true" : null);
+  }, []);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setPathId(params.get("id"));
   }, []);
 
   const [userDetails, setUserDetails] = useState<any>();
@@ -636,8 +642,12 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                     "selectedLearningPathCards",
                     JSON.stringify(selectedCards)
                   );
+                  if(pathId){
                   // ShowToast(`${selectedCards.length} cards saved to learning path`, "success")
-                  router.push("/tutor/creating-learning-path");
+                  router.push(`/tutor/creating-learning-path?id=${pathId}`);
+                  }else{
+                    router.push(`/tutor/creating-learning-path`);
+                  }
                 }}
                 className="bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black cursor-pointer"
               >

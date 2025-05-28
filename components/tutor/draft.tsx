@@ -146,6 +146,7 @@ export default function Drafts() {
   // Function to handle editing a learning path
   const handleEdit = (row: DraftTableData) => {
     console.log(`Editing: ${row.courseName}`, row.originalData);
+    router.push(`/tutor/creating-learning-path?id=${row.id}`);
     // Add your edit logic here
     // router.push(`/edit-learning-path/${row.id}`);
   };

@@ -21,7 +21,7 @@ const SelectTrigger = React.forwardRef<
       "flex items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-all",
       "hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-ring/30 cursor-pointer",
       "disabled:cursor-not-allowed disabled:opacity-50",
-      "data-[size=default]:h-9 data-[size=sm]:h-8",
+      "data-[size=default]:h-9 data-[size=sm]:h-8 focus:border-[#F9DB6F] focus:outline-none border border-transparent",
       className
     )}
     {...props}

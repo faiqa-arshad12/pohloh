@@ -1,7 +1,5 @@
 "use client";
-
 import type React from "react";
-
 import {useState, useEffect, useMemo} from "react";
 import {useRouter} from "next/navigation";
 import {Button} from "@/components/ui/button";
@@ -16,11 +14,12 @@ import {
 import {Minus, Plus, X, PlusIcon} from "lucide-react";
 import {useUser} from "@clerk/nextjs";
 import VerificationPeriodPicker from "./verification-picker";
-import {apiUrl} from "@/utils/constant";
+import {apiUrl, apiUrl_AI} from "@/utils/constant";
 import ArrowBack from "../shared/ArrowBack";
 import {ShowToast} from "../shared/show-toast";
 import QuestionModal from "./question-modal";
 import QuestionPreview from "./questions-preview";
+import Loader from "../shared/loader";
 
 // Types
 type Question = {
@@ -29,6 +28,7 @@ type Question = {
   answer: string;
   type: "multiple" | "short";
   options?: string[];
+  source?: string;
 };
 
 type PathFormData = {
@@ -58,9 +58,16 @@ export default function LearningPathPage() {
   const [selectedCards, setSelectedCards] = useState<any[] | null>(null);
   const [teams, setTeams] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [orgId, setOrgId] = useState<string>("");
   const [apiData, setApiData] = useState<any>(null);
+  const [isGenerating, setGenerating] = useState<boolean>(false);
+  const [pathGenerated, setPathGenerated] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isDrafting, setIsDrafting] = useState(false);
+
+  const [isRegenerating, setIsRegenerating] = useState(false);
+
   const [formData, setFormData] = useState<PathFormData>({
     title: "",
     path_owner: "",
@@ -68,8 +75,8 @@ export default function LearningPathPage() {
     category_id: "",
     num_of_questions: 5,
     question_type: "multiple",
-    cardsSelected: 10,
-    totalQuestions: 50,
+    cardsSelected: 0,
+    totalQuestions: 5,
     verification_period: "",
     customDate: null,
   });
@@ -83,30 +90,16 @@ export default function LearningPathPage() {
     type: "multiple",
     options: ["", "", "", ""],
   });
-  const [pathGenerated, setPathGenerated] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
 
   // Memoized values
   const totalQuestionsNeeded = useMemo(() => {
     return formData.cardsSelected * formData.num_of_questions;
   }, [formData.cardsSelected, formData.num_of_questions]);
 
-  const questionsRemaining = useMemo(() => {
-    return totalQuestionsNeeded - questions.length;
-  }, [totalQuestionsNeeded, questions.length]);
-
-  const isAllQuestionsAdded = useMemo(() => {
-    return questions.length >= formData.num_of_questions;
-  }, [questions.length, formData.num_of_questions]);
-
-  // Toast function
   const showToast = (message: string, type: "success" | "error") => {
-    // You can replace this with your actual toast implementation
     console.log(`[${type}] ${message}`);
     ShowToast(message, type);
   };
-
-  // Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
@@ -185,7 +178,6 @@ export default function LearningPathPage() {
     fetchData();
   }, [user, pathId]);
 
-  // Fetch learning path data
   const fetchLearningPath = async (id: string) => {
     try {
       const pathResponse = await fetch(`${apiUrl}/learning-paths/${id}`, {
@@ -228,9 +220,9 @@ export default function LearningPathPage() {
       }
 
       // Set selected cards from API data
-      if (cardLearningPaths) {
-        setSelectedCards(cardLearningPaths);
-      }
+      // if (cardLearningPaths) {
+      //   setSelectedCards(cardLearningPaths);
+      // }
 
       // Set path as generated since we're editing
       setPathGenerated(true);
@@ -244,6 +236,12 @@ export default function LearningPathPage() {
       );
     }
   };
+  useEffect(() => {
+    const savedCards = localStorage.getItem("selectedLearningPathCards");
+    if (savedCards) {
+      setSelectedCards(JSON.parse(savedCards));
+    }
+  }, []);
 
   // Update total questions when relevant values change
   useEffect(() => {
@@ -262,6 +260,76 @@ export default function LearningPathPage() {
       }));
     }
   }, [selectedCards]);
+
+  // Effect to watch for changes in question settings and regenerate path
+  useEffect(() => {
+    if (pathGenerated && !isRegenerating) {
+      const regeneratePath = async () => {
+        try {
+          setIsRegenerating(true);
+          setGenerating(true);
+
+          // Transform and prepare the data
+          const transformedCards = selectedCards
+            ? transformSelectedCards(selectedCards)
+            : [];
+
+          // Create the filtered data object
+          const filteredData = {
+            cards: transformedCards,
+            num_of_questions: formData.num_of_questions,
+            question_type: formData.question_type,
+          };
+
+          // Submit to API
+          const response = await fetch(
+            `${apiUrl_AI}/learningpath/questions-generation`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(filteredData),
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Failed to regenerate path");
+          }
+
+          const result = await response.json();
+
+          // Transform the API response questions into the expected format
+          const transformedQuestions = result.questions.map((q: any) => ({
+            id: q.id,
+            question: q.question_text,
+            answer: q.correct_answer,
+            type: q.question_type === "multiple_choice" ? "multiple" : "short",
+            options: q.options || undefined,
+            source: q.card_info?.card_title,
+          }));
+
+          // Set the questions in state
+          setQuestions(transformedQuestions);
+          showToast("Path regenerated successfully", "success");
+        } catch (error) {
+          console.error("Error regenerating path:", error);
+          showToast(
+            error instanceof Error
+              ? error.message
+              : "Failed to regenerate path",
+            "error"
+          );
+        } finally {
+          setGenerating(false);
+          setIsRegenerating(false);
+        }
+      };
+
+      regeneratePath();
+    }
+  }, [formData.question_type, formData.num_of_questions]);
 
   // Form validation
   const validateForm = () => {
@@ -380,6 +448,16 @@ export default function LearningPathPage() {
     }));
   };
 
+  // Transform selected cards into the desired format
+  const transformSelectedCards = (cards: any[]) => {
+    return cards.map((card) => ({
+      id: card.id,
+      title: card.title,
+      content: card.content,
+      tags: card.tags || [],
+    }));
+  };
+
   // Prepare data for API
   const prepareLearningPathData = (
     status: "draft" | "generated" | "published"
@@ -419,6 +497,11 @@ export default function LearningPathPage() {
       }
     }
 
+    // Transform selected cards into the desired format
+    const transformedCards = selectedCards
+      ? transformSelectedCards(selectedCards)
+      : [];
+
     // Prepare the learning path data
     return {
       title: formData.title,
@@ -430,7 +513,6 @@ export default function LearningPathPage() {
       status: status,
       org_id: orgId,
       questions: questions,
-      cards: selectedCards?.map((card) => card.id || card.card?.id) || [],
     };
   };
 
@@ -442,16 +524,61 @@ export default function LearningPathPage() {
     }
 
     try {
-      setLoading(true);
+      setGenerating(true);
+      // setLoading(true);
 
-      // For editing, we don't need to generate a new path
-      if (isEditing) {
-        setPathGenerated(true);
-        showToast("Path ready for editing", "success");
-        return;
+      // if (isEditing) {
+      //   setPathGenerated(true);
+      //   showToast("Path ready for editing", "success");
+      //   return;
+      // }
+
+      // Transform and prepare the data
+      const transformedCards = selectedCards
+        ? transformSelectedCards(selectedCards)
+        : [];
+
+      // Create the filtered data object
+      const filteredData = {
+        cards: transformedCards,
+        num_of_questions: formData.num_of_questions,
+        question_type: formData.question_type,
+      };
+
+      // Submit to API
+      const response = await fetch(
+        `${apiUrl_AI}/learningpath/questions-generation`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(filteredData),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to generate path");
       }
 
-      // Instead of API call, just set pathGenerated to true
+      const result = await response.json();
+      console.log(result, "result");
+
+      // Transform the API response questions into the expected format
+      const transformedQuestions = result.questions.map((q: any) => ({
+        id: q.id,
+        question: q.question_text,
+        answer: q.correct_answer,
+        type: q.question_type === "multiple_choice" ? "multiple" : "short",
+        options: q.options || undefined,
+        source: q.card_info?.card_title,
+      }));
+
+      // Set the questions in state
+      setQuestions(transformedQuestions);
+      console.log(transformSelectedCards, "dta");
+      // Set path as generated
       setPathGenerated(true);
       showToast("Path Generated Successfully", "success");
     } catch (error) {
@@ -462,6 +589,7 @@ export default function LearningPathPage() {
       );
     } finally {
       setLoading(false);
+      setGenerating(false);
     }
   };
 
@@ -478,8 +606,6 @@ export default function LearningPathPage() {
     }
 
     try {
-      setLoading(true);
-
       // Prepare data for submission
       const learningPathData = prepareLearningPathData("published");
 
@@ -515,6 +641,7 @@ export default function LearningPathPage() {
 
       // Redirect to the learning paths page
       router.push("/tutor/explore-learning-paths");
+      localStorage.removeItem("selectedLearningPathCards");
     } catch (error) {
       console.error("Error publishing path:", error);
       showToast(
@@ -522,7 +649,6 @@ export default function LearningPathPage() {
         "error"
       );
     } finally {
-      setLoading(false);
       setIsPublishing(false);
     }
   };
@@ -534,7 +660,7 @@ export default function LearningPathPage() {
     }
 
     try {
-      setLoading(true);
+      setIsDrafting(true);
 
       // Prepare data for submission
       const learningPathData = prepareLearningPathData("draft");
@@ -563,6 +689,8 @@ export default function LearningPathPage() {
       }
 
       showToast("Learning path saved as draft", "success");
+      localStorage.removeItem("selectedLearningPathCards"); // Clear after loading
+
       router.push("/tutor/drafts");
     } catch (error) {
       console.error("Error saving draft:", error);
@@ -571,7 +699,7 @@ export default function LearningPathPage() {
         "error"
       );
     } finally {
-      setLoading(false);
+      setIsDrafting(false);
     }
   };
 
@@ -705,9 +833,10 @@ export default function LearningPathPage() {
               variant="outline"
               className="h-[41px] w-[242px] border border-[#F9DB6F] text-black bg-[#F9DB6F] hover:bg-[#F9DB6F] hover:text-black rounded-md font-medium transition-colors duration-200 cursor-pointer"
               onClick={handlePublish}
+              disabled={loading || isGenerating || isDrafting}
             >
+              {isPublishing ? <Loader /> : "Publish"}
               {/* {isEditing ? "Update & Publish" : "Publish"} */}
-              Publish
             </Button>
           )}
         </div>
@@ -729,8 +858,9 @@ export default function LearningPathPage() {
                 placeholder="Insert Title"
                 value={formData.title}
                 onChange={handleInputChange}
-                className="bg-[#2a2a2a] h-[44px] border-0 text-white rounded-md"
+                className="h-[44px] bg-[#2a2a2a] text-white rounded-md border border-transparent focus:border-[#F9DB6F]  focus:outline-none focus:!border-[#F9DB6F]"
               />
+
               {formErrors.title && (
                 <p className="text-red-500 text-xs">{formErrors.title}</p>
               )}
@@ -749,7 +879,7 @@ export default function LearningPathPage() {
                 onValueChange={(value) => handleSelectChange("owner", value)}
               >
                 <SelectTrigger
-                  className="w-full text-white border-none bg-[#2C2D2E] text-[#FFFFFF52]"
+                  className="w-full text-white bg-[#2C2D2E] text-[#FFFFFF52]"
                   style={{height: "44px"}}
                 >
                   <SelectValue placeholder="Select path owner" />
@@ -784,7 +914,7 @@ export default function LearningPathPage() {
                 onValueChange={(value) => handleSelectChange("category", value)}
               >
                 <SelectTrigger
-                  className="w-full text-white border-none bg-[#2C2D2E] text-[#FFFFFF52]"
+                  className="w-full text-white bg-[#2C2D2E] text-[#FFFFFF52] focus:border-[#F9DB6F] focus:outline-none border border-transparent"
                   style={{height: "44px"}}
                 >
                   <SelectValue placeholder="Select category" />
@@ -832,7 +962,7 @@ export default function LearningPathPage() {
                 onClick={() => {
                   // Pass the current path ID if editing
                   const url = pathId
-                    ? `/knowledge-base?selectForLearningPath=true&pathId=${pathId}`
+                    ? `/knowledge-base?selectForLearningPath=true&id=${pathId}`
                     : "/knowledge-base?selectForLearningPath=true";
                   router.push(url);
                 }}
@@ -877,7 +1007,7 @@ export default function LearningPathPage() {
                   size="icon"
                   className="roundeed-[4px] w-[41.41pxpx]  h-[34.61px] border-transparent bg-[#191919] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#191919] cursor-pointer"
                   onClick={incrementQuestions}
-                  disabled={formData.num_of_questions >= 20}
+                  // disabled={formData.num_of_questions >= 20}
                 >
                   <Plus size={16} />
                 </Button>
@@ -889,48 +1019,16 @@ export default function LearningPathPage() {
               <label className="block text-[16px]] font-urbanist text-normal">
                 Choose Questions style
               </label>
-              {/* <div className="flex gap-4">
-                <Button
-                  variant={
-                    formData.question_type === "multiple"
-                      ? "default"
-                      : "outline"
-                  }
-                  className={
-                    formData.question_type === "multiple"
-                      ? "border border-[#F9DB6F] bg-[#f0d568]/10 text-[#f0d568] hover:bg-[#f0d568]/10 rounded-md w-auto cursor-pointer h-[44px] px-6 cursor-pointer"
-                      : "border-0 bg-[#222222] text-white hover:text-white hover:opacity-90 rounded-md hover:bg-transparent h-[44px] px-6 cursor-pointer w-auto"
-                  }
-                  onClick={() => handleQuestionStyleChange("multiple")}
-                >
-                  Multiple Choice
-                </Button>
-                <Button
-                  variant={
-                    formData.question_type === "short" ? "default" : "outline"
-                  }
-                  className={
-                    formData.question_type === "short"
-                      ? "border border-[#F9DB6F] bg-[#191919]  text-[#f0d568] hover:bg-[#f0d568]/10 hover:text-[#f0d568] rounded-md cursor-pointer h-[44px]  px-6 cursor-pointer w-auto"
-                      : " border-0 bg-[#FFFFFF0F] text-white hover:text-white hover:opacity-90 rounded-md hover:bg-transparent h-[44px] px-6 cursor-pointer w-auto"
-                  }
-                  onClick={() => handleQuestionStyleChange("short")}
-                >
-                  Short Answer
-                </Button>
-              </div> */}
+
               <div className="flex gap-4 pt-4">
                 <button
                   type="button"
-                  // onClick={handleClose}
                   className={`w-full h-[48px] rounded-md  text-white font-urbanist font-normal bg-[#333435]  transition cursor-pointer ${
                     formData.question_type === "multiple"
                       ? "border border-[#F9DB6F] bg-[#f0d568]/10 text-[#f0d568] hover:bg-[#f0d568]/10"
                       : "border-0 bg-[#333435] "
                   }`}
                   onClick={() => handleQuestionStyleChange("multiple")}
-
-                  // disabled={isLoading}
                 >
                   Multiple Choice
                 </button>
@@ -943,13 +1041,6 @@ export default function LearningPathPage() {
                   }`}
                   onClick={() => handleQuestionStyleChange("short")}
                 >
-                  {/* {isLoading ? (
-                                <div className="flex flex-row justify-center items-center">
-                                  <Loader />
-                                </div>
-                              ) : (
-                                "Create Announcement"
-                              )} */}
                   Short Answer
                 </button>
               </div>
@@ -960,21 +1051,18 @@ export default function LearningPathPage() {
               <Button
                 className="w-full bg-[#f0d568] hover:bg-[#e0c558] text-[14px] text-black font-medium h-12 rounded-md cursor-pointer"
                 onClick={handleGeneratePath}
-                disabled={loading}
+                disabled={loading || isDrafting}
               >
-                {/* {isEditing ? "Update Path" : "Generate Path"} */}
-                {"Generate Path"}
+                {isGenerating ? <Loader /> : "Generate Path"}
               </Button>
-              {/* {!isEditing && ( */}
               <Button
                 variant="outline"
                 className="w-full border bg-[#333435] border-[#ffffff] text-white hover:bg-[#333435] hover:text-white h-12 rounded-md cursor-pointer text-[14px] font-mediuum"
                 onClick={handleSaveAsDraft}
-                disabled={loading}
+                disabled={loading || isGenerating}
               >
-                Save as Draft
+                {isDrafting ? <Loader /> : "Save as Draft"}
               </Button>
-              {/* )} */}
             </div>
           </div>
 
@@ -1008,13 +1096,13 @@ export default function LearningPathPage() {
                         <div className="space-y-1 text-[#FFFFFF] text-[20px]">
                           <p>
                             &gt; Number of Cards selected:{" "}
-                            {formData.cardsSelected}
+                            {selectedCards?.length ||'N/A'}
                           </p>
                           <p>
                             &gt; Questions per card: {formData.num_of_questions}
                           </p>
                           <p>
-                            &gt; Total Path Questions: {formData.totalQuestions}
+                            &gt; Total Path Questions:  {selectedCards?.length ?formData.num_of_questions * (selectedCards?.length):'N/A'}
                           </p>
                           <p>
                             &gt; Questions Style:{" "}
@@ -1027,8 +1115,8 @@ export default function LearningPathPage() {
                       <Button
                         variant="outline"
                         className="border border-white bg-[#333435] text-white hover:text-white hover:bg-[#333435] hover:opacity-90 h-10 rounded-md flex items-center gap-2 cursor-pointer !px-8"
-                        onClick={openQuestionModal}
-                        disabled={questions.length >= formData.totalQuestions}
+                        // onClick={openQuestionModal}
+                        // disabled={questions.length >= formData.totalQuestions}
                       >
                         <PlusIcon size={16} /> Add Questions
                       </Button>
@@ -1056,6 +1144,7 @@ export default function LearningPathPage() {
                       questions={questions}
                       displayQuestionType={displayQuestionType}
                       removeQuestion={removeQuestion}
+                      isLoading={isGenerating}
                     />
                   </div>
                 </div>

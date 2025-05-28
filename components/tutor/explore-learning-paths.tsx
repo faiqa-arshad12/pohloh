@@ -104,7 +104,8 @@ export default function ExploreLearningPath() {
       if (apiData.success && apiData.cards) {
         // Filter to only include published learning paths
         const publishedCards = apiData.cards.filter(
-          (card) => card.status.toLowerCase() === "published"||"draft"||"generated"
+          (card) =>
+            card.status.toLowerCase() === "published" || "draft" || "generated"
         );
 
         // Create initial data with empty enrolled users
@@ -229,6 +230,8 @@ export default function ExploreLearningPath() {
   // Function to handle editing a learning path
   const handleEdit = (row: LearningPathTableData) => {
     console.log(`Editing: ${row.courseName}`, row.originalData);
+    router.push(`/tutor/creating-learning-path?id=${row.id}`);
+
     // Add your edit logic here
   };
 
@@ -241,7 +244,7 @@ export default function ExploreLearningPath() {
   // Function to handle confirming deletion
   const confirmDelete = async (id: string) => {
     try {
-      console.log(id,'string')
+      console.log(id, "string");
       setIsDeleting(true);
 
       if (itemToDelete !== null) {
@@ -267,7 +270,7 @@ export default function ExploreLearningPath() {
     } finally {
       setIsDeleting(false);
       setItemToDelete(null);
-      setDeleteModalOpen(false)
+      setDeleteModalOpen(false);
     }
   };
 
@@ -279,7 +282,6 @@ export default function ExploreLearningPath() {
     return (
       <div className="text-white py-4">
         <div className="">
-
           <div className="flex items-center justify-between mb-6">
             <div className="flex flex-wrap items-center gap-4 sm:gap-7 cusror-pointer">
               <ArrowBack link="/tutor" />
