@@ -879,7 +879,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col lg:flex-row gap-4 md:gap-8 h-[calc(100vh-200px)]">
+          <div className="flex flex-col lg:flex-row gap-4 md:gap-8 min-h-[90vh]">
             {/* Left Side - Form */}
             <Form {...form}>
               <form
@@ -1221,7 +1221,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
             </Form>
 
             {/* Right Side - Content Editor */}
-            <div className="flex-1 bg-[#191919] rounded-[20px] p-6 md:p-10 flex flex-col h-full">
+            <div className="flex-1 bg-[#191919] rounded-[20px] p-6 md:p-10 flex flex-col">
               <Form {...form}>
                 <div className="w-full bg-[#191919] rounded-[20px] flex flex-col h-full">
                   {/* Title */}
