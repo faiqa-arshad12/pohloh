@@ -397,10 +397,10 @@ export default function ExploreLearningPath() {
               renderCell={(column, row) => {
                 if (column === "courseName") {
                   return (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 ml-3">
                       {row.courseName}
                       {row.enrolled && (
-                        <span className="bg-[#3a3a1a] text-[#f0d568] text-xs px-2 py-0.5 rounded-full">
+                        <span className="bg-[#F9DB6F66] text-[#F9DB6F] text-[14px]  rounded-[20px] w-[91px] h-[27px] text-center items-center flex flex-row justify-center">
                           Enrolled
                         </span>
                       )}
