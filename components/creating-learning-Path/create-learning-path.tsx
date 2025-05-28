@@ -3,7 +3,7 @@
 import type React from "react";
 
 import {useState, useEffect, useMemo} from "react";
-import {useRouter, useSearchParams} from "next/navigation";
+import {useRouter} from "next/navigation";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {
@@ -269,8 +269,8 @@ export default function LearningPathPage() {
       errors.title = "Learning Path Title is required";
     } else if (formData.title.trim().length < 4) {
       errors.title = "Title must be at least 4 characters long";
-    } else if (formData.title.trim().length > 50) {
-      errors.title = "Title must be no more than 50 characters long";
+    } else if (formData.title.trim().length > 30) {
+      errors.title = "Title must be no more than 30 characters long";
     }
 
     if (!formData.path_owner) {
@@ -318,10 +318,10 @@ export default function LearningPathPage() {
         ...prev,
         title: "Title must be at least 4 characters long",
       }));
-    } else if (value.trim().length > 50) {
+    } else if (value.trim().length > 30) {
       setFormErrors((prev) => ({
         ...prev,
-        title: "Title must be no more than 50 characters long",
+        title: "Title must be no more than 30 characters long",
       }));
     } else {
       setFormErrors((prev) => ({...prev, title: ""}));
@@ -739,7 +739,7 @@ export default function LearningPathPage() {
           <div className="bg-[#1a1a1a] rounded-lg p-6 space-y-5 font-urbanist  rounded-[20px]">
             {/* Title */}
             <div className="space-y-2">
-              <label htmlFor="title" className="block text-sm">
+              <label htmlFor="title" className="block text-[16px] font-urbanist text-normal">
                 Learning Path Title
               </label>
               <Input
@@ -757,7 +757,7 @@ export default function LearningPathPage() {
 
             {/* Path Owner */}
             <div className="space-y-2">
-              <label htmlFor="path_owner" className="block text-sm">
+              <label htmlFor="path_owner"  className="block text-[16px] font-urbanist text-normal">
                 Enter Path Owner
               </label>
               <Select
@@ -789,7 +789,7 @@ export default function LearningPathPage() {
 
             {/* Category */}
             <div className="space-y-2">
-              <label htmlFor="category" className="block text-sm">
+              <label htmlFor="category"  className="block text-[16px] font-urbanist text-normal">
                 Select Category
               </label>
               <Select
@@ -836,7 +836,7 @@ export default function LearningPathPage() {
 
             {/* Training Content */}
             <div className="space-y-2">
-              <label className="block text-sm">Choose Training Content</label>
+              <label  className="block text-[16px] font-urbanist text-normal">Choose Training Content</label>
               <Button
                 variant="outline"
                 className="border bg-[#FFFFFF14] border-[#f0d568] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#F9DB6F]/10 h-10 rounded-md cursor-pointer"
@@ -864,18 +864,18 @@ export default function LearningPathPage() {
 
             {/* Questions per card */}
             <div className="space-y-2">
-              <label className="block text-sm">
+              <label  className="block text-[16px] font-urbanist text-normal">
                 Number of Questions per card
               </label>
-              <div className="flex items-center bg-[#FFFFFF14] rounded-[6px] w-[130px] border border-[#F9DB6F]">
+              <div className="flex items-center  p-2 bg-[#FFFFFF14] rounded-[6px] w-[144px] h-[61.8px] border border-[#F9DB6F]">
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-6 w-6 m-3 border-transparent bg-[#191919] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#191919] cursor-pointer"
+                  className="roundeed-[4px] w-[41.41pxpx] h-[34.61px]  border-transparent bg-[#191919] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#191919] cursor-pointer"
                   onClick={decrementQuestions}
                   disabled={formData.num_of_questions <= 1}
                 >
-                  <Minus size={16} />
+                  <Minus size={16}  className="roundeed-[4px] w-[41.41pxpx] h-[34.61px]"/>
                 </Button>
                 <div className="h-6 w-8 m-3 flex items-center justify-center text-[#f0d568]">
                   {formData.num_of_questions}
@@ -883,7 +883,7 @@ export default function LearningPathPage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-6 w-6 m-3 border-transparent bg-[#191919] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#191919] cursor-pointer"
+                  className="roundeed-[4px] w-[41.41pxpx]  h-[34.61px] border-transparent bg-[#191919] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#191919] cursor-pointer"
                   onClick={incrementQuestions}
                   disabled={formData.num_of_questions >= 20}
                 >
@@ -894,7 +894,7 @@ export default function LearningPathPage() {
 
             {/* Question style */}
             <div className="space-y-2 w-full">
-              <label className="block text-sm">Choose Questions style</label>
+              <label  className="block text-[16px]] font-urbanist text-normal">Choose Questions style</label>
               {/* <div className="flex gap-4">
                 <Button
                   variant={
@@ -929,7 +929,7 @@ export default function LearningPathPage() {
                 <button
                   type="button"
                   // onClick={handleClose}
-                  className={`w-full h-[48px] rounded-md  text-white font-urbanist font-semibold bg-[#333435]  transition cursor-pointer ${
+                  className={`w-full h-[48px] rounded-md  text-white font-urbanist font-normal bg-[#333435]  transition cursor-pointer ${
                     formData.question_type === "multiple"
                       ? "border border-[#F9DB6F] bg-[#f0d568]/10 text-[#f0d568] hover:bg-[#f0d568]/10"
                       : "border-0 bg-[#333435] "
@@ -942,7 +942,7 @@ export default function LearningPathPage() {
                 </button>
                 <button
                   type="submit"
-                  className={`w-full h-[48px] rounded-md  text-whitebg-[#333435]  font-urbanist font-semibold  transition cursor-pointer ${
+                  className={`w-full h-[48px] rounded-md  text-whitebg-[#333435]  font-urbanist font-normal  transition cursor-pointer ${
                     formData.question_type === "short"
                       ? "border border-[#F9DB6F] bg-[#f0d568]/10 text-[#f0d568] hover:bg-[#f0d568]/10"
                       : "border-0 bg-[#333435] "
@@ -964,7 +964,7 @@ export default function LearningPathPage() {
             {/* Action buttons */}
             <div className="flex flex-col pt-4 space-y-3 justify-center items-center">
               <Button
-                className="w-full bg-[#f0d568] hover:bg-[#e0c558] text-black font-medium h-12 rounded-md cursor-pointer"
+                className="w-full bg-[#f0d568] hover:bg-[#e0c558] text-[14px] text-black font-medium h-12 rounded-md cursor-pointer"
                 onClick={handleGeneratePath}
                 disabled={loading}
               >
@@ -974,7 +974,7 @@ export default function LearningPathPage() {
               {/* {!isEditing && ( */}
               <Button
                 variant="outline"
-                className="w-full border bg-[#333435] border-[#ffffff] text-white hover:bg-[#333435] hover:text-white h-12 rounded-md cursor-pointer"
+                className="w-full border bg-[#333435] border-[#ffffff] text-white hover:bg-[#333435] hover:text-white h-12 rounded-md cursor-pointer text-[14px] font-mediuum"
                 onClick={handleSaveAsDraft}
                 disabled={loading}
               >
