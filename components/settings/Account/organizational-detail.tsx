@@ -56,19 +56,16 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
     try {
       if (selectedDepartments.includes(department)) {
         // Find the team to delete
-        const teamToDelete = teams.find(team => team.name === department);
+        const teamToDelete = teams.find((team) => team.name === department);
         if (!teamToDelete) return;
 
         // Remove department from team table
-        const response = await fetch(
-          `${apiUrl}/teams/${teamToDelete.id}`,
-          {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        const response = await fetch(`${apiUrl}/teams/${teamToDelete.id}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
 
         if (!response.ok) {
           throw new Error("Failed to remove department from team");
@@ -78,28 +75,24 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
         setSelectedDepartments(
           selectedDepartments.filter((dep) => dep !== department)
         );
-        setTeams(teams.filter(team => team.name !== department));
-        ShowToast("Department removed Successfully!")
-
+        setTeams(teams.filter((team) => team.name !== department));
+        ShowToast("Department removed Successfully!");
       } else {
         // Add department to team table
-        const response = await fetch(
-          `${apiUrl}/teams`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              name: department,
-              org_id: organization?.organizations?.id,
-              // For custom departments, you might want to set different defaults
-              lead_id: null,
-              user_id: null,
-              icon: DEPARTMENTS.includes(department) ? department : null
-            }),
-          }
-        );
+        const response = await fetch(`${apiUrl}/teams`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: department,
+            org_id: organization?.organizations?.id,
+            // For custom departments, you might want to set different defaults
+            lead_id: null,
+            user_id: null,
+            icon: DEPARTMENTS.includes(department) ? department : null,
+          }),
+        });
 
         if (!response.ok) {
           throw new Error("Failed to add department to team");
@@ -110,7 +103,7 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
         // Update local state
         setSelectedDepartments([...selectedDepartments, department]);
         setTeams([...teams, newTeam]);
-        ShowToast("Department Added Successfully!")
+        ShowToast("Department Added Successfully!");
       }
     } catch (error) {
       console.error("Error toggling department:", error);
@@ -147,7 +140,9 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
         if (teamsData.success && teamsData.teams) {
           setTeams(teamsData.teams);
           // Extract department names from teams
-          const departmentNames = teamsData.teams.map((team: Team) => team.name);
+          const departmentNames = teamsData.teams.map(
+            (team: Team) => team.name
+          );
           setSelectedDepartments(departmentNames);
         }
       } catch (error) {
@@ -219,7 +214,32 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
         num_of_seat: seats,
         org_picture: profilePictureUrl,
       };
+      const totalUserData = await fetch(
+        `${apiUrl}/users/count/${organization?.organizations.id}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // credentials: "include",
+        }
+      );
 
+      if (!totalUserData.ok) {
+        const errorText = await totalUserData.text();
+        throw new Error(
+          `Failed to fetch organization data: ${totalUserData.status} - ${errorText}`
+        );
+      }
+
+      const totalUser = await totalUserData.json();
+      if (totalUser.data.count > seats) {
+        ShowToast(
+          "The number of seats must be at least equal to the number of active users.",
+          "error"
+        );
+        return;
+      }
       const response = await fetch(
         `${apiUrl}/${organizations}/${organization?.organizations.id}`,
         {
@@ -244,6 +264,8 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
       setOrg_loading(false);
       ShowToast("An error occurred with updating organization", "error");
       console.error("Error updating organization:", error);
+    } finally {
+      setOrg_loading(false);
     }
   };
 
@@ -424,22 +446,19 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
 
                         try {
                           // Add to team table
-                          const response = await fetch(
-                            `${apiUrl}/teams`,
-                            {
-                              method: "POST",
-                              headers: {
-                                "Content-Type": "application/json",
-                              },
-                              body: JSON.stringify({
-                                name: customDept,
-                                org_id: organization?.organizations?.id,
-                                lead_id: null,
-                                user_id: null,
-                                icon: null
-                              }),
-                            }
-                          );
+                          const response = await fetch(`${apiUrl}/teams`, {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                              name: customDept,
+                              org_id: organization?.organizations?.id,
+                              lead_id: null,
+                              user_id: null,
+                              icon: null,
+                            }),
+                          });
 
                           if (!response.ok) {
                             throw new Error("Failed to add custom department");
@@ -447,11 +466,17 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
 
                           const newTeam = await response.json();
 
-                          setSelectedDepartments([...selectedDepartments, customDept]);
+                          setSelectedDepartments([
+                            ...selectedDepartments,
+                            customDept,
+                          ]);
                           setTeams([...teams, newTeam]);
                           setCustomDepartment("");
                         } catch (error) {
-                          console.error("Error adding custom department:", error);
+                          console.error(
+                            "Error adding custom department:",
+                            error
+                          );
                           ShowToast("Failed to add custom department", "error");
                         }
                       }
