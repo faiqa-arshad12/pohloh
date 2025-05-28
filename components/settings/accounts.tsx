@@ -91,7 +91,11 @@ export default function Account() {
         }
 
         const result = await response.json();
-        if (
+        console.log(subscription, "subscription");
+        if (subscription?.plan?.subscription?.status !== "active") {
+          ShowToast("Upgrade your subscription to invite users", "error");
+          return;
+        } else if (
           result.data.count >= subscription.plan.subscription.quantity &&
           subscription.plan.subscription.status === "active"
         ) {
@@ -99,11 +103,13 @@ export default function Account() {
             "You've reached the maximum number of users for your current plan. Upgrade your subscription to invite more users.",
             "error"
           );
+          return;
         } else {
           setOpenInvite(true);
         }
       } else {
         ShowToast("Upgrade your subscription to invite more users", "error");
+        return;
       }
     } catch (err) {
       console.error("Error inviting user:", err);
