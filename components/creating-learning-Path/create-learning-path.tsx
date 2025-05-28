@@ -13,12 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {Minus, Plus, X, ArrowLeft, PlusIcon} from "lucide-react";
+import {Minus, Plus, X, PlusIcon} from "lucide-react";
 import {useUser} from "@clerk/nextjs";
 import VerificationPeriodPicker from "./verification-picker";
 import {apiUrl} from "@/utils/constant";
 import ArrowBack from "../shared/ArrowBack";
 import {ShowToast} from "../shared/show-toast";
+import QuestionModal from "./question-modal";
+import QuestionPreview from "./questions-preview";
 
 // Types
 type Question = {
@@ -449,31 +451,7 @@ export default function LearningPathPage() {
         return;
       }
 
-      // Prepare data for submission
-      const learningPathData = prepareLearningPathData("generated");
-
-      // Submit to API
-      const response = await fetch(`${apiUrl}/learning-paths`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        // credentials: "include",
-        body: JSON.stringify(learningPathData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to generate path");
-      }
-
-      const result = await response.json();
-
-      // If we get a path ID back, update the URL
-      if (result && result.id) {
-        router.push(`/learning-path?id=${result.id}`);
-      }
-
+      // Instead of API call, just set pathGenerated to true
       setPathGenerated(true);
       showToast("Path Generated Successfully", "success");
     } catch (error) {
@@ -734,12 +712,15 @@ export default function LearningPathPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-[450px_1fr] gap-6 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-[400px_1fr] gap-6 w-full">
           {/* Form Section */}
           <div className="bg-[#1a1a1a] rounded-lg p-6 space-y-5 font-urbanist  rounded-[20px]">
             {/* Title */}
             <div className="space-y-2">
-              <label htmlFor="title" className="block text-[16px] font-urbanist text-normal">
+              <label
+                htmlFor="title"
+                className="block text-[16px] font-urbanist text-normal"
+              >
                 Learning Path Title
               </label>
               <Input
@@ -757,7 +738,10 @@ export default function LearningPathPage() {
 
             {/* Path Owner */}
             <div className="space-y-2">
-              <label htmlFor="path_owner"  className="block text-[16px] font-urbanist text-normal">
+              <label
+                htmlFor="path_owner"
+                className="block text-[16px] font-urbanist text-normal"
+              >
                 Enter Path Owner
               </label>
               <Select
@@ -789,7 +773,10 @@ export default function LearningPathPage() {
 
             {/* Category */}
             <div className="space-y-2">
-              <label htmlFor="category"  className="block text-[16px] font-urbanist text-normal">
+              <label
+                htmlFor="category"
+                className="block text-[16px] font-urbanist text-normal"
+              >
                 Select Category
               </label>
               <Select
@@ -836,7 +823,9 @@ export default function LearningPathPage() {
 
             {/* Training Content */}
             <div className="space-y-2">
-              <label  className="block text-[16px] font-urbanist text-normal">Choose Training Content</label>
+              <label className="block text-[16px] font-urbanist text-normal">
+                Choose Training Content
+              </label>
               <Button
                 variant="outline"
                 className="border bg-[#FFFFFF14] border-[#f0d568] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#F9DB6F]/10 h-10 rounded-md cursor-pointer"
@@ -864,7 +853,7 @@ export default function LearningPathPage() {
 
             {/* Questions per card */}
             <div className="space-y-2">
-              <label  className="block text-[16px] font-urbanist text-normal">
+              <label className="block text-[16px] font-urbanist text-normal">
                 Number of Questions per card
               </label>
               <div className="flex items-center  p-2 bg-[#FFFFFF14] rounded-[6px] w-[144px] h-[61.8px] border border-[#F9DB6F]">
@@ -875,7 +864,10 @@ export default function LearningPathPage() {
                   onClick={decrementQuestions}
                   disabled={formData.num_of_questions <= 1}
                 >
-                  <Minus size={16}  className="roundeed-[4px] w-[41.41pxpx] h-[34.61px]"/>
+                  <Minus
+                    size={16}
+                    className="roundeed-[4px] w-[41.41pxpx] h-[34.61px]"
+                  />
                 </Button>
                 <div className="h-6 w-8 m-3 flex items-center justify-center text-[#f0d568]">
                   {formData.num_of_questions}
@@ -894,7 +886,9 @@ export default function LearningPathPage() {
 
             {/* Question style */}
             <div className="space-y-2 w-full">
-              <label  className="block text-[16px]] font-urbanist text-normal">Choose Questions style</label>
+              <label className="block text-[16px]] font-urbanist text-normal">
+                Choose Questions style
+              </label>
               {/* <div className="flex gap-4">
                 <Button
                   variant={
@@ -1026,25 +1020,10 @@ export default function LearningPathPage() {
                             &gt; Questions Style:{" "}
                             {displayQuestionType(formData.question_type)}
                           </p>
-                          {/* {formData.path_owner && (
-                            <p>
-                              &gt; Path Owner:{" "}
-                              {getOwnerDisplayName(formData.path_owner)}
-                            </p>
-                          )}
-                          {apiData?.id && <p>&gt; Path ID: {apiData.id}</p>} */}
                         </div>
                       </div>
                     </div>
                     <div className="flex justify-end">
-                      {/* <div className="text-sm">
-                      <span className="text-gray-400">Questions: </span>
-                      <span className="text-white">{questions.length}</span>
-                      <span className="text-gray-400"> / Required: </span>
-                      <span className=F"text-white">{formData.num_of_questions}</span>
-                      <span className="text-gray-400"> / Total: </span>
-                      <span className="text-white">{formData.totalQuestions}</span>
-                    </div> */}
                       <Button
                         variant="outline"
                         className="border border-white bg-[#333435] text-white hover:text-white hover:bg-[#333435] hover:opacity-90 h-10 rounded-md flex items-center gap-2 cursor-pointer !px-8"
@@ -1060,30 +1039,6 @@ export default function LearningPathPage() {
                       <h3 className="font-medium text-[32px] text-[#f0d568] mb-4">
                         Training Content:
                       </h3>
-                      {/* <div className="text-sm">
-                        {questions.length >= formData.totalQuestions ? (
-                          <span className="text-green-500">
-                            All required questions added ({questions.length}/
-                            {formData.totalQuestions})
-                          </span>
-                        ) : (
-                          <span
-                            className={
-                              isPublishing &&
-                              questions.length < formData.num_of_questions
-                                ? "text-red-500"
-                                : "text-yellow-500"
-                            }
-                          >
-                            {formData.totalQuestions - questions.length} more
-                            question
-                            {formData.totalQuestions - questions.length !== 1
-                              ? "s"
-                              : ""}{" "}
-                            needed
-                          </span>
-                        )}
-                      </div> */}
                     </div>
 
                     {isPublishing &&
@@ -1097,67 +1052,11 @@ export default function LearningPathPage() {
                       )}
 
                     {/* Questions Display */}
-                    <div className="space-y-4">
-                      {questions.length === 0 ? (
-                        <div className="bg-[#222222] rounded-lg p-5 text-center">
-                          <p className="text-gray-400">
-                            No questions added yet. Click "Add Questions" to get
-                            started.
-                          </p>
-                        </div>
-                      ) : (
-                        questions.map((q, index) => (
-                          <div
-                            key={q.id}
-                            className="bg-[#222222] rounded-lg p-5 space-y-4 relative"
-                          >
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="absolute top-2 right-2 text-gray-400 hover:text-white hover:bg-transparent"
-                              onClick={() => removeQuestion(q.id)}
-                            >
-                              <X size={16} />
-                            </Button>
-                            <div>
-                              <h4 className="font-medium mb-2">
-                                Question {index + 1}:
-                              </h4>
-                              <p className="mb-1">{q.question}</p>
-                              {q.type === "multiple" && q.options && (
-                                <div className="mt-2 space-y-2">
-                                  {q.options.map((option, i) => (
-                                    <div
-                                      key={i}
-                                      className="flex items-center gap-2"
-                                    >
-                                      <div className="w-4 h-4 rounded-full border border-gray-400"></div>
-                                      <span>{option}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            <div>
-                              <p className="font-medium">
-                                Answer:{" "}
-                                <span className="font-normal">{q.answer}</span>
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="font-medium">
-                                Type:{" "}
-                                <span className="font-normal">
-                                  {displayQuestionType(q.type)}
-                                </span>
-                              </p>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
+                    <QuestionPreview
+                      questions={questions}
+                      displayQuestionType={displayQuestionType}
+                      removeQuestion={removeQuestion}
+                    />
                   </div>
                 </div>
               ) : (
@@ -1170,78 +1069,16 @@ export default function LearningPathPage() {
         </div>
 
         {/* Question Modal */}
-        {isQuestionModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-[#1a1a1a] rounded-lg p-6 w-full max-w-xl">
-              <h2 className="text-xl font-medium mb-4">Add Question</h2>
-
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="question" className="block text-sm mb-1">
-                    Question
-                  </label>
-                  <textarea
-                    id="question"
-                    name="question"
-                    value={currentQuestion.question}
-                    onChange={handleQuestionChange}
-                    className="w-full bg-[#2a2a2a] border-0 text-white rounded-md p-2 min-h-[100px]"
-                    placeholder="Enter your question here"
-                  />
-                </div>
-
-                {currentQuestion.type === "multiple" && (
-                  <div>
-                    <label className="block text-sm mb-1">Options</label>
-                    <div className="space-y-2">
-                      {currentQuestion.options?.map((option, index) => (
-                        <Input
-                          key={index}
-                          value={option}
-                          onChange={(e) =>
-                            handleOptionChange(index, e.target.value)
-                          }
-                          className="bg-[#2a2a2a] h-[44px] border-0 text-white rounded-md"
-                          placeholder={`Option ${index + 1}`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label htmlFor="answer" className="block text-sm mb-1">
-                    Answer
-                  </label>
-                  <Input
-                    id="answer"
-                    name="answer"
-                    value={currentQuestion.answer}
-                    onChange={handleQuestionChange}
-                    className="bg-[#2a2a2a] h-[44px] border-0 text-white rounded-md"
-                    placeholder="Enter the correct answer"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button
-                    variant="outline"
-                    className="border border-gray-600 bg-transparent text-white hover:text-white hover:opacity-90 rounded-md hover:bg-transparent"
-                    onClick={closeQuestionModal}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    className="bg-[#f0d568] hover:bg-[#e0c558] text-black font-medium rounded-md cursor-pointer"
-                    onClick={addQuestion}
-                  >
-                    Add Question
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <QuestionModal
+          isOpen={isQuestionModalOpen}
+          onClose={closeQuestionModal}
+          onAddQuestion={addQuestion}
+          currentQuestion={currentQuestion}
+          onQuestionChange={handleQuestionChange}
+          onOptionChange={handleOptionChange}
+          onQuestionTypeChange={handleQuestionTypeChange}
+          questionType={formData.question_type}
+        />
       </div>
     </div>
   );
