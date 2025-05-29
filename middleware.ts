@@ -54,7 +54,7 @@ export default clerkMiddleware(async (auth, req) => {
         user.publicMetadata?.status === UserStatus.approved;
 
       const isOwner =
-        user.unsafeMetadata?.role === 'owner' ||
+        // user.unsafeMetadata?.role === 'owner' ||
         user.publicMetadata?.role === 'owner';
 
       const isSubscribed =

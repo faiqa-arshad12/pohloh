@@ -34,8 +34,10 @@ export async function POST(req: Request) {
 
     // Check if user has unsafe metadata or if it's an empty object
     if (
-      !user.unsafe_metadata ||
-      Object.keys(user.unsafe_metadata).length === 0
+      user.unsafe_metadata &&
+      Object.keys(user.unsafe_metadata).length === 0 &&
+      user.public_metadata &&
+      Object.keys(user.public_metadata).length === 0
     ) {
       const client = await clerkClient();
 
