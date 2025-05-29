@@ -705,13 +705,13 @@ export default function LearningPathPage() {
 
   // Question management
   const openQuestionModal = () => {
-    if (questions.length >= totalQuestionsNeeded) {
-      showToast(
-        `You've reached the maximum number of questions (${totalQuestionsNeeded})`,
-        "error"
-      );
-      return;
-    }
+    // if (questions.length >= totalQuestionsNeeded) {
+    //   showToast(
+    //     `You've reached the maximum number of questions (${totalQuestionsNeeded})`,
+    //     "error"
+    //   );
+    //   return;
+    // }
 
     setCurrentQuestion({
       id: crypto.randomUUID(),
@@ -1115,7 +1115,7 @@ export default function LearningPathPage() {
                       <Button
                         variant="outline"
                         className="border border-white bg-[#333435] text-white hover:text-white hover:bg-[#333435] hover:opacity-90 h-10 rounded-md flex items-center gap-2 cursor-pointer !px-8"
-                        // onClick={openQuestionModal}
+                        onClick={openQuestionModal}
                         // disabled={questions.length >= formData.totalQuestions}
                       >
                         <PlusIcon size={16} /> Add Questions

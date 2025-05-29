@@ -1,6 +1,12 @@
 import React from "react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Question = {
   id: string;
@@ -33,12 +39,14 @@ export default function QuestionModal({
   onQuestionTypeChange,
   questionType,
 }: QuestionModalProps) {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-[#1a1a1a] rounded-lg p-6 w-full max-w-xl">
-        <h2 className="text-xl font-medium mb-4">Add Question</h2>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-[#1a1a1a] border-none rounded-lg w-full max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="text-white text-2xl font-medium">
+            Add Question
+          </DialogTitle>
+        </DialogHeader>
 
         <div className="space-y-4">
           <div>
@@ -86,7 +94,7 @@ export default function QuestionModal({
             />
           </div>
 
-          <div className="flex gap-4 pt-4">
+          {/* <div className="flex gap-4 pt-4">
             <button
               type="button"
               className={`w-full h-[48px] rounded-md text-white font-urbanist font-normal bg-[#333435] transition cursor-pointer ${
@@ -109,25 +117,25 @@ export default function QuestionModal({
             >
               Short Answer
             </button>
-          </div>
+          </div> */}
 
-          <div className="flex justify-end gap-2 pt-4">
+          <div className="flex justify-between gap-2 pt-4">
             <Button
               variant="outline"
-              className="border border-gray-600 bg-transparent text-white hover:text-white hover:opacity-90 rounded-md hover:bg-transparent"
+              className="bg-[#333333] hover:bg-[#444444] hover:text-[white] text-white border-0 rounded-md py-2 h-[47px] w-[166px] cursor-pointer"
               onClick={onClose}
             >
               Cancel
             </Button>
             <Button
-              className="bg-[#f0d568] hover:bg-[#e0c558] text-black font-medium rounded-md cursor-pointer"
+              className="bg-[#f0d568] hover:bg-[#e0c558] text-black font-medium rounded-md py-2 h-[48px] w-[210px] cursor-pointer"
               onClick={() => onAddQuestion(currentQuestion)}
             >
               Add Question
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

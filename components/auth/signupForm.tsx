@@ -174,20 +174,23 @@ export function SignupForm() {
     try {
       setSocialLoading(provider);
 
-      // Create signup with metadata before redirect
-      await signUp.create({
+      // First create the signup with initial metadata
+      const signUpResult = await signUp.create({
         unsafeMetadata: {
           role: role,
-          isProfileComplete: false,
           status: UserStatus.Pending,
+          isProfileComplete: false,
+          provider: provider,
+          signupMethod: "social",
+          signupDate: new Date().toISOString(),
         },
       });
 
-      // Make sure we're using the correct redirect URLs
-      await signUp?.authenticateWithRedirect({
+      // Then authenticate with the provider
+      await signUpResult.authenticateWithRedirect({
         strategy: provider,
-        redirectUrl: "/login",
-        redirectUrlComplete: "/",
+        redirectUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/owner/onboarding`,
+        redirectUrlComplete: `${process.env.NEXT_PUBLIC_SITE_URL}/owner/onboarding`,
       });
     } catch (err: unknown) {
       console.error("OAuth error:", err);

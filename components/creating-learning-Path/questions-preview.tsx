@@ -2,6 +2,8 @@ import React from "react";
 import {Button} from "../ui/button";
 import {X} from "lucide-react";
 import Loader from "../shared/loader";
+// import QuestionModal from "../components/QuestionModal";
+
 interface QuestionPreviewProps {
   questions: any[];
   displayQuestionType: (
