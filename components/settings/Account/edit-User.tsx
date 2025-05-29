@@ -27,11 +27,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {apiUrl, nameRegex, user_roles} from "@/utils/constant";
+import {apiUrl, user_roles, usernameRegex} from "@/utils/constant";
 import {ShowToast} from "@/components/shared/show-toast";
 import Loader from "@/components/shared/loader";
 import {useUser} from "@clerk/nextjs";
-import {X, Plus, PlusIcon} from "lucide-react";
+import {X, PlusIcon} from "lucide-react";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
 import {ScrollArea} from "@/components/ui/scroll-area";
 import {Badge} from "@/components/ui/badge";
@@ -39,10 +39,11 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 
 const formSchema = z.object({
   user_name: z
+
     .string()
-    .min(1, "Name is required")
-    .max(50, "Name must not exceed 50 characters")
-    .regex(nameRegex, "Name must not contain spaces"),
+    .min(1, "Username is required")
+    .max(50, "Username must not exceed 50 characters")
+    .regex(usernameRegex, "Username must not contain spaces"),
   role: z.string().min(1, "Seat Type is required"),
   user_role: z.string().min(1, "User Role is required"),
   team_id: z.string().min(1, "Team is required"),
@@ -173,7 +174,7 @@ export function EditUserModal({
 
     try {
       setIsLoadingTeamMembers(true);
-      const api= `${apiUrl}/users/organizations/${userDetails.org_id}`;
+      const api = `${apiUrl}/users/organizations/${userDetails.org_id}`;
 
       const response = await fetch(api, {
         method: "GET",
@@ -201,8 +202,7 @@ export function EditUserModal({
           member.role === "user" &&
           member.team_id !== null &&
           member.team_id === form.getValues("team_id")
-        );
-      console.log(onlyUsersInTeam, "only", userDetails, "sls");
+      );
       setTeamMembers(onlyUsersInTeam);
       // setTeamMembers(filteredMembers || []);
     } catch (error) {

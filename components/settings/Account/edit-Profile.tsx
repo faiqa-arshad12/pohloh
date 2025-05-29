@@ -19,7 +19,14 @@ import {
 } from "@/components/ui/form";
 import {Input} from "@/components/ui/input";
 import {useUser} from "@clerk/nextjs";
-import {apiUrl, user_roles, users} from "@/utils/constant";
+import {
+  allowedTypes,
+  apiUrl,
+  nameRegex,
+  user_roles,
+  usernameRegex,
+  users,
+} from "@/utils/constant";
 import {Plus, PlusIcon} from "lucide-react";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
 import {ScrollArea} from "@/components/ui/scroll-area";
@@ -41,33 +48,28 @@ import * as z from "zod";
 const formSchema = z.object({
   firstName: z
     .string()
-    .min(2, "First name must be at least 2 characters")
-    .max(50, "First name cannot exceed 50 characters")
-    .regex(
-      /^[a-zA-Z\s'-]+$/,
-      "First name should only contain letters, spaces, hyphens, or apostrophes"
-    ),
+    .min(1, "First name is required")
+    .max(50, "First name must not exceed 50 characters")
+    .regex(nameRegex, "First name must contain only letters"),
   lastName: z
     .string()
-    .min(2, "Last name must be at least 2 characters")
+    .min(1, "Last name must be at least 2 characters")
     .max(50, "Last name cannot exceed 50 characters")
-    .regex(
-      /^[a-zA-Z\s'-]+$/,
-      "Last name should only contain letters, spaces, hyphens, or apostrophes"
-    ),
+    .regex(nameRegex, "Last name must contain only letters"),
   username: z
     .string()
-    .min(3, "Username must be at least 3 characters")
-    .max(30, "Username cannot exceed 30 characters")
-    .regex(
-      /^[a-zA-Z0-9_]+$/,
-      "Username can only contain letters, numbers, and underscores"
-    ),
+    .min(1, "Username is required")
+    .max(50, "Username must not exceed 50 characters")
+    .regex(usernameRegex, "Username must not contain spaces"),
   location: z
     .string()
-    .max(100, "Location cannot exceed 100 characters")
-    .optional()
-    .or(z.literal("")),
+    .min(2, "Location must be at least 2 characters")
+    .max(100, "Location must not exceed 100 characters")
+    .regex(
+      /^[a-zA-Z0-9\s,.-]+$/,
+      "Location can only contain letters, numbers, spaces, and basic punctuation (,.-)"
+    )
+    .transform((val) => val.trim()),
   user_role: z.string().min(1, "Please select a role"),
 });
 
@@ -173,14 +175,55 @@ const EditProfileModal = ({
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+    // Validate file type
+    if (!allowedTypes.includes(file.type)) {
+      ShowToast(
+        "Please upload a valid image file (JPEG, PNG, or GIF)",
+        "error"
+      );
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+    if (file.size > maxSize) {
+      ShowToast("Image size should be less than 2MB", "error");
+      return;
+    }
+
+    // Validate image dimensions
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      // Check dimensions
+      const maxDimension = 2000; // Max width/height of 2000px
+      if (img.width > maxDimension || img.height > maxDimension) {
+        URL.revokeObjectURL(objectUrl);
+        ShowToast(
+          "Image dimensions should not exceed 2000x2000 pixels",
+          "error"
+        );
+        return;
+      }
+
+      URL.revokeObjectURL(objectUrl);
+      // If all validations pass, set the file and preview
       setFileToUpload(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfileImage(reader.result as string);
       };
       reader.readAsDataURL(file);
-    }
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      ShowToast("Failed to load image", "error");
+    };
+
+    img.src = objectUrl;
   };
 
   const removeImage = () => {
@@ -222,17 +265,14 @@ const EditProfileModal = ({
         profile_picture: profilePictureUrl,
       };
 
-      const response = await fetch(
-        `${apiUrl}/${users}/${user.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedUserData),
-          // // credentials: "include",
-        }
-      );
+      const response = await fetch(`${apiUrl}/${users}/${user.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedUserData),
+        // // credentials: "include",
+      });
 
       if (!response.ok) {
         throw new Error("Failed to update user in database");
@@ -725,7 +765,9 @@ const EditProfileModal = ({
               />
               {userData?.role === "admin" && userData?.team_id && (
                 <div className="mt-2 pt-2">
-                  <h3 className="text-sm mb-4 text-white">Manage Team Members</h3>
+                  <h3 className="text-sm mb-4 text-white">
+                    Manage Team Members
+                  </h3>
 
                   {isLoadingTeamMembers ? (
                     <div className="flex justify-center items-center py-4">

@@ -164,3 +164,5 @@ export   const determinePeriodType = (date: Date): string => {
     if (date.getTime() === oneYear.getTime()) return "12months";
     return "custom";
   };
+
+  export const allowedTypes = ["image/jpeg", "image/png", "image/gif"];

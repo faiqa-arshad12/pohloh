@@ -8,7 +8,12 @@ import {useUser} from "@clerk/nextjs";
 
 import Image from "next/image";
 
-import {apiUrl, DEPARTMENTS, organizations} from "@/utils/constant";
+import {
+  allowedTypes,
+  apiUrl,
+  DEPARTMENTS,
+  organizations,
+} from "@/utils/constant";
 import Loader from "../../shared/loader";
 import {supabase} from "@/supabase/client";
 
@@ -42,14 +47,31 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setFileToUpload(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // Validate file type
+    if (!allowedTypes.includes(file.type)) {
+      ShowToast(
+        "Please upload a valid image file (JPEG, PNG, or GIF)",
+        "error"
+      );
+      return;
     }
+
+    // Validate file size (max 2MB)
+    const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+    if (file.size > maxSize) {
+      ShowToast("Image size should be less than 2MB", "error");
+      return;
+    }
+
+    // If validations pass, set the file and preview
+    setFileToUpload(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfileImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const toggleDepartment = async (department: string) => {
@@ -196,6 +218,30 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
 
   const submitOrganizationDetails = async () => {
     try {
+      // Validate organization name first
+      if (!organizationName.trim()) {
+        setOrganizationNameError("Organization name is required");
+        return;
+      }
+      if (organizationName.length < 2) {
+        setOrganizationNameError(
+          "Organization name must be at least 2 characters"
+        );
+        return;
+      }
+      if (organizationName.length > 50) {
+        setOrganizationNameError(
+          "Organization name cannot exceed 50 characters"
+        );
+        return;
+      }
+      if (!/^[a-zA-Z0-9\s&'-]+$/.test(organizationName)) {
+        setOrganizationNameError(
+          "Organization name contains invalid characters"
+        );
+        return;
+      }
+
       setOrg_loading(true);
 
       if (!user) return;
@@ -210,7 +256,7 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
       }
 
       const payload = {
-        name: organizationName,
+        name: organizationName.trim(),
         num_of_seat: seats,
         org_picture: profilePictureUrl,
       };
@@ -321,17 +367,26 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
                   <BuildingIcon size={18} className="text-gray-400 mr-2" />
                   <input
                     type="text"
-                    placeholder="Pholoh"
+                    placeholder="Enter organization name"
                     className="bg-transparent w-full focus:outline-none text-white"
                     value={organizationName}
                     onChange={(e) => {
-                      setOrganizationName(e.target.value);
+                      // Remove any special characters except allowed ones
+                      const value = e.target.value.replace(
+                        /[^a-zA-Z0-9\s&'-]/g,
+                        ""
+                      );
+                      setOrganizationName(value);
                       setOrganizationNameError("");
                     }}
                     onBlur={() => {
                       if (!organizationName.trim()) {
                         setOrganizationNameError(
                           "Organization name is required"
+                        );
+                      } else if (organizationName.length < 2) {
+                        setOrganizationNameError(
+                          "Organization name must be at least 2 characters"
                         );
                       } else if (organizationName.length > 50) {
                         setOrganizationNameError(
@@ -540,8 +595,24 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
                     // Validate all fields
                     let isValid = true;
 
+                    // Validate organization name
                     if (!organizationName.trim()) {
                       setOrganizationNameError("Organization name is required");
+                      isValid = false;
+                    } else if (organizationName.length < 2) {
+                      setOrganizationNameError(
+                        "Organization name must be at least 2 characters"
+                      );
+                      isValid = false;
+                    } else if (organizationName.length > 50) {
+                      setOrganizationNameError(
+                        "Organization name cannot exceed 50 characters"
+                      );
+                      isValid = false;
+                    } else if (!/^[a-zA-Z0-9\s&'-]+$/.test(organizationName)) {
+                      setOrganizationNameError(
+                        "Organization name contains invalid characters"
+                      );
                       isValid = false;
                     }
 
