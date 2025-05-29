@@ -28,8 +28,9 @@ interface TipTapEditorProps {
   placeholder?: string;
   isContentEmpty?: boolean;
   onUploadClick?: () => void;
-  isExtracting:boolean;
-  setIsExtracting:(isload:boolean)=>void
+  isExtracting: boolean;
+  setIsExtracting: (isload: boolean) => void;
+  setIsContentEmpty?: (isEmpty: boolean) => void;
 }
 
 // Add supported file types interface
@@ -37,8 +38,8 @@ interface SupportedFileTypes {
   supported_extensions: string[];
   unavailable_formats: string[];
   note: string;
-  isExtracting:boolean;
-  setIsExtracting:(isload:boolean)=>void
+  isExtracting: boolean;
+  setIsExtracting: (isload: boolean) => void;
 }
 
 const TipTapEditor = ({
@@ -48,7 +49,8 @@ const TipTapEditor = ({
   isContentEmpty = true,
   onUploadClick,
   isExtracting,
-  setIsExtracting
+  setIsExtracting,
+  setIsContentEmpty,
 }: TipTapEditorProps) => {
   // Refs for dropdowns
   const paragraphDropdownRef = useRef<HTMLDivElement>(null);
@@ -117,6 +119,12 @@ const TipTapEditor = ({
       // Sanitize the content before sending it
       const sanitizedHtml = html.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
       onChange(sanitizedHtml);
+      // Update isContentEmpty based on content
+      if (setIsContentEmpty) {
+        setIsContentEmpty(sanitizedHtml === "<p></p>");
+      }
+      // Maintain focus after update
+      editor.commands.focus();
     },
     editorProps: {
       attributes: {
@@ -132,6 +140,13 @@ const TipTapEditor = ({
       },
     },
   });
+
+  // Add effect to maintain focus when content changes
+  useEffect(() => {
+    if (editor && !isContentEmpty) {
+      editor.commands.focus();
+    }
+  }, [isContentEmpty, editor]);
 
   // Handle click outside to close dropdowns
   useEffect(() => {
@@ -578,11 +593,11 @@ const TipTapEditor = ({
       {/* Editor Content */}
       <div className="flex-grow rounded-[20px] bg-[#191919] overflow-auto !border !border-[white] !border-dashed mt-4 p-4 h-[200px] overflow-y-[auto]">
         {isContentEmpty ? (
-          <div className="flex flex-col items-center justify-center h-full w-full text-center">
+          <div className="flex flex-col items-center justify-center h-full w-full text-center relative">
             <p className="text-white mb-4 text-[20px] font-urbanist">
               {placeholder}
             </p>
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-2 relative z-10">
               <input
                 type="file"
                 id="file-upload"
@@ -600,7 +615,6 @@ const TipTapEditor = ({
                 {isExtracting ? (
                   <>
                     <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-                    {/* <span>Extracting...</span> */}
                   </>
                 ) : (
                   <>
@@ -612,6 +626,17 @@ const TipTapEditor = ({
               {uploadError && (
                 <p className="text-red-500 text-sm mt-2">{uploadError}</p>
               )}
+            </div>
+            <div className="absolute inset-0" style={{pointerEvents: "auto"}}>
+              <EditorContent
+                editor={editor}
+                className="h-full opacity-0"
+                onKeyDown={() => {
+                  if (setIsContentEmpty) {
+                    setIsContentEmpty(false);
+                  }
+                }}
+              />
             </div>
           </div>
         ) : (
