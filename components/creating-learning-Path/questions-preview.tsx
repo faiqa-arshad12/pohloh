@@ -1,6 +1,6 @@
 import React from "react";
 import {Button} from "../ui/button";
-import {X} from "lucide-react";
+import {X, Pencil} from "lucide-react";
 import Loader from "../shared/loader";
 // import QuestionModal from "../components/QuestionModal";
 
@@ -10,6 +10,7 @@ interface QuestionPreviewProps {
     type: "multiple" | "short"
   ) => "Multiple Choice" | "Short Answer";
   removeQuestion: (id: string) => void;
+  onEditQuestion: (question: any) => void;
   isLoading: boolean;
 }
 
@@ -17,6 +18,7 @@ export default function QuestionPreview({
   questions,
   displayQuestionType,
   removeQuestion,
+  onEditQuestion,
   isLoading,
 }: QuestionPreviewProps) {
   console.log(questions, "questiosn");
@@ -40,14 +42,24 @@ export default function QuestionPreview({
                 key={q.id}
                 className="bg-[#222222] rounded-lg p-5 space-y-4 relative"
               >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 right-2 text-gray-400 hover:text-white hover:bg-transparent"
-                  onClick={() => removeQuestion(q.id)}
-                >
-                  <X size={16} />
-                </Button>
+                <div className="absolute top-2 right-2 flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-gray-400 hover:text-white hover:bg-transparent cursor-pointer"
+                    onClick={() => onEditQuestion(q)}
+                  >
+                    <Pencil size={16}  className="cursor-pointer"/>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-gray-400 hover:text-white hover:bg-transparent cursor-pointer"
+                    onClick={() => removeQuestion(q.id)}
+                  >
+                    <X size={16} className="cursor-pointer"/>
+                  </Button>
+                </div>
                 <div>
                   <h4 className="font-medium mb-2">Question {index + 1}:</h4>
                   <p className="mb-1">{q.question}</p>

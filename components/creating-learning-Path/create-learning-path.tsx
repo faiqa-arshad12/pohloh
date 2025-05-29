@@ -17,7 +17,7 @@ import VerificationPeriodPicker from "./verification-picker";
 import {apiUrl, apiUrl_AI} from "@/utils/constant";
 import ArrowBack from "../shared/ArrowBack";
 import {ShowToast} from "../shared/show-toast";
-import QuestionModal from "./question-modal";
+import QuestionModal, {QuestionModalProps} from "./question-modal";
 import QuestionPreview from "./questions-preview";
 import Loader from "../shared/loader";
 
@@ -236,6 +236,7 @@ export default function LearningPathPage() {
       );
     }
   };
+  console.log(formData, "form");
   useEffect(() => {
     const savedCards = localStorage.getItem("selectedLearningPathCards");
     if (savedCards) {
@@ -704,29 +705,50 @@ export default function LearningPathPage() {
   };
 
   // Question management
-  const openQuestionModal = () => {
-    // if (questions.length >= totalQuestionsNeeded) {
-    //   showToast(
-    //     `You've reached the maximum number of questions (${totalQuestionsNeeded})`,
-    //     "error"
-    //   );
-    //   return;
-    // }
+  const openQuestionModal = (questionToEdit?: any) => {
+    console.log("Opening modal with form type:", formData.question_type);
 
+    if (questionToEdit) {
+      // If editing existing question, keep its current type
+      console.log("Editing existing question with type:", questionToEdit.type);
+      setCurrentQuestion({
+        ...questionToEdit,
+        options:
+          questionToEdit.type === "multiple"
+            ? [...(questionToEdit.options || ["", "", "", ""])]
+            : undefined,
+      });
+    } else {
+      // If adding new question, always use the form's selected type
+      console.log(
+        "Adding new question with form type:",
+        formData.question_type
+      );
+      const newQuestion = {
+        id: crypto.randomUUID(),
+        question: "",
+        answer: "",
+        type: formData.question_type,
+        options:
+          formData.question_type === "multiple" ? ["", "", "", ""] : undefined,
+      };
+      console.log("New question object:", newQuestion);
+      setCurrentQuestion(newQuestion);
+    }
+    setIsQuestionModalOpen(true);
+  };
+
+  const closeQuestionModal = () => {
+    setIsQuestionModalOpen(false);
+    // Reset current question with the form's type
     setCurrentQuestion({
-      id: crypto.randomUUID(),
+      id: "",
       question: "",
       answer: "",
       type: formData.question_type,
       options:
         formData.question_type === "multiple" ? ["", "", "", ""] : undefined,
     });
-
-    setIsQuestionModalOpen(true);
-  };
-
-  const closeQuestionModal = () => {
-    setIsQuestionModalOpen(false);
   };
 
   const handleQuestionChange = (
@@ -751,12 +773,24 @@ export default function LearningPathPage() {
   };
 
   const handleQuestionTypeChange = (type: "multiple" | "short") => {
-    setCurrentQuestion((prev) => ({
-      ...prev,
-      type,
-      options: type === "multiple" ? ["", "", "", ""] : undefined,
-    }));
+    // This function is no longer needed since we don't allow changing types in the modal
+    // But we'll keep it to avoid breaking the interface
+    console.log("Question type change not allowed after path generation");
   };
+
+  // Add a debug effect to monitor question type changes
+  useEffect(() => {
+    console.log("Form question type:", formData.question_type);
+    console.log("Current question type:", currentQuestion.type);
+  }, [formData.question_type, currentQuestion.type]);
+
+  // Add effect to monitor form data changes
+  useEffect(() => {
+    console.log("Form data changed:", {
+      question_type: formData.question_type,
+      current_question_type: currentQuestion.type,
+    });
+  }, [formData.question_type, currentQuestion.type]);
 
   const addQuestion = () => {
     if (!currentQuestion.question.trim()) {
@@ -781,15 +815,33 @@ export default function LearningPathPage() {
       return;
     }
 
-    if (questions.length >= totalQuestionsNeeded) {
-      showToast(
-        `You've reached the maximum number of questions (${totalQuestionsNeeded})`,
-        "error"
-      );
-      return;
+    // Check if we're editing an existing question
+    const existingQuestionIndex = questions.findIndex(
+      (q) => q.id === currentQuestion.id
+    );
+
+    if (existingQuestionIndex !== -1) {
+      // Update existing question
+      setQuestions((prev) => {
+        const newQuestions = [...prev];
+        newQuestions[existingQuestionIndex] = currentQuestion;
+        return newQuestions;
+      });
+      showToast("Question updated successfully", "success");
+    } else {
+      // Only check maximum limit when adding a new question
+      if (questions.length >= totalQuestionsNeeded) {
+        showToast(
+          `You've reached the maximum number of questions (${totalQuestionsNeeded})`,
+          "error"
+        );
+        return;
+      }
+      // Add new question
+      setQuestions((prev) => [...prev, currentQuestion]);
+      showToast("Question added successfully", "success");
     }
 
-    setQuestions((prev) => [...prev, currentQuestion]);
     closeQuestionModal();
   };
 
@@ -1096,13 +1148,17 @@ export default function LearningPathPage() {
                         <div className="space-y-1 text-[#FFFFFF] text-[20px]">
                           <p>
                             &gt; Number of Cards selected:{" "}
-                            {selectedCards?.length ||'N/A'}
+                            {selectedCards?.length || "N/A"}
                           </p>
                           <p>
                             &gt; Questions per card: {formData.num_of_questions}
                           </p>
                           <p>
-                            &gt; Total Path Questions:  {selectedCards?.length ?formData.num_of_questions * (selectedCards?.length):'N/A'}
+                            &gt; Total Path Questions:{" "}
+                            {selectedCards?.length
+                              ? formData.num_of_questions *
+                                selectedCards?.length
+                              : "N/A"}
                           </p>
                           <p>
                             &gt; Questions Style:{" "}
@@ -1144,6 +1200,7 @@ export default function LearningPathPage() {
                       questions={questions}
                       displayQuestionType={displayQuestionType}
                       removeQuestion={removeQuestion}
+                      onEditQuestion={openQuestionModal}
                       isLoading={isGenerating}
                     />
                   </div>
@@ -1167,6 +1224,10 @@ export default function LearningPathPage() {
           onOptionChange={handleOptionChange}
           onQuestionTypeChange={handleQuestionTypeChange}
           questionType={formData.question_type}
+          isEditing={
+            !!currentQuestion.id &&
+            questions.some((q) => q.id === currentQuestion.id)
+          }
         />
       </div>
     </div>

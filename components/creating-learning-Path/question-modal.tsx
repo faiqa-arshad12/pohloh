@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-type Question = {
+export type Question = {
   id: string;
   question: string;
   answer: string;
@@ -16,7 +16,7 @@ type Question = {
   options?: string[];
 };
 
-interface QuestionModalProps {
+export interface QuestionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddQuestion: (question: Question) => void;
@@ -27,6 +27,7 @@ interface QuestionModalProps {
   onOptionChange: (index: number, value: string) => void;
   onQuestionTypeChange: (type: "multiple" | "short") => void;
   questionType: "multiple" | "short";
+  isEditing: boolean;
 }
 
 export default function QuestionModal({
@@ -38,13 +39,35 @@ export default function QuestionModal({
   onOptionChange,
   onQuestionTypeChange,
   questionType,
+  isEditing = false,
 }: QuestionModalProps) {
+  // Initialize options when adding a new multiple-choice question
+  React.useEffect(() => {
+    if (
+      isOpen &&
+      !isEditing &&
+      questionType === "multiple" &&
+      (!currentQuestion.options || currentQuestion.options.length === 0)
+    ) {
+      onOptionChange(0, ""); // Trigger a change to initialize options array
+      onOptionChange(1, "");
+      onOptionChange(2, "");
+      onOptionChange(3, "");
+    }
+  }, [
+    isOpen,
+    isEditing,
+    questionType,
+    currentQuestion.options,
+    onOptionChange,
+  ]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-[#1a1a1a] border-none rounded-lg w-full max-w-xl">
         <DialogHeader>
           <DialogTitle className="text-white text-2xl font-medium">
-            Add Question
+            {isEditing ? "Edit Question" : "Add Question"}
           </DialogTitle>
         </DialogHeader>
 
@@ -63,7 +86,8 @@ export default function QuestionModal({
             />
           </div>
 
-          {currentQuestion.type === "multiple" && (
+          {/* Render options only if the question type is multiple choice */}
+          {questionType === "multiple" && (
             <div>
               <label className="block text-sm mb-1">Options</label>
               <div className="space-y-2">
@@ -94,32 +118,7 @@ export default function QuestionModal({
             />
           </div>
 
-          {/* <div className="flex gap-4 pt-4">
-            <button
-              type="button"
-              className={`w-full h-[48px] rounded-md text-white font-urbanist font-normal bg-[#333435] transition cursor-pointer ${
-                questionType === "multiple"
-                  ? "border border-[#F9DB6F] bg-[#f0d568]/10 text-[#f0d568] hover:bg-[#f0d568]/10"
-                  : "border-0 bg-[#333435]"
-              }`}
-              onClick={() => onQuestionTypeChange("multiple")}
-            >
-              Multiple Choice
-            </button>
-            <button
-              type="button"
-              className={`w-full h-[48px] rounded-md text-white font-urbanist font-normal bg-[#333435] transition cursor-pointer ${
-                questionType === "short"
-                  ? "border border-[#F9DB6F] bg-[#f0d568]/10 text-[#f0d568] hover:bg-[#f0d568]/10"
-                  : "border-0 bg-[#333435]"
-              }`}
-              onClick={() => onQuestionTypeChange("short")}
-            >
-              Short Answer
-            </button>
-          </div> */}
-
-          <div className="flex justify-between gap-2 pt-4">
+          <div className="flex justify-between flex-row">
             <Button
               variant="outline"
               className="bg-[#333333] hover:bg-[#444444] hover:text-[white] text-white border-0 rounded-md py-2 h-[47px] w-[166px] cursor-pointer"
@@ -131,7 +130,7 @@ export default function QuestionModal({
               className="bg-[#f0d568] hover:bg-[#e0c558] text-black font-medium rounded-md py-2 h-[48px] w-[210px] cursor-pointer"
               onClick={() => onAddQuestion(currentQuestion)}
             >
-              Add Question
+              {isEditing ? "Save Changes" : "Add Question"}
             </Button>
           </div>
         </div>
