@@ -46,8 +46,8 @@ type RenewSubscriptionProps = {
 const formSchema = z.object({
   title: z
     .string()
-    .min(3, "Title must be at least 3 characters")
-    .max(30, "Title must be less than 30 characters")
+    .min(1, "Title must be at least 1 characters")
+    .max(256, "Title must be less than or equal to 256 characters")
     .regex(
       /^[a-zA-Z0-9\s\-_]+$/,
       "Title can only contain letters, numbers, spaces, hyphens and underscores"

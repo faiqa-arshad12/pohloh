@@ -107,8 +107,8 @@ CustomDateInput.displayName = "CustomDateInput";
 const formSchema = z.object({
   title: z
     .string()
-    .min(4, {message: "Title must be at least 4 characters"})
-    .max(30, {message: "Title must not be greater than 30 characters"})
+    .min(1, {message: "Title must be at least 1 characters"})
+    .max(256, {message: "Title must not be greater than 256 characters"})
     .regex(/^[a-zA-Z0-9\s\-_.,!?()]+$/, {
       message:
         "Title can only contain letters, numbers, spaces, and basic punctuation",
@@ -1238,8 +1238,13 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                                   <Input
                                     {...field}
                                     aria-label="Card title"
+                                    placeholder="Enter your title here..."
                                     className={cn(
-                                      "bg-transparent border-none p-0 focus-visible:ring-0 focus-visible:ring-offset-0 font-medium text-xl sm:text-2xl md:text-[32px] leading-[24px] text-center align-middle text-white hover:bg-transparent w-auto",
+                                      "bg-transparent border-none p-0 focus-visible:ring-0 focus-visible:ring-offset-0 font-medium text-xl sm:text-2xl md:text-[32px] leading-[24px] text-center align-middle text-white hover:bg-transparent w-auto placeholder:text-[#FFFFFF52] placeholder:font-urbanist",
+                                      "transition-all duration-200 ease-in-out",
+                                      "hover:scale-[1.02] focus:scale-[1.02]",
+                                      "font-urbanist tracking-tight",
+                                      "shadow-[0_2px_10px_rgba(0,0,0,0.1)]",
                                       form.formState.errors.title &&
                                         "border-b border-red-500"
                                     )}

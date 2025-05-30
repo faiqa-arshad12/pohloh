@@ -27,7 +27,14 @@ import {
 } from "@/components/ui/select";
 import {StepIndicator} from "../shared/stepIndicator";
 import {useUser} from "@clerk/nextjs";
-import {apiUrl, nameRegex, user_roles, usernameRegex, users} from "@/utils/constant";
+import {
+  allowedTypes,
+  apiUrl,
+  nameRegex,
+  user_roles,
+  usernameRegex,
+  users,
+} from "@/utils/constant";
 import {ShowToast} from "../shared/show-toast";
 import {UserStatus} from "@/types/enum";
 import {useRouter} from "next/navigation";
@@ -40,29 +47,44 @@ import {
 } from "@/lib/local-storage";
 import Loader from "../shared/loader";
 
-const formSchema = z.object({
-  profilePicture: z.string().optional(),
-  user_role: z.string().min(1, "Role is required"),
-  location: z
-    .string()
-    .min(1, "Location is required")
-    .max(100, "Location must not exceed 100 characters"),
-  first_name: z
-    .string()
-    .min(1, "First name is required")
-    .max(50, "First name must not exceed 50 characters")
-    .regex(nameRegex, "First name must contain only letters"),
-  last_name: z
-    .string()
-    .min(1, "Last name is required")
-    .max(50, "Last name must not exceed 50 characters")
-    .regex(nameRegex, "Last name must contain only letters"),
-  user_name: z
-    .string()
-    .min(1, "Username is required")
-    .max(50, "Username must not exceed 50 characters")
-    .regex(usernameRegex, "Username must not contain spaces"),
-});
+const formSchema = (role: Role | null) =>
+  z.object({
+    profilePicture: z.string().optional(),
+    user_role: z.string().min(1, "Role is required"),
+    location: z
+      .string()
+      .min(2, "Location must be at least 2 characters")
+      .max(100, "Location must not exceed 100 characters")
+      .regex(
+        /^[a-zA-Z0-9\s,.-]+$/,
+        "Location can only contain letters, numbers, spaces, and basic punctuation (,.-)"
+      )
+      .transform((val) => val.trim()),
+    first_name:
+      role !== "owner"
+        ? z
+            .string()
+            .min(1, "First name is required")
+            .max(50, "First name must not exceed 50 characters")
+            .regex(nameRegex, "First name must contain only letters")
+        : z.string().optional(),
+    last_name:
+      role !== "owner"
+        ? z
+            .string()
+            .min(1, "Last name is required")
+            .max(50, "Last name must not exceed 50 characters")
+            .regex(nameRegex, "Last name must contain only letters")
+        : z.string().optional(),
+    user_name:
+      role !== "owner"
+        ? z
+            .string()
+            .min(1, "Username is required")
+            .max(50, "Username must not exceed 50 characters")
+            .regex(usernameRegex, "Username must not contain spaces")
+        : z.string().optional(),
+  });
 
 interface ProfileData {
   user_role: string;
@@ -134,8 +156,8 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
       profile_picture: "",
     };
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<ReturnType<typeof formSchema>>>({
+    resolver: zodResolver(formSchema(role)),
     defaultValues: {
       profilePicture: initialData.profile_picture || "",
       user_role: initialData.user_role || "Software Engineer",
@@ -192,6 +214,20 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
     if (!file) return;
 
     try {
+      if (!allowedTypes.includes(file.type)) {
+        ShowToast(
+          "Please upload a valid image file (JPEG, PNG, or GIF)",
+          "error"
+        );
+        return;
+      }
+
+      // Validate file size (max 2MB)
+      const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+      if (file.size > maxSize) {
+        ShowToast("Image size should be less than 2MB", "error");
+        return;
+      }
       // Upload to Supabase immediately
       const uploadedUrl = await uploadFileToSupabase(file);
 
@@ -274,7 +310,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
     }
   };
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<ReturnType<typeof formSchema>>) => {
     setLoading(true);
     try {
       if (role === "owner") {
@@ -569,9 +605,17 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                       <FormLabel className="text-base">Location</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="eg: location"
+                          placeholder="Enter your city, state, or country"
                           className="placeholder:text-sm h-[44px] border border-[#FFFFFF0F] bg-[#FFFFFF14]"
                           {...field}
+                          onChange={(e) => {
+                            // Remove any special characters except allowed ones
+                            const value = e.target.value.replace(
+                              /[^a-zA-Z0-9\s,.-]/g,
+                              ""
+                            );
+                            field.onChange(value);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />

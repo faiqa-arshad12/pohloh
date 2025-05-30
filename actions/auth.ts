@@ -70,7 +70,7 @@ export async function inviteUser(email: string, role: string, user_id: string) {
         const invitation = await client.invitations.createInvitation({
           emailAddress: email,
           // redirectUrl:''
-          redirectUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/signup`,
+          redirectUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/signup-link`,
 
           publicMetadata: {
             role,

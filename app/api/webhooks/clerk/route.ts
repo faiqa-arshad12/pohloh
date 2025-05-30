@@ -31,20 +31,19 @@ export async function POST(req: Request) {
 
   if (evt.type === "user.created") {
     const email = user.email_addresses?.[0]?.email_address || user.email;
-    console.log(user, "user");
 
     // Check if user has unsafe metadata or if it's an empty object
     if (
-      !user.unsafe_metadata ||
-      Object.keys(user.unsafe_metadata).length === 0
+      user.unsafe_metadata &&
+      Object.keys(user.unsafe_metadata).length === 0 &&
+      user.public_metadata &&
+      Object.keys(user.public_metadata).length === 0
     ) {
       const client = await clerkClient();
 
       const res = await client.users.updateUser(user.id, {
         unsafeMetadata: {role: "owner", status: "pending"},
       });
-      console.log("inafe");
-      // Set default metadata
     }
 
     const role =

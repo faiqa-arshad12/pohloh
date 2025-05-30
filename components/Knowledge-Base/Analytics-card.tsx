@@ -61,6 +61,7 @@ interface KnowledgeCard {
   category_id?: string;
   verificationperiod?: string | Date;
   card_status?: CardStatus;
+  attachments?: {name: string; url: string}[];
 }
 
 interface AnalyticsCardProps {
@@ -97,20 +98,160 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
 
   const [isCardDeleteLoading, setIsCardDeleting] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState("");
-  const [pathId, setPathId] = useState<null|string>(null);
+  const [pathId, setPathId] = useState<null | string>(null);
 
   const [selectedCards, setSelectedCards] = useState<KnowledgeCard[]>([]);
 
+  const [userDetails, setUserDetails] = useState<any>();
+
+  // Add back the URL parameter handling effects
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setCard(params.get("selectForLearningPath") === "true" ? "true" : null);
   }, []);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setPathId(params.get("id"));
   }, []);
 
-  const [userDetails, setUserDetails] = useState<any>();
+  const loadCardById = async (id: string) => {
+    try {
+      // Find the card in the existing data structure
+      let cardFound = false;
+      for (const team of teams) {
+        if (!team.subcategories) continue;
+
+        for (const subcategory of team.subcategories) {
+          if (!subcategory.knowledge_card) continue;
+
+          const card = subcategory.knowledge_card.find(
+            (card) => card.id === id
+          );
+          if (card) {
+            // Set the active states to display this card
+            setActiveTeam(team);
+            setActiveSubcategory(subcategory);
+            setActiveItem(card);
+
+            // Expand the subcategory containing this card
+            setExpandedSubcategories((prev) => ({
+              ...prev,
+              [subcategory.id]: true,
+            }));
+            cardFound = true;
+            break;
+          }
+        }
+        if (cardFound) break;
+      }
+
+      // If card not found in existing data, fetch it directly
+      if (!cardFound && userDetails?.user?.organizations?.id) {
+        const response = await fetch(`${apiUrl}/cards/${id}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch card details");
+        }
+
+        const cardData = await response.json();
+
+        // Now fetch the team and subcategory this card belongs to
+        if (cardData.subcategory_id) {
+          const subcategoryResponse = await fetch(
+            `${apiUrl}/subcategories/${cardData.subcategory_id}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (subcategoryResponse.ok) {
+            const subcategoryData = await subcategoryResponse.json();
+
+            // Find the team this subcategory belongs to
+            const teamResponse = await fetch(
+              `${apiUrl}/teams/${subcategoryData.team_id}`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+
+            if (teamResponse.ok) {
+              const teamData = await teamResponse.json();
+
+              // Update the active states
+              setActiveTeam(teamData);
+              setActiveSubcategory(subcategoryData);
+              setActiveItem(cardData);
+
+              // Expand the subcategory
+              setExpandedSubcategories((prev) => ({
+                ...prev,
+                [subcategoryData.id]: true,
+              }));
+
+              // Add the card to the team's subcategory if it doesn't exist
+              setTeams((prevTeams) => {
+                return prevTeams.map((team) => {
+                  if (team.id === teamData.id) {
+                    return {
+                      ...team,
+                      subcategories: team.subcategories?.map((sub) => {
+                        if (sub.id === subcategoryData.id) {
+                          return {
+                            ...sub,
+                            knowledge_card: sub.knowledge_card?.some(
+                              (card) => card.id === cardData.id
+                            )
+                              ? sub.knowledge_card
+                              : [...(sub.knowledge_card || []), cardData],
+                          };
+                        }
+                        return sub;
+                      }),
+                    };
+                  }
+                  return team;
+                });
+              });
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error loading card by ID:", error);
+      ShowToast("Failed to load card details", "error");
+    }
+  };
+
+  // Update the card loading effects
+  useEffect(() => {
+    if (cardId && teams.length > 0 && userDetails) {
+      loadCardById(cardId);
+    }
+  }, [cardId, teams, userDetails]);
+
+  // Add a new effect to handle URL cardId parameter
+  useEffect(() => {
+    if (!isLoading && userDetails) {
+      const params = new URLSearchParams(window.location.search);
+      const urlCardId = params.get("cardId");
+      if (urlCardId) {
+        loadCardById(urlCardId);
+      }
+    }
+  }, [isLoading, userDetails]);
 
   const checkScroll = () => {
     const el = scrollRef.current;
@@ -315,107 +456,6 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
       fetchData();
     }
   }, [user, isUserLoaded]);
-
-  useEffect(() => {
-    const loadCardById = async (id: string) => {
-      try {
-        // Find the card in the existing data structure
-        for (const team of teams) {
-          if (!team.subcategories) continue;
-
-          for (const subcategory of team.subcategories) {
-            if (!subcategory.knowledge_card) continue;
-
-            const card = subcategory.knowledge_card.find(
-              (card) => card.id === id
-            );
-            if (card) {
-              // Set the active states to display this card
-              setActiveTeam(team);
-              setActiveSubcategory(subcategory);
-              setActiveItem(card);
-
-              // Expand the subcategory containing this card
-              setExpandedSubcategories((prev) => ({
-                ...prev,
-                [subcategory.id]: true,
-              }));
-
-              return;
-            }
-          }
-        }
-
-        // If card not found in existing data, fetch it directly
-        if (userDetails?.user?.organizations?.id) {
-          const response = await fetch(`${apiUrl}/cards/${id}`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            // credentials: "include",
-          });
-
-          if (!response.ok) {
-            throw new Error("Failed to fetch card details");
-          }
-
-          const cardData = await response.json();
-
-          // Now fetch the team and subcategory this card belongs to
-          if (cardData.subcategory_id) {
-            const subcategoryResponse = await fetch(
-              `${apiUrl}/subcategories/${cardData.subcategory_id}`,
-              {
-                method: "GET",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                // credentials: "include",
-              }
-            );
-
-            if (subcategoryResponse.ok) {
-              const subcategoryData = await subcategoryResponse.json();
-
-              // Find the team this subcategory belongs to
-              const teamResponse = await fetch(
-                `${apiUrl}/teams/${subcategoryData.team_id}`,
-                {
-                  method: "GET",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  // credentials: "include",
-                }
-              );
-
-              if (teamResponse.ok) {
-                const teamData = await teamResponse.json();
-
-                // Update the active states
-                setActiveTeam(teamData);
-                setActiveSubcategory(subcategoryData);
-                setActiveItem(cardData);
-
-                // Expand the subcategory
-                setExpandedSubcategories((prev) => ({
-                  ...prev,
-                  [subcategoryData.id]: true,
-                }));
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error loading card by ID:", error);
-      }
-    };
-
-    if (cardId && teams.length > 0 && userDetails) {
-      loadCardById(cardId);
-    }
-  }, [cardId, teams, userDetails]);
 
   const toggleSubcategoryExpanded = (subcategoryId: string) => {
     setExpandedSubcategories((prev) => ({
@@ -642,10 +682,10 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                     "selectedLearningPathCards",
                     JSON.stringify(selectedCards)
                   );
-                  if(pathId){
-                  // ShowToast(`${selectedCards.length} cards saved to learning path`, "success")
-                  router.push(`/tutor/creating-learning-path?id=${pathId}`);
-                  }else{
+                  if (pathId) {
+                    // ShowToast(`${selectedCards.length} cards saved to learning path`, "success")
+                    router.push(`/tutor/creating-learning-path?id=${pathId}`);
+                  } else {
                     router.push(`/tutor/creating-learning-path`);
                   }
                 }}
@@ -987,18 +1027,35 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
 
               <div className="mt-auto pt-4 ">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <FileText className="h-[40px] w-[40px]" />
-                    <span className="ml-2 font-urbanist font-medium text-[20px] leading-[100%]">
-                      {activeItem.title}.pdf
-                    </span>
+                  <div className="flex-1">
+                    {activeItem.attachments &&
+                      activeItem.attachments.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {activeItem.attachments.map(
+                            (file: any, index: number) => (
+                              <div
+                                key={index}
+                                className="flex items-center p-2 rounded-md"
+                              >
+                                <FileText className="h-[32.5px] w-[27.5px] mr-2" />
+                                <a
+                                  href={file.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-white hover:text-[#F9DB6F] cursor-pointer truncate max-w-[200px]"
+                                >
+                                  <span className="text-[20px] font-urbanist font-medium">
+                                    {file.name}
+                                  </span>
+                                </a>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
                   </div>
-                  <div className="p-2">
-                    {/* <Tag
-                      initialTags={activeItem.tags || []}
-                      onTagsChange={() => {}}
-                      className="w-full"
-                    /> */}
+                  {activeItem && activeItem?.tags &&activeItem?.tags?.length>0 &&
+                  <div className="p-2 flex-shrink-0">
                     <div
                       className={`w-full max-w-xl relative h-[24px] cursor-pointer p-2`}
                     >
@@ -1006,7 +1063,7 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                         {activeItem?.tags?.map((tag, index) => (
                           <div
                             key={index}
-                            className="bg-[#F9DB6F]  w-[114px] h-[24px] text-black px-2 sm:px-3 rounded-sm flex items-center text-xs sm:text-sm max-w-full justify-between"
+                            className="bg-[#F9DB6F] w-[114px] h-[24px] text-black px-2 sm:px-3 rounded-sm flex items-center text-xs sm:text-sm max-w-full justify-between"
                           >
                             <span className="truncate max-w-[120px] sm:max-w-[160px]">
                               {tag}
@@ -1017,7 +1074,6 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                               size="icon"
                               className="w-4 h-4 ml-1 p-0 text-black text-right hover:bg-black/10 hover:text-black focus-visible:ring-0 focus-visible:ring-offset-0 cursor-pointer"
                               disabled
-                              // onClick={() => removeTag(index)}
                             >
                               <X className="w-3 h-3" />
                             </Button>
@@ -1026,6 +1082,7 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                       </div>
                     </div>
                   </div>
+}
                 </div>
               </div>
             </div>

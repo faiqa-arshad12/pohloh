@@ -7,6 +7,7 @@ import {
 import {formatTimestamp} from "@/lib/dateFormat";
 import {stripHtml} from "@/lib/stripeHtml";
 import Image from "next/image";
+import {useRouter} from "next/navigation";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 
@@ -24,7 +25,7 @@ export default function ViewAnnouncementModal({
   const handleCancel = () => {
     onClose(false); // Cancel action
   };
-
+  const router = useRouter();
   return (
     <Dialog open={open} onOpenChange={handleCancel}>
       <DialogContent className="overflow-y-auto w-full max-w-[864px] h-auto bg-[#222222] text-white border-none">
@@ -159,6 +160,19 @@ export default function ViewAnnouncementModal({
                 <span className="block mt-10 mb-10">
                   {stripHtml(announcement.description)}
                 </span>
+                <span className="block mt-10 mb-10 flex justify-center">
+  <a
+    href={`/knowledge-base?cardId=${announcement?.card_id?.id}`}
+    className="text-[#F9DB6F] hover:text-[#F9DB6F]/80 cursor-pointer underline"
+    onClick={(e) => {
+      e.preventDefault();
+      router.push(`/knowledge-base?cardId=${announcement?.card_id?.id}`);
+    }}
+  >
+    {announcement?.card_id?.title}
+  </a>
+</span>
+
                 <span className="block my-2">
                   <p>Best Regards,</p>
                   <p className="mt-2">{announcement?.org_id.name}</p>

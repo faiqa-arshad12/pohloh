@@ -30,9 +30,16 @@ const ORG_DATA_KEY = "organization_setup_data";
 const formSchema = z.object({
   name: z
     .string()
-    .min(1, "Organization name is required")
+    .min(2, "Organization name must be at least 2 characters")
     .max(50, "Organization name must not exceed 50 characters")
-    .regex(usernameRegex, "Organization name must contain only letters"),
+    .regex(
+      /^[a-zA-Z0-9\s&'-]+$/,
+      "Organization name can only contain letters, numbers, spaces"
+    )
+    .transform((val) => val.trim())
+    .refine((val) => val.length >= 2, {
+      message: "Organization name must be at least 2 characters",
+    }),
   departments: z.array(z.string()),
   customDepartment: z.string().optional(),
   wantsUpdates: z.boolean().optional(),
@@ -116,6 +123,21 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
       num_of_seat: initialData.num_of_seat || 1,
     },
   });
+
+  useEffect(() => {
+    const organization = form.watch((values) => {
+      const orgData: OrganizationData = {
+        name: values.name || "",
+        departments: values.departments!.filter(
+          (d): d is string => typeof d === "string"
+        ),
+        num_of_seat: values.num_of_seat,
+      };
+      updateOrganization(orgData);
+      saveToLocalStorage(orgData);
+    });
+    return () => organization.unsubscribe();
+  }, [form, initialData, user?.id, updateOrganization]);
 
   const departments = form.watch("departments");
   const customDepartments = departments.filter(
@@ -203,6 +225,14 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
                       placeholder="Enter your organization name"
                       className="bg-[#2C2D2E] border-none text-white h-[44px]"
                       {...field}
+                      onChange={(e) => {
+                        // Remove any special characters except allowed ones
+                        const value = e.target.value.replace(
+                          /[^a-zA-Z0-9\s&'-]/g,
+                          ""
+                        );
+                        field.onChange(value);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -214,18 +244,17 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
             <div className="mb-6">
               <FormLabel>Add departments to your organization</FormLabel>
               <p className="text-xs text-[#D1D1D1] mb-3 mt-3">
-                This will pre-populate categories for your knowledge base.
-                Don't worry you can always edit these later. Select all that
-                apply.{" "}
+                This will pre-populate categories for your knowledge base. Don't
+                worry you can always edit these later. Select all that apply.{" "}
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2 cursor-pointer">
                 {DEPARTMENTS.map((dept) => (
                   <Button
                     key={dept}
                     variant="outline"
                     type="button"
                     onClick={() => toggleDepartment(dept)}
-                    className={`rounded-md py-4 text-sm h-[58px] ${
+                    className={`rounded-md py-4 text-sm h-[58px] !opacity-100 !hover:opacity-80 cursor-pointer  ${
                       departments.includes(dept)
                         ? "bg-[#2C2D2E] border-[#F9DB6F] text-[#F9DB6F]"
                         : "bg-[#2C2D2E] border-[#3A3B3C] text-[#D1D1D1] !hover:text-[#D1D1D1]"
@@ -372,7 +401,7 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
-                      className="border-gray-500 data-[state=checked]:bg-yellow-400 data-[state=checked]:border-yellow-400 cursor-pointer"
+                      className="border-gray-500 data-[state=checked]:bg-[#F9DB6F] data-[state=checked]:border-[#F9DB6F] cursor-pointer"
                     />
                   </FormControl>
                   <label htmlFor="updates" className="text-xs text-gray-300">
