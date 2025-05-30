@@ -29,6 +29,7 @@ type Question = {
   type: "multiple" | "short";
   options?: string[];
   source?: string;
+  source_id?: string;
 };
 
 type PathFormData = {
@@ -309,6 +310,7 @@ export default function LearningPathPage() {
             type: q.question_type === "multiple_choice" ? "multiple" : "short",
             options: q.options || undefined,
             source: q.card_info?.card_title,
+            source_id: q.card_info?.id || q.card_id,
           }));
 
           // Set the questions in state
@@ -574,6 +576,7 @@ export default function LearningPathPage() {
         type: q.question_type === "multiple_choice" ? "multiple" : "short",
         options: q.options || undefined,
         source: q.card_info?.card_title,
+        source_id: q.card_info?.id || q.card_id,
       }));
 
       // Set the questions in state
@@ -719,7 +722,7 @@ export default function LearningPathPage() {
             : undefined,
       });
     } else {
-      // If adding new question, always use the form's selected type
+      // If adding new question, use the form's selected type
       console.log(
         "Adding new question with form type:",
         formData.question_type
@@ -731,6 +734,7 @@ export default function LearningPathPage() {
         type: formData.question_type,
         options:
           formData.question_type === "multiple" ? ["", "", "", ""] : undefined,
+        source_id: selectedCards?.[0]?.id, // Set the first selected card's ID as default
       };
       console.log("New question object:", newQuestion);
       setCurrentQuestion(newQuestion);
@@ -773,9 +777,13 @@ export default function LearningPathPage() {
   };
 
   const handleQuestionTypeChange = (type: "multiple" | "short") => {
-    // This function is no longer needed since we don't allow changing types in the modal
-    // But we'll keep it to avoid breaking the interface
-    console.log("Question type change not allowed after path generation");
+    // Update the current question's type
+    setCurrentQuestion((prev) => ({
+      ...prev,
+      type: type,
+      // Reset options if switching to short answer
+      options: type === "multiple" ? ["", "", "", ""] : undefined,
+    }));
   };
 
   // Add a debug effect to monitor question type changes
@@ -829,16 +837,22 @@ export default function LearningPathPage() {
       });
       showToast("Question updated successfully", "success");
     } else {
-      // Only check maximum limit when adding a new question
-      if (questions.length >= totalQuestionsNeeded) {
-        showToast(
-          `You've reached the maximum number of questions (${totalQuestionsNeeded})`,
-          "error"
-        );
-        return;
-      }
       // Add new question
-      setQuestions((prev) => [...prev, currentQuestion]);
+      const sourceCard = selectedCards?.find(
+        (card) => card.id === currentQuestion.source_id
+      );
+
+      const newQuestion: Question = {
+        id: crypto.randomUUID(),
+        question: currentQuestion.question,
+        answer: currentQuestion.answer,
+        type: currentQuestion.type,
+        options: currentQuestion.options,
+        source_id: currentQuestion.source_id,
+        source: sourceCard?.title,
+      };
+
+      setQuestions((prev) => [...prev, newQuestion]);
       showToast("Question added successfully", "success");
     }
 
@@ -1059,7 +1073,7 @@ export default function LearningPathPage() {
                   size="icon"
                   className="roundeed-[4px] w-[41.41pxpx]  h-[34.61px] border-transparent bg-[#191919] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#191919] cursor-pointer"
                   onClick={incrementQuestions}
-                  // disabled={formData.num_of_questions >= 20}
+                  disabled={formData.num_of_questions >= 10}
                 >
                   <Plus size={16} />
                 </Button>
@@ -1155,10 +1169,11 @@ export default function LearningPathPage() {
                           </p>
                           <p>
                             &gt; Total Path Questions:{" "}
-                            {selectedCards?.length
+                            {/* {selectedCards?.length
                               ? formData.num_of_questions *
                                 selectedCards?.length
-                              : "N/A"}
+                              : "N/A"} */}
+                            {questions.length}
                           </p>
                           <p>
                             &gt; Questions Style:{" "}
@@ -1228,6 +1243,8 @@ export default function LearningPathPage() {
             !!currentQuestion.id &&
             questions.some((q) => q.id === currentQuestion.id)
           }
+          selectedCards={selectedCards || []}
+          showToast={showToast}
         />
       </div>
     </div>
