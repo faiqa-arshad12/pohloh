@@ -268,10 +268,11 @@ const TipTapEditor = ({
 
       const data = await response.json();
       const extractedText = data.text || data.extracted_text || "";
-
-      if (extractedText) {
+      console.log(extractedText, "text");
+      const sample = extractedText.replace(/\n/g, " ");
+      if (sample) {
         // Sanitize the extracted text before setting it
-        const sanitizedText = extractedText.replace(
+        const sanitizedText = sample.replace(
           /[\u0000-\u001F\u007F-\u009F]/g,
           ""
         );

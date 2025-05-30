@@ -36,8 +36,7 @@ export function SavedCards({cards}: SavedCardsProp) {
     if (cards) {
       const filteredCards = cards?.filter(
         (card: any) =>
-          card?.card_status === CardStatus.SAVED &&
-           card.is_verified
+          card?.card_status === CardStatus.SAVED && card.is_verified
       );
       setSavedCards(filteredCards || []);
 
@@ -137,8 +136,10 @@ export function SavedCards({cards}: SavedCardsProp) {
           )}
         >
           <div className="flex justify-center items-start mb-2">
-            <h3 className="text-white font-normal text-[20px] p-4">
+            <h3 className="text-white font-normal text-[20px] p-4 line-clamp-1">
               {displayedCard.title}
+              {displayedCard.title?.slice(0, 50) +
+                (displayedCard.title?.length > 50 ? "..." : "")}
             </h3>
           </div>
 

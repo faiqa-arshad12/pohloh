@@ -14,7 +14,6 @@ import {apiUrl, CardType} from "@/utils/constant";
 import {useRouter} from "next/navigation";
 import {stripHtml} from "@/lib/stripeHtml";
 import {ShowToast} from "../shared/show-toast";
-import DeleteConfirmationModal from "../shared/delete-modal";
 
 type UnverifiedCard = {
   id: string;
@@ -193,9 +192,11 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
                       <Info size={16} className="text-black" />
                     </div>
                     <div className="flex flex-col">
-                      <h3 className="text-[20px] font-semibold">
-                        {card.title}
+                      <h3 className="text-[20px] font-semibold line-clamp-1">
+                        {card.title?.slice(0, 50) +
+                          (card.title?.length > 50 ? "..." : "")}
                       </h3>
+
                       <span className="text-[11px] text-white">
                         {card?.category_id?.name}
                       </span>

@@ -61,6 +61,7 @@ interface KnowledgeCard {
   category_id?: string;
   verificationperiod?: string | Date;
   card_status?: CardStatus;
+  attachments?: {name: string; url: string}[];
 }
 
 interface AnalyticsCardProps {
@@ -97,7 +98,7 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
 
   const [isCardDeleteLoading, setIsCardDeleting] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState("");
-  const [pathId, setPathId] = useState<null|string>(null);
+  const [pathId, setPathId] = useState<null | string>(null);
 
   const [selectedCards, setSelectedCards] = useState<KnowledgeCard[]>([]);
 
@@ -642,10 +643,10 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                     "selectedLearningPathCards",
                     JSON.stringify(selectedCards)
                   );
-                  if(pathId){
-                  // ShowToast(`${selectedCards.length} cards saved to learning path`, "success")
-                  router.push(`/tutor/creating-learning-path?id=${pathId}`);
-                  }else{
+                  if (pathId) {
+                    // ShowToast(`${selectedCards.length} cards saved to learning path`, "success")
+                    router.push(`/tutor/creating-learning-path?id=${pathId}`);
+                  } else {
                     router.push(`/tutor/creating-learning-path`);
                   }
                 }}
@@ -987,18 +988,34 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
 
               <div className="mt-auto pt-4 ">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <FileText className="h-[40px] w-[40px]" />
-                    <span className="ml-2 font-urbanist font-medium text-[20px] leading-[100%]">
-                      {activeItem.title}.pdf
-                    </span>
+                  <div className="flex-1">
+                    {activeItem.attachments &&
+                      activeItem.attachments.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {activeItem.attachments.map(
+                            (file: any, index: number) => (
+                              <div
+                                key={index}
+                                className="flex items-center p-2 rounded-md"
+                              >
+                                <FileText className="h-[32.5px] w-[27.5px] mr-2" />
+                                <a
+                                  href={file.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-white hover:text-[#F9DB6F] cursor-pointer truncate max-w-[200px]"
+                                >
+                                  <span className="text-[20px] font-urbanist font-medium">
+                                    {file.name}
+                                  </span>
+                                </a>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
                   </div>
-                  <div className="p-2">
-                    {/* <Tag
-                      initialTags={activeItem.tags || []}
-                      onTagsChange={() => {}}
-                      className="w-full"
-                    /> */}
+                  <div className="p-2 flex-shrink-0">
                     <div
                       className={`w-full max-w-xl relative h-[24px] cursor-pointer p-2`}
                     >
@@ -1006,7 +1023,7 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                         {activeItem?.tags?.map((tag, index) => (
                           <div
                             key={index}
-                            className="bg-[#F9DB6F]  w-[114px] h-[24px] text-black px-2 sm:px-3 rounded-sm flex items-center text-xs sm:text-sm max-w-full justify-between"
+                            className="bg-[#F9DB6F] w-[114px] h-[24px] text-black px-2 sm:px-3 rounded-sm flex items-center text-xs sm:text-sm max-w-full justify-between"
                           >
                             <span className="truncate max-w-[120px] sm:max-w-[160px]">
                               {tag}
@@ -1017,7 +1034,6 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                               size="icon"
                               className="w-4 h-4 ml-1 p-0 text-black text-right hover:bg-black/10 hover:text-black focus-visible:ring-0 focus-visible:ring-offset-0 cursor-pointer"
                               disabled
-                              // onClick={() => removeTag(index)}
                             >
                               <X className="w-3 h-3" />
                             </Button>
