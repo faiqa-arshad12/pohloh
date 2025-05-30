@@ -64,7 +64,6 @@ const TipTapEditor = ({
   const [supportedFileTypes, setSupportedFileTypes] =
     useState<SupportedFileTypes | null>(null);
   const [uploadError, setUploadError] = useState<string>("");
-  // const [isExtracting, setIsExtracting] = useState(false);
 
   // State for selected values
   const [selectedParagraph, setSelectedParagraph] = useState("Paragraph");
@@ -369,7 +368,7 @@ const TipTapEditor = ({
         editor
           .chain()
           .focus()
-          .insertContent(`<a href="${url}">${url}</a>`)
+          .insertContent(`<a href="\${url}">\${url}</a>`)
           .run();
       } else {
         // If text is selected, turn it into a link
@@ -386,43 +385,43 @@ const TipTapEditor = ({
   return (
     <div className="tiptap-editor w-full h-full flex flex-col">
       {/* Toolbar */}
-      <div className="toolbar flex items-center gap-2 p-4 flex-shrink-0 sticky top-0 z-10 bg-[#191919]">
+      <div className="toolbar flex items-center gap-2 py-4  flex-shrink-0 sticky top-0 z-10 bg-[#191919] flex-wrap">
         {/* Paragraph Style Dropdown */}
         <div
           ref={paragraphDropdownRef}
-          className="relative cursor-pointer !h-[44px]"
+          className="relative cursor-pointer !h-[44px] max-w-[180px] w-auto sm:w-full !rounded-[6px]"
           style={{borderRadius: "6px"}}
         >
           <button
             onClick={() => setShowParagraphDropdown(!showParagraphDropdown)}
-            className="flex items-center justify-between w-[252px] bg-[#2C2D2E] text-white px-3 py-2 !h-[44px] rounded cursor-pointer"
+            className="flex items-center justify-between max-w-[180px] w-full bg-[#2C2D2E] text-white px-3 py-2 !h-[44px] rounded cursor-pointer"
           >
             <span className="text-sm">{selectedParagraph}</span>
             <ChevronDown size={14} />
           </button>
           {showParagraphDropdown && (
-            <div className="absolute z-10 mt-1 w-[252px] bg-[#2C2D2E] rounded shadow-lg">
+            <div className="absolute z-10 mt-1 w-full max-w-[180px] bg-[#2C2D2E] rounded shadow-lg">
               <button
                 onClick={() => applyParagraphStyle("Paragraph")}
-                className="block w-full text-left px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] text-sm cursor-pointer"
+                className="block w-full max-w-[252px] text-left px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] text-sm cursor-pointer"
               >
                 Paragraph
               </button>
               <button
                 onClick={() => applyParagraphStyle("Heading 1")}
-                className="block w-full text-left px-3 py-2 text-white hover:bg-[#333] text-sm cursor-pointer hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] "
+                className="block w-full max-w-[252px] text-left px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] text-sm cursor-pointer"
               >
                 Heading 1
               </button>
               <button
                 onClick={() => applyParagraphStyle("Heading 2")}
-                className="block w-full text-left px-3 py-2 text-white hover:bg-[#333] text-sm cursor-pointer hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] "
+                className="block w-full max-w-[252px] text-left px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] text-sm cursor-pointer"
               >
                 Heading 2
               </button>
               <button
                 onClick={() => applyParagraphStyle("Heading 3")}
-                className="block w-full text-left px-3 py-2 text-white hover:bg-[#333] text-sm cursor-pointer hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] "
+                className="block w-full text-left px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] text-sm cursor-pointer"
               >
                 Heading 3
               </button>
@@ -431,25 +430,28 @@ const TipTapEditor = ({
         </div>
 
         {/* Font Size Dropdown */}
-        <div ref={fontSizeDropdownRef} className="relative">
+        <div
+          ref={fontSizeDropdownRef}
+          className="relative w-auto max-w-[100px] sm:w-full !rounded-[6px]"
+          style={{borderRadius: "6px"}}
+        >
           <button
             onClick={() => setShowFontSizeDropdown(!showFontSizeDropdown)}
-            className="flex items-center justify-between w-[120px] bg-[#2C2D2E] h-[44px] text-white px-3 py-2 rounded cursor-pointer"
-            style={{borderRadius: "6px"}}
+            className="flex items-center justify-between max-w-[100px] w-full bg-[#2C2D2E] h-[44px] text-white px-3 py-2 rounded cursor-pointer"
           >
             <span className="text-sm">{selectedFontSize}</span>
             <ChevronDown size={14} />
           </button>
           {showFontSizeDropdown && (
             <div
-              className="absolute z-10 mt-1 w-[120px] max-h-[200px] overflow-y-auto bg-[#2C2D2E]  rounded shadow-lg cursor-pointer"
+              className="absolute z-10 mt-1 w-full max-w-[120px] max-h-[200px] overflow-y-auto bg-[#2C2D2E] rounded shadow-lg cursor-pointer"
               style={{borderRadius: "6px"}}
             >
               {fontSizes.map((size) => (
                 <button
                   key={size}
                   onClick={() => applyFontSize(size)}
-                  className="block w-full text-left px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F]  text-sm cursor-pointer"
+                  className="block w-full text-left px-3 max-w-[120px] py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] text-sm cursor-pointer"
                 >
                   {size}
                 </button>
@@ -459,22 +461,25 @@ const TipTapEditor = ({
         </div>
 
         {/* Font Family Dropdown */}
-        <div ref={fontFamilyDropdownRef} className="relative">
+        <div
+          ref={fontFamilyDropdownRef}
+          className="relative sm:w-full max-w-[120px] !rounded-[6px] "
+          style={{borderRadius: "6px"}}
+        >
           <button
             onClick={() => setShowFontFamilyDropdown(!showFontFamilyDropdown)}
-            className="flex items-center justify-between w-[180px] bg-[#2C2D2E]  h-[44px] text-white px-3 py-2  cursor-pointer"
-            style={{borderRadius: "6px"}}
+            className="flex items-center max-w-[120px] justify-between w-full bg-[#2C2D2E] h-[44px] text-white px-3 py-2 cursor-pointer"
           >
             <span className="truncate text-sm">{selectedFontFamily}</span>
             <ChevronDown size={14} />
           </button>
           {showFontFamilyDropdown && (
-            <div className="absolute z-10 mt-1 w-[180px] max-h-[300px] overflow-y-auto bg-[#2C2D2E]  rounded shadow-lg cursor-pointer">
+            <div className="absolute z-10 mt-1 w-full max-w-[120px] max-h-[300px] overflow-y-auto bg-[#2C2D2E] rounded shadow-lg cursor-pointer">
               {fontFamilies.map((font) => (
                 <button
                   key={font}
                   onClick={() => applyFontFamily(font)}
-                  className="block w-full text-left px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F]  text-sm cursor-pointer"
+                  className="block w-full text-left px-3 py-2 max-w-[120px] text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] text-sm cursor-pointer"
                   style={{fontFamily: font === "Default" ? "inherit" : font}}
                 >
                   {font}
@@ -485,105 +490,64 @@ const TipTapEditor = ({
         </div>
 
         {/* Formatting Buttons */}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-2 ml-auto flex-wrap">
           {/* Text Formatting */}
           <button
             onClick={() => editor.chain().focus().toggleBold().run()}
-            className={`p-2  bg-[#F9DB6F] text-black opacity-100
-
-              hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
-
-              `}
-            style={{borderRadius: "8px"}}
-            // ${editor.isActive("bold") ? "opacity-100" : "opacity-80"}
-
+            className={`p-2 bg-[#F9DB6F] text-black opacity-100 hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center rounded-md`}
             title="Bold"
           >
             <Bold size={16} />
           </button>
           <button
-            className={`p-2  bg-[#F9DB6F] text-black opacity-100
-
-              hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
-
-              `}
-            style={{borderRadius: "8px"}}
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            className={`p-2 bg-[#F9DB6F] text-black opacity-100 hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center rounded-md`}
             title="Italic"
           >
             <Italic size={16} />
           </button>
           <button
             onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className={`p-2  bg-[#F9DB6F] text-black opacity-100
-
-              hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
-
-              `}
-            style={{borderRadius: "8px"}}
+            className={`p-2 bg-[#F9DB6F] text-black opacity-100 hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center rounded-md`}
             title="Underline"
           >
             <UnderlineIcon size={16} />
           </button>
 
           {/* Text Alignment */}
-          <button
+          {/* <button
             onClick={() => applyTextAlign("left")}
-            className={`p-2  bg-[#F9DB6F] text-black opacity-100
-
-              hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
-
-              `}
-            style={{borderRadius: "8px"}}
+            className={`p-2 bg-[#F9DB6F] text-black opacity-100 hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center rounded-md`}
             title="Align Left"
           >
             <AlignLeft size={16} />
-          </button>
+          </button> */}
           <button
             onClick={() => applyTextAlign("center")}
-            className={`p-2  bg-[#F9DB6F] text-black opacity-100
-
-              hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
-
-              `}
-            style={{borderRadius: "8px"}}
+            className={`p-2 bg-[#F9DB6F] text-black opacity-100 hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center rounded-md`}
             title="Align Center"
           >
             <AlignCenter size={16} />
           </button>
-          <button
+          {/* <button
             onClick={() => applyTextAlign("right")}
-            className={`p-2  bg-[#F9DB6F] text-black opacity-100
-
-              hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
-
-              `}
-            style={{borderRadius: "8px"}}
+            className={`p-2 bg-[#F9DB6F] text-black opacity-100 hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center rounded-md`}
             title="Align Right"
           >
             <AlignRight size={16} />
-          </button>
-          <button
+          </button> */}
+          {/* <button
             onClick={() => applyTextAlign("justify")}
-            className={`p-2  bg-[#F9DB6F] text-black opacity-100
-
-              hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
-
-              `}
-            style={{borderRadius: "8px"}}
+            className={`p-2 bg-[#F9DB6F] text-black opacity-100 hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center rounded-md`}
             title="Justify"
           >
             <AlignJustify size={16} />
-          </button>
+          </button> */}
 
           {/* Link */}
           <button
             onClick={insertLink}
-            className={`p-2  bg-[#F9DB6F] text-black opacity-100
-
-              hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center
-
-              `}
-            style={{borderRadius: "8px"}}
+            className={`p-2 bg-[#F9DB6F] text-black opacity-100 hover:opacity-80 focus:outline-none cursor-pointer h-[40px] w-[42px] text-center flex flex-row justify-center items-center rounded-md`}
             title="Add Link"
           >
             <LinkIcon size={16} />
@@ -609,9 +573,7 @@ const TipTapEditor = ({
               <button
                 onClick={() => document.getElementById("file-upload")?.click()}
                 disabled={isExtracting}
-                className={`bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black px-4 py-2 rounded-md flex gap-2 items-center justify-center w-[200px] cursor-pointer ${
-                  isExtracting ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                className={`bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black px-4 py-2 rounded-md flex gap-2 items-center justify-center w-[200px] cursor-pointer \${isExtracting ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {isExtracting ? (
                   <>
@@ -719,9 +681,32 @@ const TipTapEditor = ({
         .tiptap-editor .ProseMirror [style*="font-family: Consolas"] {
           font-family: Consolas, monospace;
         }
+
+        /* Responsive Styles */
+        @media (max-width: 1440px) {
+          .toolbar {
+            flex-wrap: wrap; /* Allow items to wrap */
+            justify-content: flex-start; /* Align items to the start */
+          }
+
+          .toolbar button {
+            max-width: 100%; /* Prevent buttons from overflowing */
+            flex: 1 1 auto; /* Allow buttons to grow and shrink */
+            margin: 2px 4px; /* Add some margin for spacing */
+          }
+
+          .toolbar .relative {
+            width: 100% !important; /* Make dropdowns full width */
+          }
+
+          .tiptap-editor .ProseMirror {
+            font-size: 0.9em; /* Adjust font size for smaller screens */
+          }
+        }
       `}</style>
     </div>
   );
 };
 
 export default TipTapEditor;
+

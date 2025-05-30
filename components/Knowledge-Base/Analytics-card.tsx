@@ -1054,6 +1054,7 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                         </div>
                       )}
                   </div>
+                  {activeItem && activeItem?.tags &&activeItem?.tags?.length>0 &&
                   <div className="p-2 flex-shrink-0">
                     <div
                       className={`w-full max-w-xl relative h-[24px] cursor-pointer p-2`}
@@ -1081,6 +1082,7 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                       </div>
                     </div>
                   </div>
+}
                 </div>
               </div>
             </div>
