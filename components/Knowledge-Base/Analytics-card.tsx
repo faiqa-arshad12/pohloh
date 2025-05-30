@@ -102,16 +102,156 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
 
   const [selectedCards, setSelectedCards] = useState<KnowledgeCard[]>([]);
 
+  const [userDetails, setUserDetails] = useState<any>();
+
+  // Add back the URL parameter handling effects
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setCard(params.get("selectForLearningPath") === "true" ? "true" : null);
   }, []);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setPathId(params.get("id"));
   }, []);
 
-  const [userDetails, setUserDetails] = useState<any>();
+  const loadCardById = async (id: string) => {
+    try {
+      // Find the card in the existing data structure
+      let cardFound = false;
+      for (const team of teams) {
+        if (!team.subcategories) continue;
+
+        for (const subcategory of team.subcategories) {
+          if (!subcategory.knowledge_card) continue;
+
+          const card = subcategory.knowledge_card.find(
+            (card) => card.id === id
+          );
+          if (card) {
+            // Set the active states to display this card
+            setActiveTeam(team);
+            setActiveSubcategory(subcategory);
+            setActiveItem(card);
+
+            // Expand the subcategory containing this card
+            setExpandedSubcategories((prev) => ({
+              ...prev,
+              [subcategory.id]: true,
+            }));
+            cardFound = true;
+            break;
+          }
+        }
+        if (cardFound) break;
+      }
+
+      // If card not found in existing data, fetch it directly
+      if (!cardFound && userDetails?.user?.organizations?.id) {
+        const response = await fetch(`${apiUrl}/cards/${id}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch card details");
+        }
+
+        const cardData = await response.json();
+
+        // Now fetch the team and subcategory this card belongs to
+        if (cardData.subcategory_id) {
+          const subcategoryResponse = await fetch(
+            `${apiUrl}/subcategories/${cardData.subcategory_id}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (subcategoryResponse.ok) {
+            const subcategoryData = await subcategoryResponse.json();
+
+            // Find the team this subcategory belongs to
+            const teamResponse = await fetch(
+              `${apiUrl}/teams/${subcategoryData.team_id}`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+
+            if (teamResponse.ok) {
+              const teamData = await teamResponse.json();
+
+              // Update the active states
+              setActiveTeam(teamData);
+              setActiveSubcategory(subcategoryData);
+              setActiveItem(cardData);
+
+              // Expand the subcategory
+              setExpandedSubcategories((prev) => ({
+                ...prev,
+                [subcategoryData.id]: true,
+              }));
+
+              // Add the card to the team's subcategory if it doesn't exist
+              setTeams((prevTeams) => {
+                return prevTeams.map((team) => {
+                  if (team.id === teamData.id) {
+                    return {
+                      ...team,
+                      subcategories: team.subcategories?.map((sub) => {
+                        if (sub.id === subcategoryData.id) {
+                          return {
+                            ...sub,
+                            knowledge_card: sub.knowledge_card?.some(
+                              (card) => card.id === cardData.id
+                            )
+                              ? sub.knowledge_card
+                              : [...(sub.knowledge_card || []), cardData],
+                          };
+                        }
+                        return sub;
+                      }),
+                    };
+                  }
+                  return team;
+                });
+              });
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error loading card by ID:", error);
+      ShowToast("Failed to load card details", "error");
+    }
+  };
+
+  // Update the card loading effects
+  useEffect(() => {
+    if (cardId && teams.length > 0 && userDetails) {
+      loadCardById(cardId);
+    }
+  }, [cardId, teams, userDetails]);
+
+  // Add a new effect to handle URL cardId parameter
+  useEffect(() => {
+    if (!isLoading && userDetails) {
+      const params = new URLSearchParams(window.location.search);
+      const urlCardId = params.get("cardId");
+      if (urlCardId) {
+        loadCardById(urlCardId);
+      }
+    }
+  }, [isLoading, userDetails]);
 
   const checkScroll = () => {
     const el = scrollRef.current;
@@ -316,107 +456,6 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
       fetchData();
     }
   }, [user, isUserLoaded]);
-
-  useEffect(() => {
-    const loadCardById = async (id: string) => {
-      try {
-        // Find the card in the existing data structure
-        for (const team of teams) {
-          if (!team.subcategories) continue;
-
-          for (const subcategory of team.subcategories) {
-            if (!subcategory.knowledge_card) continue;
-
-            const card = subcategory.knowledge_card.find(
-              (card) => card.id === id
-            );
-            if (card) {
-              // Set the active states to display this card
-              setActiveTeam(team);
-              setActiveSubcategory(subcategory);
-              setActiveItem(card);
-
-              // Expand the subcategory containing this card
-              setExpandedSubcategories((prev) => ({
-                ...prev,
-                [subcategory.id]: true,
-              }));
-
-              return;
-            }
-          }
-        }
-
-        // If card not found in existing data, fetch it directly
-        if (userDetails?.user?.organizations?.id) {
-          const response = await fetch(`${apiUrl}/cards/${id}`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            // credentials: "include",
-          });
-
-          if (!response.ok) {
-            throw new Error("Failed to fetch card details");
-          }
-
-          const cardData = await response.json();
-
-          // Now fetch the team and subcategory this card belongs to
-          if (cardData.subcategory_id) {
-            const subcategoryResponse = await fetch(
-              `${apiUrl}/subcategories/${cardData.subcategory_id}`,
-              {
-                method: "GET",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                // credentials: "include",
-              }
-            );
-
-            if (subcategoryResponse.ok) {
-              const subcategoryData = await subcategoryResponse.json();
-
-              // Find the team this subcategory belongs to
-              const teamResponse = await fetch(
-                `${apiUrl}/teams/${subcategoryData.team_id}`,
-                {
-                  method: "GET",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  // credentials: "include",
-                }
-              );
-
-              if (teamResponse.ok) {
-                const teamData = await teamResponse.json();
-
-                // Update the active states
-                setActiveTeam(teamData);
-                setActiveSubcategory(subcategoryData);
-                setActiveItem(cardData);
-
-                // Expand the subcategory
-                setExpandedSubcategories((prev) => ({
-                  ...prev,
-                  [subcategoryData.id]: true,
-                }));
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error loading card by ID:", error);
-      }
-    };
-
-    if (cardId && teams.length > 0 && userDetails) {
-      loadCardById(cardId);
-    }
-  }, [cardId, teams, userDetails]);
 
   const toggleSubcategoryExpanded = (subcategoryId: string) => {
     setExpandedSubcategories((prev) => ({
