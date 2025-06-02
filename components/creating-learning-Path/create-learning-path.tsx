@@ -20,6 +20,7 @@ import {ShowToast} from "../shared/show-toast";
 import QuestionModal, {QuestionModalProps} from "./question-modal";
 import QuestionPreview from "./questions-preview";
 import Loader from "../shared/loader";
+import {Skeleton} from "@/components/ui/skeleton";
 
 // Types
 type Question = {
@@ -30,6 +31,7 @@ type Question = {
   options?: string[];
   source?: string;
   source_id?: string;
+  isManuallyAdded?: boolean; // Track if question was manually added
 };
 
 type PathFormData = {
@@ -43,6 +45,14 @@ type PathFormData = {
   totalQuestions: number;
   verification_period: string;
   customDate: Date | null;
+};
+
+// Track the generation parameters to detect changes
+type GenerationParams = {
+  num_of_questions: number;
+  question_type: "multiple" | "short";
+  cardsSelected: number;
+  selectedCardIds: string[];
 };
 
 export default function LearningPathPage() {
@@ -66,8 +76,12 @@ export default function LearningPathPage() {
   const [pathGenerated, setPathGenerated] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isDrafting, setIsDrafting] = useState(false);
-
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [needsRegeneration, setNeedsRegeneration] = useState(false);
+
+  // Track the last generation parameters
+  const [lastGenerationParams, setLastGenerationParams] =
+    useState<GenerationParams | null>(null);
 
   const [formData, setFormData] = useState<PathFormData>({
     title: "",
@@ -97,10 +111,56 @@ export default function LearningPathPage() {
     return formData.cardsSelected * formData.num_of_questions;
   }, [formData.cardsSelected, formData.num_of_questions]);
 
+  // Current generation parameters
+  const currentGenerationParams = useMemo(
+    (): GenerationParams => ({
+      num_of_questions: formData.num_of_questions,
+      question_type: formData.question_type,
+      cardsSelected: formData.cardsSelected,
+      selectedCardIds: selectedCards?.map((card) => card.id) || [],
+    }),
+    [
+      formData.num_of_questions,
+      formData.question_type,
+      formData.cardsSelected,
+      selectedCards,
+    ]
+  );
+
+  // Check if regeneration is needed
+  const checkNeedsRegeneration = useMemo(() => {
+    if (!pathGenerated || !lastGenerationParams || isGenerating) {
+      return false;
+    }
+
+    const paramsChanged =
+      lastGenerationParams.num_of_questions !==
+        currentGenerationParams.num_of_questions ||
+      lastGenerationParams.question_type !==
+        currentGenerationParams.question_type ||
+      lastGenerationParams.cardsSelected !==
+        currentGenerationParams.cardsSelected ||
+      JSON.stringify(lastGenerationParams.selectedCardIds.sort()) !==
+        JSON.stringify(currentGenerationParams.selectedCardIds.sort());
+
+    return paramsChanged;
+  }, [
+    pathGenerated,
+    lastGenerationParams,
+    currentGenerationParams,
+    isGenerating,
+  ]);
+
+  // Update needsRegeneration state
+  useEffect(() => {
+    setNeedsRegeneration(checkNeedsRegeneration);
+  }, [checkNeedsRegeneration]);
+
   const showToast = (message: string, type: "success" | "error") => {
     console.log(`[${type}] ${message}`);
     ShowToast(message, type);
   };
+
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
@@ -220,13 +280,18 @@ export default function LearningPathPage() {
         setQuestions(learningPath.questions);
       }
 
-      // Set selected cards from API data
-      // if (cardLearningPaths) {
-      //   setSelectedCards(cardLearningPaths);
-      // }
-
       // Set path as generated since we're editing
       setPathGenerated(true);
+
+      // Set the last generation parameters based on loaded data
+      setLastGenerationParams({
+        num_of_questions: learningPath.num_of_questions || 5,
+        question_type: learningPath.question_type || "multiple",
+        cardsSelected: cardLearningPaths?.length || 0,
+        selectedCardIds:
+          cardLearningPaths?.map((clp: any) => clp.card?.id || clp.card_id) ||
+          [],
+      });
     } catch (error) {
       console.error("Error fetching learning path:", error);
       showToast(
@@ -237,7 +302,6 @@ export default function LearningPathPage() {
       );
     }
   };
-  console.log(formData, "form");
   useEffect(() => {
     const savedCards = localStorage.getItem("selectedLearningPathCards");
     if (savedCards) {
@@ -262,77 +326,6 @@ export default function LearningPathPage() {
       }));
     }
   }, [selectedCards]);
-
-  // Effect to watch for changes in question settings and regenerate path
-  useEffect(() => {
-    if (pathGenerated && !isRegenerating) {
-      const regeneratePath = async () => {
-        try {
-          setIsRegenerating(true);
-          setGenerating(true);
-
-          // Transform and prepare the data
-          const transformedCards = selectedCards
-            ? transformSelectedCards(selectedCards)
-            : [];
-
-          // Create the filtered data object
-          const filteredData = {
-            cards: transformedCards,
-            num_of_questions: formData.num_of_questions,
-            question_type: formData.question_type,
-          };
-
-          // Submit to API
-          const response = await fetch(
-            `${apiUrl_AI}/learningpath/questions-generation`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(filteredData),
-            }
-          );
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Failed to regenerate path");
-          }
-
-          const result = await response.json();
-
-          // Transform the API response questions into the expected format
-          const transformedQuestions = result.questions.map((q: any) => ({
-            id: q.id,
-            question: q.question_text,
-            answer: q.correct_answer,
-            type: q.question_type === "multiple_choice" ? "multiple" : "short",
-            options: q.options || undefined,
-            source: q.card_info?.card_title,
-            source_id: q.card_info?.id || q.card_id,
-          }));
-
-          // Set the questions in state
-          setQuestions(transformedQuestions);
-          showToast("Path regenerated successfully", "success");
-        } catch (error) {
-          console.error("Error regenerating path:", error);
-          showToast(
-            error instanceof Error
-              ? error.message
-              : "Failed to regenerate path",
-            "error"
-          );
-        } finally {
-          setGenerating(false);
-          setIsRegenerating(false);
-        }
-      };
-
-      regeneratePath();
-    }
-  }, [formData.question_type, formData.num_of_questions]);
 
   // Form validation
   const validateForm = () => {
@@ -364,6 +357,128 @@ export default function LearningPathPage() {
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
+  };
+
+  const handleGeneratePath = async () => {
+    if (!validateForm()) {
+      showToast("Please fix the errors in the form", "error");
+      return;
+    }
+
+    try {
+      setGenerating(true);
+      setNeedsRegeneration(false); // Reset immediately when starting regeneration
+
+      // Transform and prepare the data
+      const transformedCards = selectedCards
+        ? transformSelectedCards(selectedCards)
+        : [];
+
+      // Create the filtered data object
+      const filteredData = {
+        cards: transformedCards,
+        num_of_questions: formData.num_of_questions,
+        question_type: formData.question_type,
+      };
+
+      // Submit to API
+      const response = await fetch(
+        `${apiUrl_AI}/learningpath/questions-generation`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(filteredData),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to generate path");
+      }
+
+      const result = await response.json();
+
+      // Transform the API response questions into the expected format
+      const transformedQuestions = result.questions.map((q: any) => ({
+        id: q.id,
+        question: q.question_text,
+        answer: q.correct_answer,
+        type: q.question_type === "multiple_choice" ? "multiple" : "short",
+        options: q.options || undefined,
+        source: q.card_info?.card_title,
+        source_id: q.card_info?.card_id,
+        isManuallyAdded: false, // Mark as generated
+      }));
+
+      // Preserve manually added questions if regenerating
+      let finalQuestions = transformedQuestions;
+      if (pathGenerated && questions.length > 0) {
+        const manualQuestions = questions.filter((q) => q.isManuallyAdded);
+        finalQuestions = [...transformedQuestions, ...manualQuestions];
+      }
+
+      // Set the questions in state
+      setQuestions(finalQuestions);
+
+      // Update the last generation parameters
+      setLastGenerationParams({
+        num_of_questions: formData.num_of_questions,
+        question_type: formData.question_type,
+        cardsSelected: formData.cardsSelected,
+        selectedCardIds: selectedCards?.map((card) => card.id) || [],
+      });
+
+      // Set path as generated and ensure regeneration flag is reset
+      setPathGenerated(true);
+      setNeedsRegeneration(false);
+
+      showToast(
+        pathGenerated
+          ? "Path regenerated successfully"
+          : "Path Generated Successfully",
+        "success"
+      );
+    } catch (error) {
+      console.error("Error generating path:", error);
+      showToast(
+        error instanceof Error ? error.message : "Failed to generate path",
+        "error"
+      );
+      // Reset regeneration flag on error
+      setNeedsRegeneration(true);
+    } finally {
+      setLoading(false);
+      setGenerating(false);
+    }
+  };
+
+  const validateFormDataMatchesQuestions = () => {
+    // If path is not generated yet, don't allow save/publish
+    if (!pathGenerated) {
+      showToast(
+        "Please generate the path before saving or publishing",
+        "error"
+      );
+      return false;
+    }
+
+    // If we're currently generating, don't validate
+    if (isGenerating) {
+      return true;
+    }
+
+    // Check if regeneration is needed
+    if (needsRegeneration) {
+      showToast(
+        "Please regenerate the path after changing questions per card, question style, or selected cards",
+        "error"
+      );
+      return false;
+    }
+
+    return true;
   };
 
   // Form input handlers
@@ -519,86 +634,14 @@ export default function LearningPathPage() {
     };
   };
 
-  // API actions
-  const handleGeneratePath = async () => {
-    if (!validateForm()) {
-      showToast("Please fix the errors in the form", "error");
-      return;
-    }
-
-    try {
-      setGenerating(true);
-      // setLoading(true);
-
-      // if (isEditing) {
-      //   setPathGenerated(true);
-      //   showToast("Path ready for editing", "success");
-      //   return;
-      // }
-
-      // Transform and prepare the data
-      const transformedCards = selectedCards
-        ? transformSelectedCards(selectedCards)
-        : [];
-
-      // Create the filtered data object
-      const filteredData = {
-        cards: transformedCards,
-        num_of_questions: formData.num_of_questions,
-        question_type: formData.question_type,
-      };
-
-      // Submit to API
-      const response = await fetch(
-        `${apiUrl_AI}/learningpath/questions-generation`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(filteredData),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to generate path");
-      }
-
-      const result = await response.json();
-      console.log(result, "result");
-
-      // Transform the API response questions into the expected format
-      const transformedQuestions = result.questions.map((q: any) => ({
-        id: q.id,
-        question: q.question_text,
-        answer: q.correct_answer,
-        type: q.question_type === "multiple_choice" ? "multiple" : "short",
-        options: q.options || undefined,
-        source: q.card_info?.card_title,
-        source_id: q.card_info?.id || q.card_id,
-      }));
-
-      // Set the questions in state
-      setQuestions(transformedQuestions);
-      console.log(transformSelectedCards, "dta");
-      // Set path as generated
-      setPathGenerated(true);
-      showToast("Path Generated Successfully", "success");
-    } catch (error) {
-      console.error("Error generating path:", error);
-      showToast(
-        error instanceof Error ? error.message : "Failed to generate path",
-        "error"
-      );
-    } finally {
-      setLoading(false);
-      setGenerating(false);
-    }
-  };
-
+  // Update handlePublish to include the new validation
   const handlePublish = async () => {
     setIsPublishing(true);
+
+    if (!validateFormDataMatchesQuestions()) {
+      setIsPublishing(false);
+      return;
+    }
 
     if (questions.length < formData.num_of_questions) {
       showToast(
@@ -613,11 +656,6 @@ export default function LearningPathPage() {
       // Prepare data for submission
       const learningPathData = prepareLearningPathData("published");
 
-      // If we're updating an existing path, include the ID
-      // if (pathId) {
-      //   learningPathData.id = pathId
-      // }
-
       // Submit to API
       const response = await fetch(
         `${apiUrl}/learning-paths${pathId ? `/${pathId}` : ""}`,
@@ -626,7 +664,6 @@ export default function LearningPathPage() {
           headers: {
             "Content-Type": "application/json",
           },
-          // credentials: "include",
           body: JSON.stringify(learningPathData),
         }
       );
@@ -657,9 +694,14 @@ export default function LearningPathPage() {
     }
   };
 
+  // Update handleSaveAsDraft to include the new validation
   const handleSaveAsDraft = async () => {
     if (!validateForm()) {
       showToast("Please fix the errors in the form", "error");
+      return;
+    }
+
+    if (!validateFormDataMatchesQuestions()) {
       return;
     }
 
@@ -669,11 +711,6 @@ export default function LearningPathPage() {
       // Prepare data for submission
       const learningPathData = prepareLearningPathData("draft");
 
-      // If we're updating an existing path, include the ID
-      // if (pathId) {
-      //   learningPathData.id = pathId
-      // }
-
       // Submit to API
       const response = await fetch(
         `${apiUrl}/learning-paths${pathId ? `/${pathId}` : ""}`,
@@ -682,7 +719,6 @@ export default function LearningPathPage() {
           headers: {
             "Content-Type": "application/json",
           },
-          // credentials: "include",
           body: JSON.stringify(learningPathData),
         }
       );
@@ -722,11 +758,7 @@ export default function LearningPathPage() {
             : undefined,
       });
     } else {
-      // If adding new question, use the form's selected type
-      console.log(
-        "Adding new question with form type:",
-        formData.question_type
-      );
+
       const newQuestion = {
         id: crypto.randomUUID(),
         question: "",
@@ -735,8 +767,8 @@ export default function LearningPathPage() {
         options:
           formData.question_type === "multiple" ? ["", "", "", ""] : undefined,
         source_id: selectedCards?.[0]?.id, // Set the first selected card's ID as default
+        isManuallyAdded: true, // Mark as manually added
       };
-      console.log("New question object:", newQuestion);
       setCurrentQuestion(newQuestion);
     }
     setIsQuestionModalOpen(true);
@@ -794,10 +826,7 @@ export default function LearningPathPage() {
 
   // Add effect to monitor form data changes
   useEffect(() => {
-    console.log("Form data changed:", {
-      question_type: formData.question_type,
-      current_question_type: currentQuestion.type,
-    });
+
   }, [formData.question_type, currentQuestion.type]);
 
   const addQuestion = () => {
@@ -832,7 +861,10 @@ export default function LearningPathPage() {
       // Update existing question
       setQuestions((prev) => {
         const newQuestions = [...prev];
-        newQuestions[existingQuestionIndex] = currentQuestion;
+        newQuestions[existingQuestionIndex] = {
+          ...currentQuestion,
+          isManuallyAdded: prev[existingQuestionIndex].isManuallyAdded || true,
+        };
         return newQuestions;
       });
       showToast("Question updated successfully", "success");
@@ -850,6 +882,7 @@ export default function LearningPathPage() {
         options: currentQuestion.options,
         source_id: currentQuestion.source_id,
         source: sourceCard?.title,
+        isManuallyAdded: true, // Mark as manually added
       };
 
       setQuestions((prev) => [...prev, newQuestion]);
@@ -876,8 +909,44 @@ export default function LearningPathPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white">
-        <p>Loading...</p>
+      <div className="min-h-screen text-white">
+        <div className="mx-auto py-4">
+          {/* Header Skeleton */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-3">
+            <div className="flex flex-wrap items-center gap-4 sm:gap-7">
+              <Skeleton className="h-6 w-6 rounded-full" />
+              <Skeleton className="h-8 w-[200px] rounded-lg" />
+            </div>
+            <Skeleton className="h-[41px] w-[242px] rounded-md" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-[400px_1fr] gap-6 w-full">
+            {/* Form Section Skeleton */}
+            <div className="bg-[#1a1a1a] rounded-lg p-6 space-y-5 rounded-[20px]">
+              {[1, 2, 3, 4, 5, 6].map((item) => (
+                <div key={item} className="space-y-2">
+                  <Skeleton className="h-6 w-1/3 rounded-lg" />
+                  <Skeleton className="h-[44px] w-full rounded-md" />
+                </div>
+              ))}
+              <div className="flex flex-col pt-4 space-y-5 justify-center items-center">
+                <Skeleton className="h-12 w-[232px] rounded-md" />
+                <Skeleton className="h-12 w-[232px] rounded-md" />
+              </div>
+            </div>
+
+            {/* Preview Section Skeleton */}
+            <div className="h-full w-full">
+              <div className="w-full bg-[#1a1a1a] rounded-lg p-6 relative h-full min-h-[400px] rounded-[20px]">
+                <div className="flex flex-col">
+                  <div className="flex flex-row justify-between p-4">
+                    <Skeleton className="h-10 w-[150px] rounded-md" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -899,10 +968,11 @@ export default function LearningPathPage() {
               variant="outline"
               className="h-[41px] w-[242px] border border-[#F9DB6F] text-black bg-[#F9DB6F] hover:bg-[#F9DB6F] hover:text-black rounded-md font-medium transition-colors duration-200 cursor-pointer"
               onClick={handlePublish}
-              disabled={loading || isGenerating || isDrafting}
+              disabled={
+                loading || isGenerating || isDrafting || needsRegeneration
+              }
             >
               {isPublishing ? <Loader /> : "Publish"}
-              {/* {isEditing ? "Update & Publish" : "Publish"} */}
             </Button>
           )}
         </div>
@@ -1113,19 +1183,25 @@ export default function LearningPathPage() {
             </div>
 
             {/* Action buttons */}
-            <div className="flex flex-col pt-4 space-y-3 justify-center items-center">
+            <div className="flex flex-col pt-4 space-y-5 justify-center items-center">
               <Button
-                className="w-full bg-[#f0d568] hover:bg-[#e0c558] text-[14px] text-black font-medium h-12 rounded-md cursor-pointer"
+                className="w-full max-w-[232px] bg-[#f0d568] hover:bg-[#e0c558] text-[14px] text-black font-medium h-12 rounded-md cursor-pointer"
                 onClick={handleGeneratePath}
                 disabled={loading || isDrafting}
               >
-                {isGenerating ? <Loader /> : "Generate Path"}
+                {isGenerating ? (
+                  <Loader />
+                ) : needsRegeneration && pathGenerated ? (
+                  "Regenerate Path"
+                ) : (
+                  "Generate Path"
+                )}
               </Button>
               <Button
                 variant="outline"
-                className="w-full border bg-[#333435] border-[#ffffff] text-white hover:bg-[#333435] hover:text-white h-12 rounded-md cursor-pointer text-[14px] font-mediuum"
+                className="w-full max-w-[232px] border bg-[#333435] border-[#ffffff] text-white hover:bg-[#333435] hover:text-white h-12 rounded-md cursor-pointer text-[14px] font-mediuum"
                 onClick={handleSaveAsDraft}
-                disabled={loading || isGenerating}
+                disabled={loading || isGenerating || needsRegeneration}
               >
                 {isDrafting ? <Loader /> : "Save as Draft"}
               </Button>
@@ -1134,12 +1210,10 @@ export default function LearningPathPage() {
 
           {/* Preview Section */}
           <div className="h-full w-full">
-            <div className="w-full bg-[#1a1a1a] rounded-lg p-6 relative h-full min-h-[400px]  rounded-[20px]">
+            <div className="w-full bg-[#1a1a1a] rounded-lg p-6 relative h-full min-h-[400px] rounded-[20px]">
               {pathGenerated ? (
                 <div className="flex flex-col">
                   <div className="flex flex-row justify-between p-4">
-                    {/* Question Counter */}
-
                     {/* Path Preview */}
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
@@ -1167,18 +1241,16 @@ export default function LearningPathPage() {
                           <p>
                             &gt; Questions per card: {formData.num_of_questions}
                           </p>
-                          <p>
-                            &gt; Total Path Questions:{" "}
-                            {/* {selectedCards?.length
-                              ? formData.num_of_questions *
-                                selectedCards?.length
-                              : "N/A"} */}
-                            {questions.length}
-                          </p>
+                          <p>&gt; Total Path Questions: {questions.length}</p>
                           <p>
                             &gt; Questions Style:{" "}
                             {displayQuestionType(formData.question_type)}
                           </p>
+                          {needsRegeneration && (
+                            <p className="text-orange-400">
+                              &gt; Status: Regeneration Required
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1187,7 +1259,6 @@ export default function LearningPathPage() {
                         variant="outline"
                         className="border border-white bg-[#333435] text-white hover:text-white hover:bg-[#333435] hover:opacity-90 h-10 rounded-md flex items-center gap-2 cursor-pointer !px-8"
                         onClick={openQuestionModal}
-                        // disabled={questions.length >= formData.totalQuestions}
                       >
                         <PlusIcon size={16} /> Add Questions
                       </Button>
@@ -1209,6 +1280,15 @@ export default function LearningPathPage() {
                           </p>
                         </div>
                       )}
+
+                    {/* {needsRegeneration && (
+                      <div className="bg-orange-500/20 border border-orange-500 rounded-md p-3 mb-4 text-orange-200">
+                        <p>
+                          <strong>Regeneration Required:</strong> You've changed the generation parameters.
+                          Please regenerate the path before saving or publishing.
+                        </p>
+                      </div>
+                    )} */}
 
                     {/* Questions Display */}
                     <QuestionPreview

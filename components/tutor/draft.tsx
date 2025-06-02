@@ -11,10 +11,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import SearchInput from "../shared/search-input";
-import {Upload, Pencil, Trash2} from "lucide-react";
+import {Trash2} from "lucide-react";
 import {useRouter} from "next/navigation";
 import ArrowBack from "../shared/ArrowBack";
-import {useUser} from "@clerk/nextjs";
 import {Skeleton} from "@/components/ui/skeleton";
 import {toast} from "sonner";
 import {apiUrl} from "@/utils/constant";
@@ -143,7 +142,7 @@ export default function Drafts() {
     }
   };
 
-  // Function to handle editing a learning path
+  // Function to handle editing a learning pathNo a
   const handleEdit = (row: DraftTableData) => {
     console.log(`Editing: ${row.courseName}`, row.originalData);
     router.push(`/tutor/creating-learning-path?id=${row.id}`);
@@ -258,55 +257,72 @@ export default function Drafts() {
   }
 
   // Custom render function for the actions column
-  const renderActions = (row: DraftTableData) => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-white hover:bg-transparent hover:text-white cursor-pointer"
-          disabled={isProcessing}
-        >
-          <MoreHorizontal className="h-5 w-5 text-white" />
-        </Button>
-      </DropdownMenuTrigger>
+  const renderActions = (row: DraftTableData) => {
+    console.log(row, "row");
+    // Check if user is admin or path owner
+    const isAdmin = userData?.role === "owner";
+    const isPathOwner = row.originalData.path_owner.id === userData?.id;
+    const hasAccess = isAdmin || isPathOwner;
 
-      <DropdownMenuContent className="bg-[#2a2a2a] border border-gray-700 text-white w-[154px]">
-        <DropdownMenuItem
-          onClick={() => handlePublish(row)}
-          className="group flex items-center gap-2 bg-transparent hover:!bg-[#F9DB6F33] cursor-pointer"
-          disabled={isProcessing}
-        >
-          {/* <Upload size={16} className="text-white group-hover:text-[#F9DB6F]" /> */}
-          <Icon
-            icon="material-symbols:publish-rounded"
-            width="24"
-            height="24"
-          />
-          <span className="group-hover:text-[#F9DB6F]">Publish</span>
-        </DropdownMenuItem>
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-white hover:bg-transparent hover:text-white cursor-pointer"
+            disabled={isProcessing}
+          >
+            <MoreHorizontal className="h-5 w-5 text-white" />
+          </Button>
+        </DropdownMenuTrigger>
+        {hasAccess && (
+          <DropdownMenuContent className="bg-[#2a2a2a] border border-gray-700 text-white w-[154px]">
+            {/* {hasAccess ? ( */}
+            <>
+              <DropdownMenuItem
+                onClick={() => handlePublish(row)}
+                className="group flex items-center gap-2 bg-transparent hover:!bg-[#F9DB6F33] cursor-pointer"
+                disabled={isProcessing}
+              >
+                <Icon
+                  icon="material-symbols:publish-rounded"
+                  width="24"
+                  height="24"
+                />
+                <span className="group-hover:text-[#F9DB6F]">Publish</span>
+              </DropdownMenuItem>
 
-        <DropdownMenuItem
-          onClick={() => handleEdit(row)}
-          className="group flex items-center gap-2 bg-transparent hover:!bg-[#F9DB6F33] cursor-pointer"
-          disabled={isProcessing}
-        >
-          {/* <Pencil size={16} className="text-white group-hover:text-[#F9DB6F]" /> */}
-          <Icon icon="iconamoon:edit-light" width="24" height="24" />
-          <span className="group-hover:text-[#F9DB6F]">Edit</span>
-        </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleEdit(row)}
+                className="group flex items-center gap-2 bg-transparent hover:!bg-[#F9DB6F33] cursor-pointer"
+                disabled={isProcessing}
+              >
+                <Icon icon="iconamoon:edit-light" width="24" height="24" />
+                <span className="group-hover:text-[#F9DB6F]">Edit</span>
+              </DropdownMenuItem>
 
-        <DropdownMenuItem
-          onClick={() => openDeleteModal(row.id)}
-          className="group flex items-center gap-2 bg-transparent hover:!bg-[#F9DB6F33] cursor-pointer"
-          disabled={isProcessing}
-        >
-          <Trash2 size={16} className="text-white group-hover:text-[#F9DB6F]" />
-          <span className="text-white group-hover:text-[#F9DB6F]">Delete</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+              <DropdownMenuItem
+                onClick={() => openDeleteModal(row.id)}
+                className="group flex items-center gap-2 bg-transparent hover:!bg-[#F9DB6F33] cursor-pointer"
+                disabled={isProcessing}
+              >
+                <Trash2
+                  size={16}
+                  className="text-white group-hover:text-[#F9DB6F]"
+                />
+                <span className="text-white group-hover:text-[#F9DB6F]">
+                  Delete
+                </span>
+              </DropdownMenuItem>
+            </>
+
+            {/* )} */}
+          </DropdownMenuContent>
+        )}
+      </DropdownMenu>
+    );
+  };
 
   return (
     <div className="text-white py-4">
@@ -324,11 +340,11 @@ export default function Drafts() {
             <div className="relative">
               <SearchInput onChange={(value) => setFilterData(value)} />
             </div>
-            {filterdata && (
+            {/* {filterdata && (
               <div className="ml-2 text-sm text-gray-400">
                 {filteredData.length} results found
               </div>
-            )}
+            )} */}
             <Button
               variant="outline"
               size="icon"

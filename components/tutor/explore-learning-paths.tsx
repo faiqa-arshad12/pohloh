@@ -1,13 +1,7 @@
 "use client";
 
 import {useEffect, useState} from "react";
-import {
-  MoreVertical,
-  Pencil,
-  SlidersHorizontal,
-  SquarePen,
-  Trash2,
-} from "lucide-react";
+import {MoreVertical, SlidersHorizontal, SquarePen, Trash2} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -274,9 +268,17 @@ export default function ExploreLearningPath() {
     }
   };
 
-  const filteredData = data.filter((row) =>
-    row.courseName.toLowerCase().includes(filterdata.toLowerCase())
-  );
+  // Filter data based on search input
+  const filteredData = data.filter((item) => {
+    const searchTerm = filterdata.toLowerCase();
+    return (
+      item.courseName.toLowerCase().includes(searchTerm) ||
+      item.owner.toLowerCase().includes(searchTerm) ||
+      (item.originalData.category?.name || "")
+        .toLowerCase()
+        .includes(searchTerm)
+    );
+  });
 
   if (loading) {
     return (
@@ -360,11 +362,11 @@ export default function ExploreLearningPath() {
             <div className="relative">
               <SearchInput onChange={(value) => setFilterData(value)} />
             </div>
-            {filterdata && (
+            {/* {filterdata && (
               <div className="ml-2 text-sm text-gray-400">
                 {filteredData.length} results found
               </div>
-            )}
+            )} */}
             <Button
               variant="outline"
               size="icon"
@@ -466,6 +468,12 @@ export default function ExploreLearningPath() {
                 return "—";
               }}
               renderActions={(row) => {
+                // Check if user is admin or path owner
+                const isAdmin = userData?.role === "owner";
+                const isPathOwner =
+                  row.originalData.path_owner.id === userData?.id;
+                const hasAccess = isAdmin || isPathOwner;
+
                 return (
                   <DropdownMenu
                     open={activeDropdown === row.id}
@@ -488,7 +496,8 @@ export default function ExploreLearningPath() {
                       align="end"
                       className="bg-[#2a2a2a] border border-gray-700 text-white w-[154px] py-2"
                     >
-                      {!row.enrolled ? (
+                      {/* Enroll option - available to all users if not enrolled */}
+                      {!row.enrolled && (
                         <DropdownMenuItem
                           onClick={() => handleEnroll(row.id)}
                           disabled={isEnrolling}
@@ -502,41 +511,39 @@ export default function ExploreLearningPath() {
                             Enroll
                           </span>
                         </DropdownMenuItem>
-                      ) : (
-                        // <DropdownMenuItem
-                        //   className="group flex items-center gap-2 bg-transparent hover:!bg-[#F9DB6F33] cursor-pointer opacity-50"
-                        //   disabled
-                        // >
-                        //   <SquarePen size={16} className="text-white" />
-                        //   <span>Already Enrolled</span>
-                        // </DropdownMenuItem>
-                        <></>
                       )}
 
-                      <DropdownMenuItem
-                        onClick={() => handleEdit(row)}
-                        className="group flex items-center gap-2 bg-transparent hover:!bg-[#F9DB6F33] cursor-pointer"
-                      >
-                        <Icon
-                          icon="iconamoon:edit-light"
-                          width="24"
-                          height="24"
-                        />
-                        <span className="group-hover:text-[#F9DB6F]">Edit</span>
-                      </DropdownMenuItem>
+                      {/* Edit and Delete options - only for admin and path owners */}
+                      {hasAccess && (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => handleEdit(row)}
+                            className="group flex items-center gap-2 bg-transparent hover:!bg-[#F9DB6F33] cursor-pointer"
+                          >
+                            <Icon
+                              icon="iconamoon:edit-light"
+                              width="24"
+                              height="24"
+                            />
+                            <span className="group-hover:text-[#F9DB6F]">
+                              Edit
+                            </span>
+                          </DropdownMenuItem>
 
-                      <DropdownMenuItem
-                        onClick={() => openDeleteModal(row.id)}
-                        className="group flex items-center gap-2 bg-transparent hover:!bg-[#F9DB6F33] cursor-pointer"
-                      >
-                        <Trash2
-                          size={16}
-                          className="text-white group-hover:text-[#F9DB6F]"
-                        />
-                        <span className="text-white group-hover:text-[#F9DB6F]">
-                          Delete
-                        </span>
-                      </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => openDeleteModal(row.id)}
+                            className="group flex items-center gap-2 bg-transparent hover:!bg-[#F9DB6F33] cursor-pointer"
+                          >
+                            <Trash2
+                              size={16}
+                              className="text-white group-hover:text-[#F9DB6F]"
+                            />
+                            <span className="text-white group-hover:text-[#F9DB6F]">
+                              Delete
+                            </span>
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 );
