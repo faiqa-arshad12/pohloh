@@ -302,7 +302,14 @@ export function SignupForm() {
                         />
                       </div>
                     </FormControl>
-                    <FormMessage />
+
+                    <div className="h-[15px]">
+                      {form.formState.errors.firstName ? (
+                        <FormMessage />
+                      ) : (
+                        <></>
+                      )}
+                    </div>
                   </FormItem>
                 )}
               />
@@ -324,7 +331,13 @@ export function SignupForm() {
                         />
                       </div>
                     </FormControl>
-                    <FormMessage />
+                    <div className="h-[15px]">
+                      {form.formState.errors.lastName ? (
+                        <FormMessage className="mt-0" />
+                      ) : (
+                        <></>
+                      )}
+                    </div>
                   </FormItem>
                 )}
               />
