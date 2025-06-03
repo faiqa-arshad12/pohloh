@@ -427,8 +427,7 @@ export default function Account() {
                   : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
               }`}
             >
-              <User_Icon className="w-10 h-10" />
-
+              <Icon icon="heroicons:users" width="24" height="24" />
               {/* <Image src="/users.png" height={24}width={24} alt={"users"} className=""/> */}
 
               <span className="text-[20px] text-normal font-urbanist">
@@ -444,7 +443,7 @@ export default function Account() {
                     : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
                 }`}
               >
-                <CreditCard className="w-10 h-10" />
+                <Icon icon="octicon:credit-card-24" width="24" height="24" />
                 {/* <Image src="/billing.png" height={24}width={24} alt={"billing"} className=""/> */}
 
                 <span className="text-[20px] text-normal font-urbanist">
@@ -462,9 +461,8 @@ export default function Account() {
                     : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
                 }`}
               >
-                <LayoutGrid className="w-10 h-10" />
+                <Icon icon="proicons:apps" width="24" height="24" />{" "}
                 {/* <Image src="/app.png" height={24}width={24} alt={"apps"} className=""/> */}
-
                 <span className="text-[20px] text-normal font-urbanist">
                   Apps
                 </span>

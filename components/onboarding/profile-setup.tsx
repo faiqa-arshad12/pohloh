@@ -46,6 +46,7 @@ import {
   setLocalStorage,
 } from "@/lib/local-storage";
 import Loader from "../shared/loader";
+import { Icon } from "@iconify/react";
 
 const formSchema = (role: Role | null) =>
   z.object({
@@ -436,7 +437,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                 <div className="flex flex-col items-center mb-6">
                   <div className="flex flex-col items-center gap-4 w-full">
                     {/* Image Preview */}
-                    <div className="w-24 h-24 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-500">
+                    <div className="w-24 h-24 rounded-full bg-[#40423A] flex items-center justify-center overflow-hidden border border-0">
                       {profilePictureUrl || initialData.profile_picture ? (
                         <Image
                           src={
@@ -450,13 +451,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                           className="object-cover w-full h-full"
                         />
                       ) : (
-                        <Image
-                          src="/placeholder-user.png"
-                          alt="Placeholder"
-                          width={500}
-                          height={500}
-                          className="object-cover rounded-full"
-                        />
+                        <Icon icon="mdi:user" width="71" height="71" color="#A2A2A2" />
                       )}
                     </div>
 
@@ -483,7 +478,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                     {/* Upload Button */}
                     <Button
                       variant="outline"
-                      className="bg-[#F9DB6F] border-white/30 text-black hover:bg-[#F9DB6F] cursor-pointer !p-6"
+                      className="bg-[#F9DB6F] w-full max-w-[175px] border-0 text-black hover:bg-[#F9DB6F] cursor-pointer h-[48px]"
                       onClick={triggerFileInput}
                       type="button"
                       disabled={isUploading}
@@ -494,7 +489,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                         </>
                       ) : (
                         <>
-                          <Upload className="h-4 w-4 mr-2" />
+                          {/* <Upload className="h-4 w-4 mr-2" /> */}
                           Upload Picture
                         </>
                       )}
