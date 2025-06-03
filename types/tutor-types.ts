@@ -1,4 +1,4 @@
-import {EvaluationResponse, Question_ as Question} from "./types";
+import { EvaluationResponse, Question_ as Question } from "./types";
 
 export interface SessionStartedProps {
   questions: Question[];
@@ -15,6 +15,7 @@ export interface SessionStartedProps {
       correct_answer: string;
     }>;
   }) => void;
+  onQuestionAnswered?: () => void;
   completedQuestions?: number;
   questionsAnswered?: Array<{
     question_id: string;

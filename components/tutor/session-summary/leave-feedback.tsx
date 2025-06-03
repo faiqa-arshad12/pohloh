@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/form";
 import {useUserHook} from "@/hooks/useUser";
 import {apiUrl} from "@/utils/constant";
+import {zodResolver} from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 type FeedbackFormValues = {
   comments: string;
@@ -59,10 +61,14 @@ const CustomTagList = ({tags, onRemoveTag}: CustomTagListProps) => {
   );
 };
 
+const feedbackSchema = z.object({
+  comments: z.string().max(500, "Comments cannot exceed 500 characters"),
+  tags: z.array(z.string()).min(1, "Please select at least one tag"),
+});
+
 export default function FeedbackForm({
   isOpen,
   onClose,
-
   learningPathId,
 }: FeedbackModalProps) {
   const {userData} = useUserHook();
@@ -72,25 +78,20 @@ export default function FeedbackForm({
       comments: "",
       tags: ["Incorrect Information", "Outdated Content", "Uncleared Output"],
     },
+    mode: "onChange",
+    resolver: zodResolver(feedbackSchema),
   });
 
   const handleSubmit = async (data: FeedbackFormValues) => {
-    // Validation: Check if tags is empty AND comments is empty
-    if (data.tags.length === 0 && data.comments.trim() === "") {
-      console.error("Please provide at least one tag or comment.");
-      // Optionally, display a user-friendly error message here
-      return;
-    }
-
-    const payload = {
-      user_id: userData.id,
-      org_id: userData.org_id,
-      learning_path_id: learningPathId,
-      tags: data.tags,
-      feedback_text: data.comments,
-    };
-
     try {
+      const payload = {
+        user_id: userData.id,
+        org_id: userData.org_id,
+        learning_path_id: learningPathId,
+        tags: data.tags,
+        feedback_text: data.comments,
+      };
+
       const response = await fetch(`${apiUrl}/learning-path-feedbacks`, {
         method: "POST",
         headers: {
@@ -100,23 +101,27 @@ export default function FeedbackForm({
       });
 
       if (!response.ok) {
-        console.error("API submission failed:", response.statusText);
-        // Optionally, handle API error feedback to user
-      } else {
-        console.log("Feedback submitted successfully!");
-        // Optionally, show success message to user
+        throw new Error(response.statusText);
       }
+
+      console.log("Feedback submitted successfully!");
+      onClose();
     } catch (error) {
       console.error("Error submitting feedback:", error);
-      // Optionally, handle network error feedback to user
-    } finally {
-      onClose(); // Close modal after attempt
+      form.setError("root", {
+        type: "manual",
+        message: "Failed to submit feedback. Please try again.",
+      });
     }
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    const newTags = form.getValues("tags").filter((tag) => tag !== tagToRemove);
-    form.setValue("tags", newTags);
+    const currentTags = form.getValues("tags");
+    const newTags = currentTags.filter((tag) => tag !== tagToRemove);
+    form.setValue("tags", newTags, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
   };
 
   return (
@@ -145,7 +150,7 @@ export default function FeedbackForm({
             className="space-y-6"
           >
             <CustomTagList
-              tags={form.getValues("tags")}
+              tags={form.watch("tags")}
               onRemoveTag={handleRemoveTag}
             />
 
@@ -160,13 +165,20 @@ export default function FeedbackForm({
                     <Textarea
                       placeholder="Lorem ipsum Lorem ipsum Lorem ipsum Lorem ipsum"
                       className="w-full bg-[#2a2a2a] border-0 text-gray-300 resize-none h-32 rounded-[6px]"
+                      maxLength={500}
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-red-400" />
                 </FormItem>
               )}
             />
+
+            {form.formState.errors.root && (
+              <p className="text-red-400 text-sm">
+                {form.formState.errors.root.message}
+              </p>
+            )}
 
             <div className="flex justify-between flex-row">
               <Button
