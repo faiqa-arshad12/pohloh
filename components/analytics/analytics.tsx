@@ -1,35 +1,20 @@
 import {useEffect, useState} from "react";
-import {
-  XAxis,
-  LineChart,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  YAxis,
-  CartesianGrid,
-  Area,
-} from "recharts";
+
 import {
   MoreHorizontal,
   ChevronDown,
   Filter,
-  FileText,
   Edit,
   Trash2,
-  Check,
   Flame,
   Trophy,
   Eye,
   FileDown,
   GraduationCap,
-  Headset,
   TriangleAlert,
-  ArrowRight,
-  ArrowLeft,
-  Ellipsis,
-  CircleHelp,
   Users,
   Copy,
+  Ellipsis,
 } from "lucide-react";
 import React from "react";
 import {Button} from "../ui/button";
@@ -46,190 +31,24 @@ import {
 import Card from "./card";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {useRole} from "../ui/Context/UserContext";
-import {Role} from "@/types/types";
-// Table Component
-
-// Interfaces for data types
-interface Tutor {
-  id: number;
-  name: string;
-  rating: string;
-  completionRate: string;
-  strengths: string[];
-  opportunities: string[];
-}
-
-const data = [
-  {name: "Week 1", value: 4},
-  {name: "Week 2", value: 5},
-  {name: "Week 3", value: 4},
-  {name: "Week 4", value: 4.5},
-  {name: "Week 5", value: 5.5},
-  {name: "Week 6", value: 5},
-];
-
-interface LearningPath {
-  id: number;
-  name: string;
-  path: string;
-  completion: string;
-  dueDate: string;
-  priority: "Low" | "Medium" | "High";
-  image: string;
-}
-
-// Mock data
-const tutorsList: Tutor[] = [
-  {
-    id: 1,
-    name: "John Henry",
-    rating: "91%",
-    completionRate: "6%",
-    strengths: ["Shopify", "Tier 1"],
-    opportunities: ["Return Policy", "Troubleshooting"],
-  },
-  {
-    id: 2,
-    name: "Darlene Robertson",
-    rating: "83%",
-    completionRate: "83%",
-    strengths: ["Warranty", "Tier 2"],
-    opportunities: ["Summer Sale", "Troubleshooting"],
-  },
-  {
-    id: 3,
-    name: "Albert Flores",
-    rating: "5%",
-    completionRate: "5%",
-    strengths: ["Escalation", "Brand Language"],
-    opportunities: ["Return Policy", "Troubleshooting"],
-  },
-  {
-    id: 4,
-    name: "Cameron Williamson",
-    rating: "39",
-    completionRate: "41%",
-    strengths: ["Call Script", "Summer Sale"],
-    opportunities: ["Tier 1", "Troubleshooting"],
-  },
-  {
-    id: 5,
-    name: "John ",
-    rating: "91%",
-    completionRate: "6%",
-    strengths: ["Shopify", "Tier 1"],
-    opportunities: ["Return Policy", "Troubleshooting"],
-  },
-  {
-    id: 6,
-    name: "Robertson",
-    rating: "83%",
-    completionRate: "83%",
-    strengths: ["Warranty", "Tier 2"],
-    opportunities: ["Summer Sale", "Troubleshooting"],
-  },
-  {
-    id: 7,
-    name: "Flores",
-    rating: "5%",
-    completionRate: "5%",
-    strengths: ["Escalation", "Brand Language"],
-    opportunities: ["Return Policy", "Troubleshooting"],
-  },
-  {
-    id: 8,
-    name: "Williamson",
-    rating: "39",
-    completionRate: "41%",
-    strengths: ["Call Script", "Summer Sale"],
-    opportunities: ["Tier 1", "Troubleshooting"],
-  },
-];
-
-const learningPaths: LearningPath[] = [
-  {
-    id: 1,
-    name: "John Doe",
-    image: "/pic1.png",
-    path: "Customer Support",
-    completion: "30%",
-    dueDate: "10 Sept 2024",
-    priority: "High",
-  },
-  {
-    id: 2,
-    name: "John Doe",
-    image: "/pic1.png",
-    path: "Advanced Sales",
-    completion: "40%",
-    dueDate: "10 Sept 2024",
-    priority: "Low",
-  },
-  {
-    id: 3,
-    name: "John Doe",
-    image: "/pic1.png",
-    path: "Advanced Sales",
-    completion: "40%",
-    dueDate: "10 Sept 2024",
-    priority: "Medium",
-  },
-  {
-    id: 4,
-    name: "John Doe",
-    image: "/pic1.png",
-    path: "Customer Support",
-    completion: "30%",
-    dueDate: "10 Sept 2024",
-    priority: "High",
-  },
-  {
-    id: 5,
-    name: "John Doe",
-    image: "/pic1.png",
-    path: "Advanced Sales",
-    completion: "40%",
-    dueDate: "10 Sept 2024",
-    priority: "Low",
-  },
-  {
-    id: 6,
-    name: "John Doe",
-    image: "/pic1.png",
-    path: "Advanced Sales",
-    completion: "40%",
-    dueDate: "10 Sept 2024",
-    priority: "Medium",
-  },
-];
-
-// const rowsPerPage = 4;
+import Graph from "./graph";
+import {
+  LearningPath,
+  learningPaths,
+  pathColumns,
+  Tutor,
+  tutorColumns,
+  tutorsList,
+} from "@/utils/analytic-data";
+import TutorScoreCard from "./tutor-card";
+import {Icon} from "@iconify/react/dist/iconify.js";
+import MetricCard from "../matric-card";
 
 export default function AnalyticsDashboard() {
   const {roleAccess} = useRole();
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [activeTab, setActiveTab] = useState("tutor");
   const [interval, setInterval] = useState("monthly");
-
-  // Define columns for tutors table
-  const tutorColumns = [
-    {Header: "Tutor Name", accessor: "name"},
-    {Header: "Average Tutor Score", accessor: "rating"},
-    {Header: "Completion rate", accessor: "completionRate"},
-    {Header: "Strength", accessor: "strengths"},
-    {Header: "Opportunities", accessor: "opportunities"},
-    {Header: "Action", accessor: "action"},
-  ];
-
-  // Define columns for learning paths table
-  const pathColumns = [
-    {Header: "Name", accessor: "name"},
-    {Header: "Learning Path", accessor: "path"},
-    {Header: "Completion", accessor: "completion"},
-    {Header: "Due Date", accessor: "dueDate"},
-    {Header: "Priority", accessor: "priority"},
-    {Header: "Action", accessor: "action"},
-  ];
 
   useEffect(() => {
     console.log("User role detected", roleAccess);
@@ -489,7 +308,13 @@ export default function AnalyticsDashboard() {
                   label="Total Cards Uses"
                   icon={
                     <div className="bg-[#A9EEFC66] p-2 rounded-full flex items-center justify-center">
-                      <FileText className="text-[#24C6E7] w-10 h-10" />
+                      <Icon
+                        icon="bi:filetype-pdf"
+                        width="24"
+                        height="24"
+                        color="black"
+                        className="cursor-pointer"
+                      />{" "}
                     </div>
                   }
                 />
@@ -519,8 +344,8 @@ export default function AnalyticsDashboard() {
                 value="08"
                 label="Completion Path"
                 icon={
-                  <div className="bg-[#BB6BD933] p-2 rounded-full">
-                    <Check className="text-[#BB6BD9] w-10 h-10" />
+                  <div className="">
+                    <img src="/check-icon.png" />
                   </div>
                 }
               />
@@ -529,8 +354,8 @@ export default function AnalyticsDashboard() {
                 value="160"
                 label="Total Questions Answered"
                 icon={
-                  <div className="bg-[#E8681833] p-2 rounded-full flex items-center justify-center">
-                    <CircleHelp className="text-[#BB6BD9] w-10 h-10" />
+                  <div className="">
+                    <img src="/total_question.png" />
                   </div>
                 }
               />
@@ -539,8 +364,8 @@ export default function AnalyticsDashboard() {
                   value="3/11"
                   label="Team Rank"
                   icon={
-                    <div className="bg-[#71D96B33] p-2 rounded-full">
-                      <Trophy className="text-[#71D96B] w-10 h-10" />
+                    <div className="">
+                      <img src="/rank.png" />
                     </div>
                   }
                 />
@@ -549,8 +374,8 @@ export default function AnalyticsDashboard() {
                   value="#14"
                   label="Leaderboard"
                   icon={
-                    <div className="bg-[#71D96B33] p-2 rounded-full">
-                      <Trophy className="text-[#71D96B] w-10 h-10" />
+                    <div className="">
+                      <img src="/goal.png" />
                     </div>
                   }
                 />
@@ -572,55 +397,20 @@ export default function AnalyticsDashboard() {
           <div>
             {/* Tutor Score Section */}
             <div className=" flex flex-col md:grid md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-[#191919] rounded-[30px] p-4">
-                <h3 className="font-urbanist font-medium text-[24px] leading-[100%] tracking-[0] mb-2 text-center">
-                  Average Tutor Score
-                </h3>
-                <div className="flex flex-col items-center justify-center p-4">
-                  <div className="mb-4 w-40 h-40">
-                    <Headset className=" w-40 h-40" />
-                  </div>
-                  <div className="font-urbanist font-normal text-[16px] leading-[100%] tracking-[0] text-center mb-4">
-                    Overall Tutor Score
-                  </div>
-                  <div className="flex flex-row gap-2 w-full">
-                    {/* Progress Bar with accessibility attributes */}
-                    <div
-                      className="w-full flex  text-center rounded border overflow-hidden flex-row "
-                      role="progressbar"
-                      aria-valuenow={88}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                    >
-                      <div
-                        className="bg-[#F9DB6F] text-black py-1 font-urbanist font-medium text-[20px] leading-[100%] tracking-[0] transition-all duration-300"
-                        style={{width: "88%"}}
-                      >
-                        88%
-                      </div>
-                      <div
-                        className="  overflow-hidden bg-cover bg-center flex-shrink-0"
-                        style={{
-                          backgroundImage: "url('/Frame.png')",
-                          backgroundColor: "#f0f0f0",
-                          width: "20%",
-                        }}
-                        role="img"
-                        aria-label="Preview thumbnail"
-                      >
-                        <div className="sr-only">Content preview</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <TutorScoreCard />
 
               <div className="bg-[#191919] rounded-[30px] p-4 col-span-3">
                 <div className="flex justify-between mb-4">
                   <h3 className="text-sm font-medium">Tutor Analytics</h3>
                   <div className="flex items-center gap-2 mb-2">
-                    <Button className="w-[52px] h-[50px] bg-[#F9DB6F] hover:bg-[#F9DB6F] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px]">
-                      <FileText size={16} />
+                    <Button className="w-[52px] h-[50px] bg-[#F9DB6F] hover:bg-[#F9DB6F] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
+                      <Icon
+                        icon="bi:filetype-pdf"
+                        width="24"
+                        height="24"
+                        color="black"
+                        className="cursor-pointer"
+                      />
                     </Button>
                     <Select value={interval} onValueChange={setInterval}>
                       <SelectTrigger
@@ -629,7 +419,7 @@ export default function AnalyticsDashboard() {
                       >
                         <SelectValue placeholder="Monthly" />
                       </SelectTrigger>
-                      <SelectContent className="bg-black text-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <SelectContent className="bg-black text-white dark:bg-gray-800 rounded-lg">
                         <SelectItem value="monthly">Monthly</SelectItem>
                         <SelectItem value="weekly">Weekly</SelectItem>
                         <SelectItem value="daily">Daily</SelectItem>
@@ -658,8 +448,14 @@ export default function AnalyticsDashboard() {
                 <h3 className="font-urbanist  text-[24px] leading-[21.9px] tracking-[0] font-medium">
                   Tutors
                 </h3>
-                <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px]">
-                  <FileText size={16} />
+                <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg  px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
+                  <Icon
+                    icon="bi:filetype-pdf"
+                    width="24"
+                    height="24"
+                    color="white"
+                    className="cursor-pointer"
+                  />
                 </Button>
               </div>
 
@@ -686,8 +482,14 @@ export default function AnalyticsDashboard() {
                 <h3 className="font-urbanist font-medium text-[24px] leading-[21.9px] tracking-[0]">
                   Assign New Learning Path
                 </h3>
-                <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px]">
-                  <FileText size={16} />
+                <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border  px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
+                  <Icon
+                    icon="bi:filetype-pdf"
+                    width="24"
+                    height="24"
+                    color="white"
+                    className="cursor-pointer"
+                  />
                 </Button>
               </div>
               <Table
@@ -717,94 +519,20 @@ export default function AnalyticsDashboard() {
                         <ChevronDown size={14} />
                       </Button>
                       <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px]">
-                        <FileText size={16} />
+                        <Icon
+                          icon="bi:filetype-pdf"
+                          width="24"
+                          height="24"
+                          className="cursor-pointer"
+                        />
                       </Button>
                       <Button className="bg-[#F9DB6F] w-[52px] h-[50px] text-black px-4 py-1 rounded">
                         <Filter size={16} />
                       </Button>
                     </div>
                   </div>
-                  <div className="rounded-xl p-4 h-[220px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={data}
-                        margin={{top: 10, right: 10, left: 0, bottom: 5}}
-                      >
-                        <defs>
-                          <linearGradient
-                            id="colorValue"
-                            x1="0"
-                            y1="0"
-                            x2="0"
-                            y2="1"
-                          >
-                            <stop
-                              offset="0%"
-                              stopColor="#F59E0B"
-                              stopOpacity={0.6}
-                            />
-                            <stop
-                              offset="100%"
-                              stopColor="#F59E0B"
-                              stopOpacity={0.1}
-                            />
-                          </linearGradient>
-                        </defs>
 
-                        <CartesianGrid vertical={false} stroke="#333" />
-
-                        <XAxis
-                          dataKey="name"
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{fill: "#9CA3AF", fontSize: 10}}
-                        />
-                        <YAxis
-                          domain={[0, 6]}
-                          ticks={[0, 2, 4, 6]}
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{fill: "#9CA3AF", fontSize: 10}}
-                        />
-
-                        {/* ✅ Area Fill */}
-                        <Area
-                          type="monotone"
-                          dataKey="value"
-                          stroke="transparent"
-                          fill="url(#colorValue)"
-                        />
-
-                        {/* ✅ Line */}
-                        <Line
-                          type="monotone"
-                          dataKey="value"
-                          stroke="#F59E0B"
-                          strokeWidth={2}
-                          dot={{stroke: "#F59E0B", fill: "#F59E0B", r: 4}}
-                          activeDot={{
-                            r: 6,
-                            fill: "#FFF",
-                            stroke: "#F59E0B",
-                            strokeWidth: 2,
-                          }}
-                        />
-
-                        {/* ✅ Tooltip */}
-                        <Tooltip
-                          content={({active, payload}) =>
-                            active && payload?.length ? (
-                              <div className="bg-gray-800 p-2 rounded text-xs border border-gray-700 shadow-lg">
-                                <p className="text-[#F9DB6F] font-medium">
-                                  {payload[0].payload.name}: {payload[0].value}
-                                </p>
-                              </div>
-                            ) : null
-                          }
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <Graph />
                 </div>
 
                 {/* Right Section: Top Performing Learning Paths */}
@@ -864,26 +592,6 @@ export default function AnalyticsDashboard() {
 
         {activeTab === "tutor" && <TutorAnalytics />}
         {activeTab === "Card" && <Card />}
-      </div>
-    </div>
-  );
-}
-
-// Custom icons
-//@ts-expect-error: Metric card
-function MetricCard({value, label, icon, className = ""}) {
-  return (
-    <div className={`bg-[#191919] rounded-[20px] p-4 text-white ${className}`}>
-      <div className="flex items-center gap-8 py-4">
-        <div className="text-yellow-400">{icon}</div>
-        <div className="text-left">
-          <span className="font-urbanist font-medium text-[34px] leading-[40px] tracking-[0] align-bottom">
-            {value}
-          </span>
-          <p className="font-urbanist font-medium text-[20px] leading-[24px] tracking-[0] align-bottom text-white mt-1">
-            {label}
-          </p>
-        </div>
       </div>
     </div>
   );
