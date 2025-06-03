@@ -1,113 +1,192 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { X } from "lucide-react"
-import { useForm } from "react-hook-form"
-
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
+import {useForm} from "react-hook-form";
+import {Button} from "@/components/ui/button";
+import {Textarea} from "@/components/ui/textarea";
 import {
-    Form,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormControl,
-    FormMessage,
-} from "@/components/ui/form"
-
-import Tag from "@/components/ui/tags" // Update the path if needed
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import {useUserHook} from "@/hooks/useUser";
+import {apiUrl} from "@/utils/constant";
 
 type FeedbackFormValues = {
-    comments: string
-    tags: string[]
+  comments: string;
+  tags: string[];
+};
+
+interface FeedbackModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  learningPathId: string;
 }
 
-export default function FeedbackForm() {
-    const [isOpen, setIsOpen] = useState(true)
+interface CustomTagListProps {
+  tags: string[];
+  onRemoveTag: (tagToRemove: string) => void;
+}
 
-    const form = useForm<FeedbackFormValues>({
-        defaultValues: {
-            comments: "",
-            tags: ["Incorrect Information", "Outdated Content", "Uncleared Output"],
-        },
-    })
+const CustomTagList = ({tags, onRemoveTag}: CustomTagListProps) => {
+  return (
+    <div className="flex flex-wrap gap-4">
+      {tags.map((tag, index) => (
+        <div
+          key={index}
+          className="bg-[#FFFFFF33] h-[44px] text-[#FFFFFF] cursor-pointer text-white px-3 py-1 rounded-sm flex items-center font-urbanist font-normal text-[18px] leading-[24px] tracking-[0px]"
+        >
+          {tag}
+          <button
+            type="button"
+            onClick={() => onRemoveTag(tag)}
+            className="ml-2 w-[10.5px] h-[10.5px] text-[24px] text-[#F9DB6F] bg-transparent hover:bg-transparent flex items-center justify-center p-0 cursor-pointer"
+            aria-label={`Remove tag ${tag}`}
+          >
+            &times;
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+};
 
-    const handleSubmit = (data: FeedbackFormValues) => {
-        console.log("Submitted:", data)
-        setIsOpen(false)
+export default function FeedbackForm({
+  isOpen,
+  onClose,
+
+  learningPathId,
+}: FeedbackModalProps) {
+  const {userData} = useUserHook();
+
+  const form = useForm<FeedbackFormValues>({
+    defaultValues: {
+      comments: "",
+      tags: ["Incorrect Information", "Outdated Content", "Uncleared Output"],
+    },
+  });
+
+  const handleSubmit = async (data: FeedbackFormValues) => {
+    // Validation: Check if tags is empty AND comments is empty
+    if (data.tags.length === 0 && data.comments.trim() === "") {
+      console.error("Please provide at least one tag or comment.");
+      // Optionally, display a user-friendly error message here
+      return;
     }
 
-    // const handleTagsChange = (tags: string[]) => {
-    //     form.setValue("tags", tags)
-    // }
+    const payload = {
+      user_id: userData.id,
+      org_id: userData.org_id,
+      learning_path_id: learningPathId,
+      tags: data.tags,
+      feedback_text: data.comments,
+    };
 
-    if (!isOpen) return null
+    try {
+      const response = await fetch(`${apiUrl}/learning-path-feedbacks`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-    return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-[#1a1a1a] w-full max-w-2xl rounded-2xl shadow-lg overflow-hidden p-8">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-white font-urbanist font-bold text-[32px] leading-[100%]">Feedback</h2>
-                    <Button onClick={() => setIsOpen(false)} className="text-white bg-transparent hover:bg-transparent hover:text-gray-300">
-                        <X size={24} className="text-[#e0c558]" />
-                    </Button>
-                </div>
+      if (!response.ok) {
+        console.error("API submission failed:", response.statusText);
+        // Optionally, handle API error feedback to user
+      } else {
+        console.log("Feedback submitted successfully!");
+        // Optionally, show success message to user
+      }
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      // Optionally, handle network error feedback to user
+    } finally {
+      onClose(); // Close modal after attempt
+    }
+  };
 
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-                        <div>
-                            <h3 className="text-[#f0d568] text-left font-urbanist font-normal text-[24px] leading-[100%] mb-4">Help us improve this learning path</h3>
+  const handleRemoveTag = (tagToRemove: string) => {
+    const newTags = form.getValues("tags").filter((tag) => tag !== tagToRemove);
+    form.setValue("tags", newTags);
+  };
 
-                            {/* Tag Component */}
-                            <Tag
-                                initialTags={form.getValues("tags")}
-                                // onTagsChange={handleTagsChange}
-                                confirmBeforeAdd={false}
-                                className="w-full"
-                                classNameTag="bg-[#FFFFFF14] w-[200px] h-[34px] text-white px-3 rounded-sm flex items-center max-w-[calc(100%-32px)] font-urbanist font-normal text-[18px] leading-[24px] tracking-[0px] align-middl"
-                                classNameTagRemove="w-[10.5px] h-[10.5px] text-lg text-[#F9DB6F] bg-transparent hover:bg-transparent"
-                                classNameAddTag="hidden"
-                                showAddTagButton={false}
-                            />
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent
+        className="bg-[#1a1a1a] border-none rounded-lg w-full max-w-2xl h-[auto]"
+        style={{borderRadius: "30px"}}
+      >
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-white text-[32px] font-bold">
+              Feedback
+            </DialogTitle>
+          </div>
+        </DialogHeader>
 
-                        </div>
-
-                        <FormField
-                            name="comments"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-white font-urbanist font-normal text-[18px] leading-[24px] tracking-[0px] align-middle">Tell Us More (Optional)</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder="Lorem ipsum Lorem ipsum Lorem ipsum Lorem ipsum"
-                                            className="w-full bg-[#2a2a2a] border-0 text-gray-300 resize-none h-32 rounded-lg"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <div className="flex justify-between pt-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setIsOpen(false)}
-                                className="bg-[#333333] hover:bg-[#333333] text-white border border-white hover:border-white hover:text-white rounded-[8px] px-8 py-2 h-[48px] font-urbanist font-medium text-[14px] leading-[100%] tracking-[0]"                  >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="submit"
-                                className="bg-[#f0d568] hover:bg-[#e0c558] text-black  rounded-[8px] px-8 py-2 h-[48px] font-urbanist font-medium text-[14px] leading-[100%] tracking-[0] "
-                            >
-                                Submit Request
-                            </Button>
-                        </div>
-
-                    </form>
-                </Form>
-            </div>
+        <div className="mb-2">
+          <p className="text-[#F9DB6F] text-[24px]">
+            Help us improve this learning path
+          </p>
         </div>
-    )
+
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-6"
+          >
+            <CustomTagList
+              tags={form.getValues("tags")}
+              onRemoveTag={handleRemoveTag}
+            />
+
+            <FormField
+              name="comments"
+              render={({field}) => (
+                <FormItem>
+                  <FormLabel className="text-white font-urbanist font-normal text-[18px] leading-[24px] tracking-[0px] align-middle">
+                    Tell Us More (Optional)
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Lorem ipsum Lorem ipsum Lorem ipsum Lorem ipsum"
+                      className="w-full bg-[#2a2a2a] border-0 text-gray-300 resize-none h-32 rounded-[6px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-between flex-row">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="bg-[#333333] hover:bg-[#444444] hover:text-[white] text-white rounded-md py-2 h-[47px] w-[166px] cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-[#f0d568] hover:bg-[#e0c558] text-black font-medium rounded-md py-2 h-[48px] w-[210px] cursor-pointer"
+              >
+                Submit Request
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
 }

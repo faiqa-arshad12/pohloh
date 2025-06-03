@@ -73,6 +73,8 @@ export const feedback_topics = [
 
 export const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 export const apiUrl_AI = `${process.env.NEXT_PUBLIC_AI_API_URL}/api`;
+export const apiUrl_AI_Tutor = `${process.env.NEXT_PUBLIC_AI_API_URL}`;
+
 
   // Available options
   export const fontSizes = [

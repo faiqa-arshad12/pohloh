@@ -8,47 +8,56 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {Button} from "../ui/button";
+import {Button} from "@/components/ui/button";
 import {useRouter} from "next/navigation";
-import FeedbackForm from "./session-summary/leave-feedback";
 import Welcome from "./welcome-screen";
-import {Path} from "@/types/types";
+import type {
+  Question_ as Question,
+  EnrolledPath,
+  EnrolledPathsApiResponse,
+} from "@/types/types";
 import {apiUrl} from "@/utils/constant";
 import {useUserHook} from "@/hooks/useUser";
 
-// Define the types for our API response
-
-interface ApiResponse {
-  success: boolean;
-  paths: Path[];
-}
-
 export default function LearningPaths() {
   const router = useRouter();
-  const [sessionComplted, setSessionComplted] = useState(true);
   const [showLeaveFeedback, setShowLeaveFeedback] = useState(false);
-  const [enrolledPaths, setEnrolledPaths] = useState<Path[]>([]);
+  const [enrolledPaths, setEnrolledPaths] = useState<EnrolledPath[]>([]);
+  const [id, setId] = useState("");
+  const [selectedLearningPath, setSelectedLearningPath] = useState<{
+    id: string;
+    title: string;
+    questions: Question[];
+    question_completed: number;
+    questions_answered?: Array<{
+      question_id: string;
+      user_answer: string;
+    }>;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const {userData} = useUserHook();
 
   useEffect(() => {
-    setSessionComplted(true);
-    if (userData) fetchEnrolledPaths();
+    if (userData?.id) {
+      fetchEnrolledPaths();
+    }
   }, [userData]);
 
   const fetchEnrolledPaths = async () => {
     try {
       setIsLoading(true);
+      setError(null);
+
       const response = await fetch(
-        ` ${apiUrl}/learning-paths/enrolled-paths/${userData?.id}`
+        `${apiUrl}/learning-paths/enrolled-paths/${userData?.id}`
       );
 
       if (!response.ok) {
         throw new Error(`Failed to fetch data: ${response.status}`);
       }
 
-      const data: ApiResponse = await response.json();
+      const data: EnrolledPathsApiResponse = await response.json();
 
       if (data.success) {
         setEnrolledPaths(data.paths);
@@ -65,9 +74,26 @@ export default function LearningPaths() {
     }
   };
 
+  const handlePathSelect = (path: EnrolledPath) => {
+    const questions: Question[] = path.learning_path_id.questions || [];
+    setId(path.learning_path_id.id);
+    setSelectedLearningPath({
+      id: path.id,
+      title: path.learning_path_id.title,
+      questions: questions,
+      question_completed: path.question_completed,
+      questions_answered: path.questions_answered,
+    });
+  };
+
+  const handleClearSelectedPath = () => {
+    setSelectedLearningPath(null);
+    fetchEnrolledPaths();
+  };
+
   return (
     <div className="flex text-white">
-      <div className="flex flex-col w-full  overflow-auto">
+      <div className="flex flex-col w-full overflow-auto">
         <h1 className="font-urbanist font-medium text-[32px] leading-[100%] tracking-[0] py-4">
           Learning Paths
         </h1>
@@ -112,43 +138,57 @@ export default function LearningPaths() {
                       const sessionCompleted =
                         path.question_completed ===
                         path.learning_path_id.num_of_questions;
+                      const isSelected = selectedLearningPath?.id === path.id;
 
                       return (
                         <div
                           key={path.id}
-                          className="flex h-[101px] p-2 items-start mx-2 gap-[17px] rounded-2xl bg-[#0E0F11] opacity-100 hover:opacity-80 cursor-pointer"
+                          className={`flex h-[101px] p-2 items-start mx-2 gap-[17px] rounded-2xl cursor-pointer transition-all duration-200 ${
+                            isSelected
+                              ? "bg-[#0E0F11] opacity-80 border-0 border-[#F9DB6F] shadow-lg"
+                              : "bg-[#0E0F11] opacity-100 hover:opacity-80 hover:bg-[#1A1B1D]"
+                          }`}
+                          onClick={() => handlePathSelect(path)}
                         >
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#F9DB6F] flex items-center justify-center text-black font-medium">
+                          <div
+                            className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-medium ${"bg-[#F9DB6F] text-black"}`}
+                          >
                             <FileBadge className="h-4 w-4" />
                           </div>
 
                           <div className="flex-1">
-                            <div className="font-urbanist font-medium text-[16px] leading-[100%]">
+                            <div
+                              className={`font-urbanist font-medium text-[16px] leading-[100%] ${"text-white"}`}
+                            >
                               {path.learning_path_id.title}
                             </div>
                             <div className="font-urbanist font-medium text-[12px] leading-[100%] text-[#828282] mt-1">
-                              {typeof path.learning_path_id.category ===
-                              "object"
-                                ? (path.learning_path_id.category as any)
-                                    .name || "Unknown Category"
-                                : path.learning_path_id.category ||
-                                  "Unknown Category"}
+                              {path.learning_path_id.category.name}
                             </div>
-                            <div
-                              className={`w-[118px] h-[29px] mt-5 flex items-center gap-[10px] rounded-[8px] px-[10px] py-[6px] font-urbanist font-semibold text-[14px] leading-[100%] text-white ${
-                                sessionCompleted
-                                  ? "bg-[#707070]"
-                                  : "bg-transparent border border-white"
-                              }`}
-                            >
-                              Complete: {path.question_completed}/
-                              {path.learning_path_id.num_of_questions}
+                            <div className="flex gap-2 mt-2 flex-wrap">
+                              <div
+                                className={`w-[118px] h-[29px] flex items-center gap-[10px] rounded-[8px] px-[10px] py-[6px] font-urbanist font-semibold text-[12px] leading-[100%] ${
+                                  sessionCompleted
+                                    ? "bg-[#707070] text-white"
+                                    : isSelected
+                                    ? "bg-transparent border border-[#F9DB6F] text-[#F9DB6F]"
+                                    : "bg-transparent border border-white text-white"
+                                }`}
+                              >
+                                Complete: {path.question_completed}/
+                                {path.learning_path_id.questions.length}
+                              </div>
                             </div>
                           </div>
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <button className="p-1">
+                              <button
+                                className={`p-1 ${
+                                  isSelected ? "text-[#F9DB6F]" : "text-white"
+                                }`}
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 <MoreVertical className="h-4 w-4 cursor-pointer" />
                               </button>
                             </DropdownMenuTrigger>
@@ -183,9 +223,10 @@ export default function LearningPaths() {
                               >
                                 <DropdownMenuItem
                                   className="group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-white hover:bg-[#F9DB6F33] focus:bg-[#F9DB6F33]"
-                                  onClick={() =>
-                                    setShowLeaveFeedback(!showLeaveFeedback)
-                                  }
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowLeaveFeedback(!showLeaveFeedback);
+                                  }}
                                 >
                                   <Pen className="h-4 w-4 text-white group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F]" />
                                   <span className="group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F] font-urbanist font-normal text-[14px] leading-[24px]">
@@ -205,7 +246,7 @@ export default function LearningPaths() {
               {/* Button section - fixed at bottom */}
               <div className="sticky bottom-0 w-full mt-auto justify-center items-center flex flex-row bg-[#191919] py-4">
                 <Button
-                  className="w-full max-w-[232px] h-[48px] bg-[#F9DB6F] rounded-md text-sm text-black font-urbanist font-medium text-[14px] leading-[100%] cursor-pointer"
+                  className="w-full max-w-[232px] h-[48px] bg-[#F9DB6F] rounded-md text-sm text-black font-urbanist font-medium text-[14px] leading-[100%] cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => router.push("/tutor/explore-learning-paths")}
                 >
                   Explore more learning paths
@@ -215,10 +256,30 @@ export default function LearningPaths() {
           </div>
 
           {/* Main content */}
-          <Welcome userName={userData?.first_name || ""} />
+          <Welcome
+            userName={userData?.first_name || ""}
+            selectedLearningPath={selectedLearningPath}
+            id={id}
+            onClearSelectedPath={handleClearSelectedPath}
+          />
         </div>
 
-        {showLeaveFeedback && <FeedbackForm />}
+        {showLeaveFeedback && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-[#222222] p-6 rounded-lg max-w-md w-full mx-4">
+              <h3 className="text-xl font-bold mb-4">Leave Feedback</h3>
+              <p className="text-gray-300 mb-4">
+                Feedback form would go here...
+              </p>
+              <button
+                onClick={() => setShowLeaveFeedback(false)}
+                className="bg-[#F9DB6F] text-black px-4 py-2 rounded hover:opacity-80"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
