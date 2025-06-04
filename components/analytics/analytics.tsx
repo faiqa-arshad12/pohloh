@@ -4,16 +4,11 @@ import {
   MoreHorizontal,
   ChevronDown,
   Filter,
-  Edit,
   Trash2,
   Flame,
   Trophy,
   Eye,
-  FileDown,
   GraduationCap,
-  TriangleAlert,
-  Users,
-  Copy,
   Ellipsis,
 } from "lucide-react";
 import React from "react";
@@ -43,6 +38,8 @@ import {
 import TutorScoreCard from "./tutor-card";
 import {Icon} from "@iconify/react/dist/iconify.js";
 import MetricCard from "../matric-card";
+import TopPerformance from "./top-performance";
+import {USER_ROLES} from "@/utils/constant";
 
 export default function AnalyticsDashboard() {
   const {roleAccess} = useRole();
@@ -51,12 +48,13 @@ export default function AnalyticsDashboard() {
   const [interval, setInterval] = useState("monthly");
 
   useEffect(() => {
-    console.log("User role detected", roleAccess);
-    if (roleAccess === "user") {
-      setActiveTab("tutor");
-    } else {
-      setActiveTab("");
-    }
+    // console.log("User role detected", roleAccess);
+    // if (roleAccess === "user") {
+    //   setActiveTab("tutor");
+    // } else {
+    //   setActiveTab("");
+    // }
+    setActiveTab("tutor");
   }, [roleAccess]);
 
   const handleDelete = (id: number) => {
@@ -67,9 +65,6 @@ export default function AnalyticsDashboard() {
     alert("deleted" + id);
   };
 
-  {
-    /*** table related Functions  */
-  }
   const renderRowActionsTutor = (row: Tutor) => {
     return (
       <div className="flex justify-start">
@@ -91,7 +86,7 @@ export default function AnalyticsDashboard() {
               <span>Assigned Learning Path</span>
             </DropdownMenu.Item>
             <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
-              <FileDown className="h-4 w-4" />
+              <Icon icon="proicons:pdf" width="24" height="24" />
               <span>Export as PDF</span>
             </DropdownMenu.Item>
             <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
@@ -99,7 +94,8 @@ export default function AnalyticsDashboard() {
               <span>View</span>
             </DropdownMenu.Item>
             <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
-              <Edit className="h-4 w-4" />
+              <Icon icon="iconamoon:edit-light" width="24" height="24" />
+
               <span>Edit</span>
             </DropdownMenu.Item>
             <DropdownMenu.Item
@@ -134,18 +130,12 @@ export default function AnalyticsDashboard() {
           >
             <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
               <GraduationCap className="h-4 w-4" />
-              <span>Assigned Learning Path</span>
+              <span>Ressign Learning Path</span>
             </DropdownMenu.Item>
+
             <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
-              <FileDown className="h-4 w-4" />
-              <span>Export as PDF</span>
-            </DropdownMenu.Item>
-            <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
-              <Eye className="h-4 w-4" />
-              <span>View</span>
-            </DropdownMenu.Item>
-            <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
-              <Edit className="h-4 w-4" />
+              <Icon icon="iconamoon:edit-light" width="24" height="24" />
+
               <span>Edit</span>
             </DropdownMenu.Item>
             <DropdownMenu.Item
@@ -170,7 +160,7 @@ export default function AnalyticsDashboard() {
             {row.strengths.map((strength, i) => (
               <span
                 key={i}
-                className="bg-[#F9DB6F66] text-xs px-2 py-1 rounded-full"
+                className="bg-[#F9DB6F66] text-[15.93px] px-3 rounded-full h-[38px] items-center text-center flex"
               >
                 {strength}
               </span>
@@ -183,7 +173,7 @@ export default function AnalyticsDashboard() {
             {row.opportunities.map((opportunity, i) => (
               <span
                 key={i}
-                className="bg-[#F9DB6F66] text-xs px-2 py-1 rounded-full"
+                className="bg-[#F9DB6F66] text-[15.93px] px-3 rounded-full h-[38px] items-center text-center flex"
               >
                 {opportunity}
               </span>
@@ -259,15 +249,27 @@ export default function AnalyticsDashboard() {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-white text-[36px] font-semibold">Analytics</h1>
 
-            <div className="flex gap-2">
-              <Button className="bg-[#F9DB6F] text-black px-4 py-1 rounded">
+            <div className="flex gap-4">
+              <Button className="bg-[#F9DB6F] text-black w-[52px] h-[50px] rounded-[8px] cursor-pointer">
                 <Filter size={16} />
               </Button>
 
-              <div className="flex border border-[#FFFFFF] rounded-full overflow-hidden p-2 gap-2">
+              <div className="border border-[#FFFFFF] rounded-full overflow-hidden h-[56px] w-[full] px-3 flex items-center  justify-center text-center gap-2">
+                {roleAccess !== "user" && (
+                  <Button
+                    onClick={() => setActiveTab("tutor-admin")}
+                    className={`w-[auto] h-[40px] px-3 cursor-pointer ${
+                      activeTab === "tutor-admin"
+                        ? "bg-[#F9DB6F] hover:bg-[#F9DB6F] text-black rounded-[90px]"
+                        : "bg-transparent hover:bg-transparent text-gray-700"
+                    }`}
+                  >
+                    {roleAccess === "admin" ? "Team" : "Organization"}
+                  </Button>
+                )}
                 <Button
                   onClick={() => setActiveTab("tutor")}
-                  className={`w-[48px] h-[24px] px-4 py-1 ${
+                  className={`w-[64px] h-[40px] px-3 cursor-pointer ${
                     activeTab === "tutor"
                       ? "bg-[#F9DB6F] hover:bg-[#F9DB6F] text-black rounded-[90px]"
                       : "bg-transparent hover:bg-transparent text-gray-700"
@@ -277,7 +279,7 @@ export default function AnalyticsDashboard() {
                 </Button>
                 <Button
                   onClick={() => setActiveTab("Card")}
-                  className={`w-[48px] h-[24px] px-4 py-1 ${
+                  className={`w-[64px] h-[40px] px-3 cursor-pointer ${
                     activeTab === "Card"
                       ? "bg-[#F9DB6F] hover:bg-[#F9DB6F] text-black rounded-[90px]"
                       : "bg-transparent hover:bg-transparent text-gray-700"
@@ -297,8 +299,8 @@ export default function AnalyticsDashboard() {
                   value="08"
                   label="Cards Created"
                   icon={
-                    <div className="bg-[#A7EC1C1A] p-2 rounded-full  flex items-center justify-center">
-                      <Copy className="text-[#A7EC1C] w-10 h-10" />
+                    <div className="p-2 rounded-full  flex items-center justify-center">
+                      <img src="/copy-icon.png" alt="copy" />
                     </div>
                   }
                 />
@@ -307,14 +309,8 @@ export default function AnalyticsDashboard() {
                   value="160"
                   label="Total Cards Uses"
                   icon={
-                    <div className="bg-[#A9EEFC66] p-2 rounded-full flex items-center justify-center">
-                      <Icon
-                        icon="bi:filetype-pdf"
-                        width="24"
-                        height="24"
-                        color="black"
-                        className="cursor-pointer"
-                      />{" "}
+                    <div className=" p-2 rounded-full flex items-center justify-center">
+                      <img src="/card-icon.png" alt="copy" />
                     </div>
                   }
                 />
@@ -322,11 +318,65 @@ export default function AnalyticsDashboard() {
                   value="3/11"
                   label="Card Creation Rank"
                   icon={
-                    <div className="bg-[#F573B44D] p-2 rounded-full  flex items-center justify-center">
-                      <Users className="text-[#F573B4] w-10 h-10" />
+                    <div className=" p-2 rounded-full  flex items-center justify-center">
+                      <img src="/card-rank.png" alt="copy" />
                     </div>
                   }
                 />
+                <MetricCard
+                  value="82%"
+                  label="Daily Goal Achieved"
+                  icon={
+                    <div className=" p-2 rounded-full">
+                      <img src="/card-score.png" alt="copy" />
+                    </div>
+                  }
+                />
+              </div>
+            </>
+          ) : (
+            (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+                <MetricCard
+                  value="08"
+                  label="Completion Path"
+                  icon={
+                    <div className="">
+                      <img src="/check-icon.png" />
+                    </div>
+                  }
+                />
+
+                <MetricCard
+                  value="160"
+                  label="Total Questions Answered"
+                  icon={
+                    <div className="">
+                      <img src="/total_question.png" />
+                    </div>
+                  }
+                />
+                {roleAccess !== "user" ? (
+                  <MetricCard
+                    value="3/11"
+                    label="Team Rank"
+                    icon={
+                      <div className="">
+                        <img src="/rank.png" />
+                      </div>
+                    }
+                  />
+                ) : (
+                  <MetricCard
+                    value="#14"
+                    label="Leaderboard"
+                    icon={
+                      <div className="">
+                        <img src="/goal.png" />
+                      </div>
+                    }
+                  />
+                )}
                 <MetricCard
                   value="82%"
                   label="Daily Goal Achieved"
@@ -337,63 +387,11 @@ export default function AnalyticsDashboard() {
                   }
                 />
               </div>
-            </>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
-              <MetricCard
-                value="08"
-                label="Completion Path"
-                icon={
-                  <div className="">
-                    <img src="/check-icon.png" />
-                  </div>
-                }
-              />
-
-              <MetricCard
-                value="160"
-                label="Total Questions Answered"
-                icon={
-                  <div className="">
-                    <img src="/total_question.png" />
-                  </div>
-                }
-              />
-              {roleAccess !== "user" ? (
-                <MetricCard
-                  value="3/11"
-                  label="Team Rank"
-                  icon={
-                    <div className="">
-                      <img src="/rank.png" />
-                    </div>
-                  }
-                />
-              ) : (
-                <MetricCard
-                  value="#14"
-                  label="Leaderboard"
-                  icon={
-                    <div className="">
-                      <img src="/goal.png" />
-                    </div>
-                  }
-                />
-              )}
-              <MetricCard
-                value="82%"
-                label="Daily Goal Achieved"
-                icon={
-                  <div className="bg-[#6B91D933] p-2 rounded-full">
-                    <Flame className="text-[#EFBE0F] w-10 h-10" />
-                  </div>
-                }
-              />
-            </div>
+            )
           )}
         </div>
 
-        {activeTab === "" && (
+        {activeTab === "tutor-admin" && roleAccess !== "user" ? (
           <div>
             {/* Tutor Score Section */}
             <div className=" flex flex-col md:grid md:grid-cols-4 gap-4 mb-8">
@@ -401,7 +399,9 @@ export default function AnalyticsDashboard() {
 
               <div className="bg-[#191919] rounded-[30px] p-4 col-span-3">
                 <div className="flex justify-between mb-4">
-                  <h3 className="text-[24px] font-medium py-4">Tutor Analytics</h3>
+                  <h3 className="text-[24px] font-medium py-4">
+                    Tutor Analytics
+                  </h3>
                   <div className="flex items-center gap-2 mb-2">
                     <Button className="w-[52px] h-[50px] bg-[#F9DB6F] hover:bg-[#F9DB6F] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
                       <Icon
@@ -448,7 +448,7 @@ export default function AnalyticsDashboard() {
                 <h3 className="font-urbanist  text-[24px] leading-[21.9px] tracking-[0] font-medium">
                   Tutors
                 </h3>
-                <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg  px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
+                <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border  w-[52px] h-[50px] flex items-center justify-center gap-[10px] cursor-pointer">
                   <Icon
                     icon="bi:filetype-pdf"
                     width="24"
@@ -512,13 +512,15 @@ export default function AnalyticsDashboard() {
                 {/* Left Section: Daily Completion */}
                 <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-[#191919] rounded-[30px] p-4 space-y-3">
                   <div className="flex justify-between mb-4 flex-wrap">
-                    <h3 className="text-sm font-medium">Daily Completion</h3>
-                    <div className="flex gap-2">
-                      <Button className="bg-[#F9DB6F] text-black text-xs px-2 py-1 rounded flex items-center gap-1">
+                    <h3 className="text-[24px] p-4 font-semibold">
+                      Daily Completion
+                    </h3>
+                    <div className="flex gap-2 items-center">
+                      <Button className="bg-[#F9DB6F] text-black text-[14px] font-semibold font-urbanist h-[36px] rounded flex items-center gap-1 cursor-pointer">
                         Organization
                         <ChevronDown size={14} />
                       </Button>
-                      <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px]">
+                      <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-[8px] border   flex items-center justify-center gap-[10px] cursor-pointer">
                         <Icon
                           icon="bi:filetype-pdf"
                           width="24"
@@ -526,8 +528,8 @@ export default function AnalyticsDashboard() {
                           className="cursor-pointer"
                         />
                       </Button>
-                      <Button className="bg-[#F9DB6F] w-[52px] h-[50px] text-black px-4 py-1 rounded">
-                        <Filter size={16} />
+                      <Button className="bg-[#F9DB6F] w-[52px] h-[50px] text-black  rounded-[8px] cursor-pointer ">
+                        <Filter size={16} className="cursor-pointer" />
                       </Button>
                     </div>
                   </div>
@@ -537,57 +539,26 @@ export default function AnalyticsDashboard() {
 
                 {/* Right Section: Top Performing Learning Paths */}
                 <div className="col-span-1 md:col-span-2 lg:col-span-1 space-y-6">
-                  <div className="bg-[#191919] p-4 rounded-[12px] text-white flex flex-col justify-between shadow-md">
-                    <div className="flex justify-between items-center ">
-                      <h4 className="font-urbanist font-bold text-[16px] leading-[140%] tracking-[0.01em] text-white">
-                        Top Performing Learning Path
-                      </h4>
-                      <button className="text-xs text-[#F9DB6F] hover:underline">
-                        View Stats
-                      </button>
-                    </div>
-                    <div>
-                      <h5 className="text-[#F9DB6F] font-urbanist font-normal text-[20px] leading-[120%] tracking-[0]">
-                        Warrant Policy
-                      </h5>
-                      <div className="text-[#F9DB6F] font-urbanist font-bold text-[48px] leading-[140%] tracking-[1%] flex flex-row justify-between">
-                        92%
-                        <div className="flex">
-                          <div className="bg-white rounded-full p-2 w-[80px] h-[80px] flex items-center justify-center">
-                            <Trophy size={40} className="text-[#F9DB6F]" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#191919] p-4 rounded-[12px] text-white flex flex-col justify-between shadow-md">
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-urbanist font-bold text-[16px] leading-[140%] tracking-[0.01em]  text-white">
-                        Top Performing Learning Path
-                      </h4>
-                      <button className="text-xs text-[#F9DB6F] hover:underline">
-                        View Stats
-                      </button>
-                    </div>
-                    <div>
-                      <h5 className="text-[#F9DB6F] font-urbanist font-normal text-[20px] leading-[120%] tracking-[0]">
-                        Refund Policy
-                      </h5>
-                      <div className="text-[#F9DB6F] font-urbanist font-bold text-[48px] leading-[140%] tracking-[1%] flex flex-row justify-between">
-                        52%
-                        <div className="flex">
-                          <div className="bg-white rounded-full p-2 w-[80px] h-[80px] flex items-center justify-center">
-                            <TriangleAlert size={40} className="text-red-500" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <TopPerformance
+                    title="Top Performing Learning Path"
+                    subtitle="Warrant Policy"
+                    percentage="92%"
+                    icon={Trophy}
+                  />
+                  <TopPerformance
+                    title="Worst Performing Learning Path"
+                    subtitle="Warrant Policy"
+                    percentage="50%"
+                    customIcon={
+                      <img src="/triangle-alert.png" alt="Alert" className="" />
+                    }
+                  />
                 </div>
               </div>
             </div>
           </div>
+        ) : (
+          ""
         )}
 
         {activeTab === "tutor" && <TutorAnalytics />}

@@ -13,6 +13,8 @@ import {
   SelectValue,
 } from "../ui/select";
 import {useRole} from "../ui/Context/UserContext";
+import { Icon } from "@iconify/react/dist/iconify.js";
+import { policies } from "@/utils/analytic-data";
 // import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 
 interface UnansweredSearch {
@@ -133,32 +135,7 @@ export default function Card() {
   const [currentPageOppurtinity, setCurrentPageOppurtinity] = useState(0);
   const [timePeriod, setTimePeriod] = useState("Monthly");
   const [expandedItems, setExpandedItems] = useState(new Set());
-  const [policies] = useState([
-    {
-      title: "How to order products online?",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ",
-    },
-    {
-      title: "CX Tips & Tricks",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ",
-    },
-    {
-      title: "Design Techniques",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ",
-    },
-    {
-      title: "Remote Work Policy",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ",
-    },
-    {
-      title: "Security Policy",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ",
-    },
-    {
-      title: "Code of Conduct",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ",
-    },
-  ]);
+
   const CARDS_PER_PAGE = 3;
   const ITEMS_PER_PAGE = 4;
   const totalPages = Math.ceil(policies.length / CARDS_PER_PAGE);
@@ -209,17 +186,20 @@ export default function Card() {
   return (
     <div className="">
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
-        <div className="bg-[#191919] rounded-[30px] p-4 pt-10 lg:w-2/3 w-full">
+        <div className="bg-[#191919] rounded-[30px] p-4 pt-8 lg:w-2/3 w-full">
           <div className="flex flex-col sm:flex-row justify-between mb-4">
-            <h3 className="font-urbanist font-medium text-[24px] leading-[100%] tracking-[0%] mb-2 sm:mb-0">
+            <h3 className="font-urbanist font-medium text-[24px] px-2 leading-[100%] tracking-[0%]">
               Cards Created on Weekly Basis
             </h3>
             <div className="flex items-center gap-2">
               <Select value={interval} onValueChange={setInterval}>
-                <SelectTrigger className="bg-black text-white w-[114px] rounded-[114px] border-0">
+                <SelectTrigger
+                  className="bg-black hover:bg-black rounded-[80px] w-[114px] text-white px-4 flex items-center gap-1 border-0"
+                  style={{height: "40px"}}
+                >
                   <SelectValue placeholder="Monthly" />
                 </SelectTrigger>
-                <SelectContent className="bg-black text-white">
+                <SelectContent className="bg-black text-white dark:bg-gray-800 rounded-lg">
                   <SelectItem value="monthly">Monthly</SelectItem>
                   <SelectItem value="weekly">Weekly</SelectItem>
                   <SelectItem value="daily">Daily</SelectItem>
@@ -252,8 +232,14 @@ export default function Card() {
               <h3 className="font-urbanist font-medium text-[24px] leading-[100%] tracking-[0%]">
                 Unanswered Searches
               </h3>
-              <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px]">
-                <FileText size={16} />
+              <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border  px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
+                <Icon
+                  icon="bi:filetype-pdf"
+                  width="24"
+                  height="24"
+                  color="white"
+                  className="cursor-pointer"
+                />
               </Button>
             </div>
             <div className="flex flex-col w-full items-start justify-between mb-6 gap-4">
@@ -281,8 +267,14 @@ export default function Card() {
               <h3 className="font-urbanist font-medium text-[24px] leading-[100%] tracking-[0%]">
                 Leaderboard
               </h3>
-              <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px]">
-                <FileText size={16} />
+               <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border  px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
+                <Icon
+                  icon="bi:filetype-pdf"
+                  width="24"
+                  height="24"
+                  color="white"
+                  className="cursor-pointer"
+                />
               </Button>
             </div>
             <div className="flex flex-col justify-end items-start mb-6 gap-4">
@@ -293,7 +285,7 @@ export default function Card() {
                   renderCell={(column, row) => {
                     if (column === "rankIcon")
                       return (
-                        <span className="bg-[#F9DB6F] text-black px-3 py-1 rounded-full font-bold text-xs">
+                        <span className="bg-[#F9DB6F] text-black px-3 h-[23px] py-2 rounded-full font-bold text-[10px]">
                           {row[column]}
                         </span>
                       );
@@ -330,17 +322,17 @@ export default function Card() {
         <div className="flex flex-col lg:flex-row gap-6 mt-6 ">
           {/* Completed Learning Paths */}
           <div className="w-full lg:w-1/3">
-            <div className="bg-[#1c1c1c] rounded-[30px] h-full p-6 shadow-lg">
+            <div className="bg-[#191919] rounded-[30px] h-full p-6 shadow-lg">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex flex-col">
-                  <h2 className="text-lg font-semibold">
-                    Trent’s Recent Cards
+                  <h2 className="text-[24px] font-medium">
+                    Trent's Recent Cards
                   </h2>
-                  <p>Last 30 days</p>
+                  <p className="text-[16px] font-medium">Last 30 days</p>
                 </div>
                 <div className="flex gap-2">
                   <button
-                    className={`w-8 h-8 flex items-center justify-center rounded-full ${
+                    className={`w-[20px] h-[20px] flex items-center justify-center rounded-full cursor-pointer ${
                       currentPage > 0
                         ? "text-[#F9DB6F] border-2 border-[#F9DB6F]"
                         : "bg-[#1e1e1e] text-gray-400 cursor-not-allowed"
@@ -351,7 +343,7 @@ export default function Card() {
                     <ChevronLeft size={18} />
                   </button>
                   <button
-                    className={`w-8 h-8 flex items-center justify-center rounded-full ${
+                    className={`w-[20px] h-[20px] cursor-pointer flex items-center justify-center rounded-full ${
                       currentPage < totalPages - 1
                         ? "text-[#F9DB6F] border-2 border-[#F9DB6F]"
                         : "bg-[#1e1e1e] text-gray-400 cursor-not-allowed"
@@ -378,13 +370,13 @@ export default function Card() {
           {/* Insights Section */}
 
           <div className="w-full lg:w-2/3">
-            <div className="bg-[#1c1c1c] rounded-2xl p-6 shadow-lg">
+            <div className="bg-[#191919] rounded-[30px] h-full p-6 shadow-lg">
               <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
                 <h2 className="font-urbanist font-medium text-[32px] leading-[100%] tracking-[0%]">
                   Insights
                 </h2>
                 <Select value={interval} onValueChange={setInterval}>
-                  <SelectTrigger className="bg-black text-white w-[114px] rounded-[80px] border-0 py-1 px-2 text-xs">
+                  <SelectTrigger className="bg-black text-white w-[114px] rounded-[80px] border-0 h-[38px] px-2 text-xs">
                     <SelectValue placeholder="Monthly" />
                   </SelectTrigger>
                   <SelectContent className="bg-black text-white">
@@ -398,12 +390,12 @@ export default function Card() {
               {/* Strengths & Opportunities */}
               <div className="space-y-4 flex flex-col lg:flex-row gap-4 w-full">
                 {/* Strengths Section */}
-                <div className="bg-[#191919] rounded-xl p-4 w-full flex flex-col h-full">
+                <div className="bg-[#232323] rounded-[30px] p-4 w-full flex flex-col h-full">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-sm font-semibold">Strengths</h3>
+                    <h3 className="text-[20px] font-semibold">Most Searched by Trent</h3>
                     <div className="flex gap-2">
                       <button
-                        className={`w-8 h-8 flex items-center justify-center rounded-full ${
+                        className={`w-[20px] h-[20px] flex items-center justify-center rounded-full ${
                           currentPageStrength > 0
                             ? "text-[#F9DB6F] border-2 border-[#F9DB6F]"
                             : "bg-[#1e1e1e] text-gray-400 cursor-not-allowed"
@@ -414,7 +406,7 @@ export default function Card() {
                         <ChevronLeft size={18} />
                       </button>
                       <button
-                        className={`w-8 h-8 flex items-center justify-center rounded-full ${
+                        className={`w-[20px] h-[20px] flex items-center justify-center rounded-full ${
                           currentPageStrength < totalStrengthPages - 1
                             ? "text-[#F9DB6F] border-2 border-[#F9DB6F]"
                             : "bg-[#1e1e1e] text-gray-400 cursor-not-allowed"
@@ -443,12 +435,12 @@ export default function Card() {
                 </div>
 
                 {/* Opportunities Section */}
-                <div className="bg-[#191919] rounded-xl p-4 w-full flex flex-col h-full">
+                <div className=" bg-[#232323] rounded-xl p-4 w-full flex flex-col h-full">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-sm font-semibold">Opportunities</h3>
-                    <div className="flex gap-2">
+                    <h3 className="text-[20px] font-semibold">Trending Searches</h3>
+                    <div className="flex gap-2  rounded-[30px]">
                       <button
-                        className={`w-8 h-8 flex items-center justify-center rounded-full ${
+                        className={`w-[20px] h-[20px] flex items-center justify-center rounded-full ${
                           currentPageOppurtinity > 0
                             ? "text-[#F9DB6F] border-2 border-[#F9DB6F]"
                             : "bg-[#1e1e1e] text-gray-400 cursor-not-allowed"
@@ -459,7 +451,7 @@ export default function Card() {
                         <ChevronLeft size={18} />
                       </button>
                       <button
-                        className={`w-8 h-8 flex items-center justify-center rounded-full ${
+                        className={`w-[20px] h-[20px] flex items-center justify-center rounded-full ${
                           currentPageOppurtinity < totalOppurtinityPages - 1
                             ? "text-[#F9DB6F] border-2 border-[#F9DB6F]"
                             : "bg-[#1e1e1e] text-gray-400 cursor-not-allowed"
@@ -498,7 +490,7 @@ export default function Card() {
 //@ts-expect-error: some error
 const PolicyCard = ({title, description}) => {
   return (
-    <div className="group relative bg-[#191919] rounded-xl p-4 transition-all hover:bg-[#191919]/90 hover:shadow-lg">
+    <div className="group relative bg-[#232323] rounded-xl p-4 transition-all hover:bg-[#191919]/90 hover:shadow-lg">
       <div className="flex items-start gap-4">
         <div className="bg-[#F9DB6F] w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center">
           <CircleAlert className="text-black" />
