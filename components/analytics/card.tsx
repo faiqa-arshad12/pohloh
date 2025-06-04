@@ -3,7 +3,15 @@ import Table from "../ui/table";
 import {UnverifiedCards} from "../dashboard/unverfied-card";
 import Image from "next/image";
 import {Button} from "../ui/button";
-import {ChevronLeft, ChevronRight, CircleAlert, FileText} from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CircleAlert,
+  FileText,
+  Trophy,
+  Medal,
+  Award,
+} from "lucide-react";
 
 import {
   Select,
@@ -13,8 +21,8 @@ import {
   SelectValue,
 } from "../ui/select";
 import {useRole} from "../ui/Context/UserContext";
-import { Icon } from "@iconify/react/dist/iconify.js";
-import { policies } from "@/utils/analytic-data";
+import {Icon} from "@iconify/react/dist/iconify.js";
+import {policies} from "@/utils/analytic-data";
 // import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 
 interface UnansweredSearch {
@@ -44,7 +52,7 @@ const dataLeaderboardEntry: LeaderboardEntry[] = [
     completion: "90%",
     cards: "12 (10 Verified)",
     engagement: "120 / 5",
-    rankIcon: "🥇 Winner",
+    rankIcon: "winner",
     avatarUrl: "https://i.pravatar.cc/40?img=1",
   },
   {
@@ -52,7 +60,7 @@ const dataLeaderboardEntry: LeaderboardEntry[] = [
     completion: "80%",
     cards: "12 (10 Verified)",
     engagement: "120 / 5",
-    rankIcon: "🥈 2nd place",
+    rankIcon: "second",
     avatarUrl: "https://i.pravatar.cc/40?img=2",
   },
   {
@@ -60,7 +68,7 @@ const dataLeaderboardEntry: LeaderboardEntry[] = [
     completion: "70%",
     cards: "12 (10 Verified)",
     engagement: "120 / 5",
-    rankIcon: "🥉 3rd place",
+    rankIcon: "third",
     avatarUrl: "https://i.pravatar.cc/40?img=3",
   },
   {
@@ -68,7 +76,7 @@ const dataLeaderboardEntry: LeaderboardEntry[] = [
     completion: "90%",
     cards: "12 (10 Verified)",
     engagement: "120 / 5",
-    rankIcon: "🥇 Winner",
+    rankIcon: "winner",
     avatarUrl: "https://i.pravatar.cc/40?img=1",
   },
   {
@@ -76,7 +84,7 @@ const dataLeaderboardEntry: LeaderboardEntry[] = [
     completion: "80%",
     cards: "12 (10 Verified)",
     engagement: "120 / 5",
-    rankIcon: "🥈 2nd place",
+    rankIcon: "second",
     avatarUrl: "https://i.pravatar.cc/40?img=2",
   },
   {
@@ -84,7 +92,7 @@ const dataLeaderboardEntry: LeaderboardEntry[] = [
     completion: "70%",
     cards: "12 (10 Verified)",
     engagement: "120 / 5",
-    rankIcon: "🥉 3rd place",
+    rankIcon: "third",
     avatarUrl: "https://i.pravatar.cc/40?img=3",
   },
 ];
@@ -267,7 +275,7 @@ export default function Card() {
               <h3 className="font-urbanist font-medium text-[24px] leading-[100%] tracking-[0%]">
                 Leaderboard
               </h3>
-               <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border  px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
+              <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border  px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
                 <Icon
                   icon="bi:filetype-pdf"
                   width="24"
@@ -283,12 +291,34 @@ export default function Card() {
                   columns={columnsLeaderboardEntry}
                   data={dataLeaderboardEntry}
                   renderCell={(column, row) => {
-                    if (column === "rankIcon")
+                    if (column === "rankIcon") {
+                      let rankText;
+                      switch (row[column]) {
+                        case "winner":
+                          rankText = "Winner";
+                          break;
+                        case "second":
+                          rankText = "2nd place";
+                          break;
+                        case "third":
+                          rankText = "3rd place";
+                          break;
+                        default:
+                          rankText = "Winner";
+                      }
                       return (
-                        <span className="bg-[#F9DB6F] text-black px-3 h-[23px] py-2 rounded-full font-bold text-[10px]">
-                          {row[column]}
+                        <span className="bg-[#F9DB6F] text-black px-3 w-full  py-3 h-[23px]  rounded-full font-bold text-[10px] max-w-[100px] flex items-center gap-1">
+                          <div className="flex items-center gap-1">
+                            <img
+                              src="/champion.png"
+                              alt="Champion"
+                              className="w-5 h-5 object-contain"
+                            />
+                            <span>{rankText}</span>
+                          </div>
                         </span>
                       );
+                    }
                     if (column === "name")
                       return (
                         <div className="flex items-center gap-3">
@@ -392,7 +422,9 @@ export default function Card() {
                 {/* Strengths Section */}
                 <div className="bg-[#232323] rounded-[30px] p-4 w-full flex flex-col h-full">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-[20px] font-semibold">Most Searched by Trent</h3>
+                    <h3 className="text-[20px] font-semibold">
+                      Most Searched by Trent
+                    </h3>
                     <div className="flex gap-2">
                       <button
                         className={`w-[20px] h-[20px] flex items-center justify-center rounded-full ${
@@ -437,7 +469,9 @@ export default function Card() {
                 {/* Opportunities Section */}
                 <div className=" bg-[#232323] rounded-xl p-4 w-full flex flex-col h-full">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-[20px] font-semibold">Trending Searches</h3>
+                    <h3 className="text-[20px] font-semibold">
+                      Trending Searches
+                    </h3>
                     <div className="flex gap-2  rounded-[30px]">
                       <button
                         className={`w-[20px] h-[20px] flex items-center justify-center rounded-full ${
