@@ -211,7 +211,7 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="rounded-lg p-6 px-10 mb-8 backdrop-invert backdrop-opacity-10 shadow-sm !px-12"
+            className="rounded-lg p-6 px-10 mb-8 backdrop-invert backdrop-opacity-10 shadow-sm !px-12 "
           >
             {/* Org Name */}
             <FormField
@@ -243,7 +243,7 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
             {/* Department Grid */}
             <div className="mb-6">
               <FormLabel>Add departments to your organization</FormLabel>
-              <p className="text-xs text-[#D1D1D1] mb-3 mt-3">
+              <p className="text-xs text-[#FFFFFF52] mb-3 mt-3">
                 This will pre-populate categories for your knowledge base. Don't
                 worry you can always edit these later. Select all that apply.{" "}
               </p>

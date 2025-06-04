@@ -42,7 +42,6 @@ import {
   visibilityLabels,
   visibilityOptions,
 } from "@/utils/constant";
-import {stripHtml} from "@/lib/stripeHtml";
 import ArrowBack from "../shared/ArrowBack";
 import {cn} from "@/lib/utils";
 import ChooseTeamModal from "./ChooseTeamModal";

@@ -608,9 +608,6 @@ const OnboardingPage = () => {
         {isloading || !isLoaded ? (
           <div className="flex flex-col justify-center items-center h-full">
             <Loader size={50} />
-            <p className="mt-4 text-gray-500">
-              Loading your onboarding data...
-            </p>
           </div>
         ) : !userDetails ? (
           <div className="flex flex-col justify-center items-center h-full">
