@@ -46,12 +46,13 @@ import {
   setLocalStorage,
 } from "@/lib/local-storage";
 import Loader from "../shared/loader";
-import { Icon } from "@iconify/react";
+import {Icon} from "@iconify/react";
 
 const formSchema = (role: Role | null) =>
   z.object({
     profilePicture: z.string().optional(),
     user_role: z.string().min(1, "Role is required"),
+    custom_role: z.string().optional(),
     location: z
       .string()
       .min(2, "Location must be at least 2 characters")
@@ -121,6 +122,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string>("");
   const [localData, setLocalData] = useState<ProfileData | null>(null);
+  const [showCustomRole, setShowCustomRole] = useState(false);
 
   // Load data from localStorage on component mount
   useEffect(() => {
@@ -162,6 +164,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
     defaultValues: {
       profilePicture: initialData.profile_picture || "",
       user_role: initialData.user_role || "Software Engineer",
+      custom_role: "",
       location: initialData.location || "",
       first_name: initialData.first_name || user?.firstName || "",
       last_name: initialData.last_name || user?.lastName || "",
@@ -317,7 +320,10 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
       if (role === "owner") {
         if (updateProfile) {
           const profileData = {
-            user_role: values.user_role,
+            user_role:
+              values.user_role === "Other"
+                ? values.custom_role || "Other"
+                : values.user_role || "",
             location: values.location,
             profile_picture:
               profilePictureUrl || initialData?.profile_picture || "",
@@ -332,11 +338,11 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
 
         if (onNext) onNext();
       } else {
-        // await submitProfile();
-        // if (updateProfile) {
-
         const profileData = {
-          user_role: values.user_role,
+          user_role:
+            values.user_role === "Other"
+              ? values.custom_role || "Other"
+              : values.user_role || "",
           first_name: values.first_name,
           last_name: values.last_name,
           user_name: values.user_name,
@@ -346,7 +352,6 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
           profile_picture:
             profilePictureUrl || initialData?.profile_picture || "",
         };
-        // updateProfile(profileData);
         const checkUrl = `${apiUrl}/${users}/${user?.id}`;
         const checkResponse = await fetch(checkUrl, {
           method: "PUT",
@@ -367,8 +372,6 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
             isProfileComplete: true, // New role
           },
         });
-        // ShowToast("user profile has been saved!");
-        // router.push("/dashboard");
       }
       setLoading(false);
       ShowToast("User profile has been saved!", "success");
@@ -423,14 +426,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
         {/* Form Container */}
         <div className="w-full max-w-[700px] p-8 rounded-2xl shadow-sm backdrop-invert backdrop-opacity-10 py-16">
           <Form {...form}>
-            <form
-              className="space-y-6"
-              // onSubmit={(e) => {
-              //   e.preventDefault();
-              //   onSubmit(form.getValues());
-              // }}
-              onSubmit={form.handleSubmit(onSubmit)}
-            >
+            <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
               <div className="space-y-4">
                 {/* Profile Picture Upload */}
                 <FormLabel className="text-lg">Profile Picture</FormLabel>
@@ -451,7 +447,12 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                           className="object-cover w-full h-full"
                         />
                       ) : (
-                        <Icon icon="mdi:user" width="71" height="71" color="#A2A2A2" />
+                        <Icon
+                          icon="mdi:user"
+                          width="71"
+                          height="71"
+                          color="#A2A2A2"
+                        />
                       )}
                     </div>
 
@@ -488,10 +489,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                           <Loader />
                         </>
                       ) : (
-                        <>
-                          {/* <Upload className="h-4 w-4 mr-2" /> */}
-                          Upload Picture
-                        </>
+                        <>Upload Picture</>
                       )}
                     </Button>
                   </div>
@@ -570,7 +568,10 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                         What best describes your role?
                       </FormLabel>
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          setShowCustomRole(value === "Other");
+                        }}
                         defaultValue={field.value}
                       >
                         <FormControl className="w-full !h-[44px] py-3 rounded-[6px] border border-[#FFFFFF0F] text-white bg-[#FFFFFF14] placeholder:text-sm placeholder:text-gray-400">
@@ -584,12 +585,36 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                               {role}
                             </SelectItem>
                           ))}
+                          <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {/* Custom Role Input */}
+                {showCustomRole && (
+                  <FormField
+                    control={form.control}
+                    name="custom_role"
+                    render={({field}) => (
+                      <FormItem>
+                        <FormLabel className="text-base">
+                          Please specify your role
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter your role"
+                            className="placeholder:text-sm h-[44px] border border-[#FFFFFF0F] bg-[#FFFFFF14]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 {/* Location Input */}
                 <FormField

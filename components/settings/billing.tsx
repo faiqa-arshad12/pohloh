@@ -13,7 +13,7 @@ import {
 import {ShowToast} from "@/components/shared/show-toast";
 import {useUser} from "@clerk/nextjs";
 import Loader from "../shared/loader";
-import {apiUrl, users} from "@/utils/constant";
+import {apiUrl, users, planFeatures} from "@/utils/constant";
 import {getSubscriptionDetails} from "@/actions/subscription.action";
 import PaymentPage from "./payment";
 import {Skeleton} from "@/components/ui/skeleton";
@@ -644,28 +644,32 @@ export default function Billing() {
                         )}
                         <div className="border-t border-[#E5E5E5] mb-5"></div>
                         <div className="space-y-5">
-                          {[
-                            "Feature 1",
-                            "Feature 2",
-                            "Feature 3",
-                            "Feature 4",
-                          ].map((feature) => (
-                            <div className="flex items-center" key={feature}>
-                              <Check
-                                size={16}
-                                className="text-[#F9DB6F] mr-2"
-                              />
-                              <span className="font-urbanist font-normal text-[14.13px] text-[#707070]">
-                                {feature}
-                              </span>
-                            </div>
-                          ))}
+                          {planFeatures
+                            .find((p) => p.tier === plan.name)
+                            ?.features.map((feature) => (
+                              <div className="flex items-center" key={feature}>
+                                {/* <Check
+                                  size={16}
+                                  className="text-[#F9DB6F] mr-2"
+                                /> */}
+                                <img
+                                  src="/billing-check.png"
+                                  className="mr-2"
+                                />
+
+                                <span className="font-urbanist font-normal text-[14.13px] text-[#707070]">
+                                  {feature}
+                                </span>
+                              </div>
+                            ))}
                         </div>
                       </div>
-                      <div className="flex flex-row justify-between">                      {/* Button logic */}
-                      {isCurrent && (
-                        <button
-                          className={`rounded-[9.42px] h-[56.51px] px-[47.09px] py-[11.77px] font-urbanist font-[600] text-[18px] mt-5 flex items-center justify-center cursor-pointer transition-all duration-200
+                      <div className="flex flex-row justify-between">
+                        {" "}
+                        {/* Button logic */}
+                        {isCurrent && (
+                          <button
+                            className={`rounded-[9.42px] h-[56.51px] px-[47.09px] py-[11.77px] font-urbanist font-[600] text-[18px] mt-5 flex items-center justify-center cursor-pointer transition-all duration-200
                              ${
                                isCurrent
                                  ? "bg-[#F9DB6F] text-black border-none"
@@ -675,29 +679,31 @@ export default function Billing() {
                              }
 
                            `}
-                          disabled={
-                            isLoading
-                            // ||
-                            // isCurrent ||
-                            // (isSubscriptionCanceled && !isCurrent)
-                          }
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedPriceId(price.id);
-                            createPaymentIntent();
-                          }}
-                        >
-                          {isSelected ? (
-                            isLoading ? (
-                              <Loader />
+                            disabled={
+                              isLoading
+                              // ||
+                              // isCurrent ||
+                              // (isSubscriptionCanceled && !isCurrent)
+                            }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPriceId(price.id);
+                              createPaymentIntent();
+                            }}
+                          >
+                            {isSelected ? (
+                              isLoading ? (
+                                <Loader />
+                              ) : (
+                                <>Change Plan</>
+                              )
                             ) : (
-                              <>Change Plan</>
-                            )
-                          ) : 'Change Plan'}
-                        </button>
-                      )}
-                      <button
-                        className={`rounded-[9.42px] h-[56.51px] px-[47.09px] py-[11.77px] font-urbanist font-semibold text-[18px] mt-5 flex items-center justify-center cursor-pointer transition-all duration-200
+                              "Change Plan"
+                            )}
+                          </button>
+                        )}
+                        <button
+                          className={`rounded-[9.42px] h-[56.51px] px-[47.09px] py-[11.77px] font-urbanist font-semibold text-[18px] mt-5 flex items-center justify-center cursor-pointer transition-all duration-200
                           ${
                             isCurrent
                               ? "bg-transparent border border-white text-white"
@@ -707,43 +713,43 @@ export default function Billing() {
                           }
 
                         `}
-                        disabled={
-                          isLoading
-                          // ||
-                          // isCurrent ||
-                          // (isSubscriptionCanceled && !isCurrent)
-                        }
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isCurrent) {
-                            handleCancelPlan();
+                          disabled={
+                            isLoading
+                            // ||
+                            // isCurrent ||
+                            // (isSubscriptionCanceled && !isCurrent)
                           }
-                          // if (!isCurrent && !isSubscriptionCanceled) {
-                          setSelectedPriceId(price.id);
-                          createPaymentIntent();
-                          // }
-                        }}
-                      >
-                        {isCurrent ? (
-                          isCancelling ? (
-                            <Loader />
-                          ) : (
-                            "Cancel Plan"
-                          )
-                        ) : isSelected ? (
-                          isLoading ? (
-                            <Loader />
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isCurrent) {
+                              handleCancelPlan();
+                            }
+                            // if (!isCurrent && !isSubscriptionCanceled) {
+                            setSelectedPriceId(price.id);
+                            createPaymentIntent();
+                            // }
+                          }}
+                        >
+                          {isCurrent ? (
+                            isCancelling ? (
+                              <Loader />
+                            ) : (
+                              "Cancel Plan"
+                            )
+                          ) : isSelected ? (
+                            isLoading ? (
+                              <Loader />
+                            ) : plan.name === "Premium" ? (
+                              `Upgrade to ${plan.name}`
+                            ) : (
+                              `Choose ${plan.name}`
+                            )
                           ) : plan.name === "Premium" ? (
                             `Upgrade to ${plan.name}`
                           ) : (
                             `Choose ${plan.name}`
-                          )
-                        ) : plan.name === "Premium" ? (
-                          `Upgrade to ${plan.name}`
-                        ) : (
-                          `Choose ${plan.name}`
-                        )}
-                      </button>
+                          )}
+                        </button>
                       </div>
                     </div>
                   );

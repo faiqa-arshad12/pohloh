@@ -39,7 +39,6 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 
 const formSchema = z.object({
   user_name: z
-
     .string()
     .min(1, "Username is required")
     .max(50, "Username must not exceed 50 characters")
@@ -66,6 +65,8 @@ export function EditUserModal({
   const [isLoading, setIsLoading] = React.useState(false);
   const [isUpdating, setIsUpdating] = React.useState(false);
   const [fetchError, setFetchError] = React.useState<string | null>(null);
+  const [showCustomRole, setShowCustomRole] = React.useState(false);
+  const [customRoleInput, setCustomRoleInput] = React.useState("");
   const {user} = useUser();
 
   const [currentTeam, setCurrentTeam] = React.useState<any>(null);
@@ -334,12 +335,23 @@ export function EditUserModal({
         ]);
 
         setCurrentTeam(teamData);
+        const isCustomRole = !user_roles.includes(userDetails.user_role);
+
+        // Set the custom role input first
+        if (isCustomRole) {
+          setCustomRoleInput(userDetails.user_role);
+        }
+
+        // Reset form with the correct role value
         form.reset({
           user_name: userDetails.user_name || "",
           role: userDetails.role || "user",
-          user_role: userDetails.user_role || "",
+          user_role: isCustomRole ? "Other" : userDetails.user_role || "",
           team_id: userDetails.team_id || teamData?.id || "",
         });
+
+        // Show custom role input if it's a custom role
+        setShowCustomRole(isCustomRole);
 
         if (userDetails.role === "admin") {
           await fetchOrgUsers();
@@ -372,6 +384,17 @@ export function EditUserModal({
         throw new Error("Current user not authenticated");
       }
 
+      // Validate custom role if "Other" is selected
+      if (values.user_role === "Other") {
+        if (!customRoleInput || customRoleInput.length < 2) {
+          ShowToast(
+            "Please enter a valid custom role (2-50 characters)",
+            "error"
+          );
+          return;
+        }
+      }
+
       await user.update({
         unsafeMetadata: {
           ...user.unsafeMetadata,
@@ -381,13 +404,18 @@ export function EditUserModal({
 
       const api = `${apiUrl}/users/${userDetails.user_id}`;
 
+      const updatedValues = {
+        ...values,
+        user_role:
+          values.user_role === "Other" ? customRoleInput : values.user_role,
+      };
+
       const response = await fetch(api, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(values),
-        // credentials: "include",
+        body: JSON.stringify(updatedValues),
       });
 
       if (!response.ok) {
@@ -513,13 +541,23 @@ export function EditUserModal({
                       Select the Role
                     </FormLabel>
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setShowCustomRole(value === "Other");
+                        if (value !== "Other") {
+                          setCustomRoleInput("");
+                        }
+                      }}
                       value={field.value}
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full p-2 bg-[#FFFFFF14] h-[44px] text-[#FFFFFF52] rounded-md border-none cursor-pointer">
-                          <SelectValue placeholder="Select the role" />
+                          <SelectValue placeholder="Select the role">
+                            {field.value === "Other" && customRoleInput
+                              ? customRoleInput
+                              : field.value}
+                          </SelectValue>
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-[#2A2A2C] text-white border border-gray-700 z-[1001]">
@@ -528,12 +566,40 @@ export function EditUserModal({
                             {role}
                           </SelectItem>
                         ))}
+                        <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {showCustomRole && (
+                <FormField
+                  control={form.control}
+                  name="user_role"
+                  render={({field}) => (
+                    <FormItem>
+                      <FormLabel className="block font-urbanist font-normal text-base text-white">
+                        Please specify the role
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          value={customRoleInput}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setCustomRoleInput(value);
+                            field.onChange("Other");
+                          }}
+                          placeholder="Enter the role"
+                          className="w-full p-2 bg-[#FFFFFF14] h-[44px] text-[#FFFFFF52] rounded-md border-none"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}
