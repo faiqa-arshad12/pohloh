@@ -12,6 +12,7 @@ import {
   setLocalStorage,
 } from "@/lib/local-storage";
 import {ShowToast} from "../shared/show-toast";
+import {planFeatures} from "@/utils/constant";
 
 type Price = {
   id: string;
@@ -324,27 +325,25 @@ export default function PricingPlan({
                           {plan.name} Plan
                         </h3>
                         <p className="text-[#707070] font-urbanist text-[14px] mb-4">
-                          {plan.description || "Flexible usage plan"}
+                          { "Perfect plan to check"}
                         </p>
                         <div className="border-t border-[#E5E5E5] mb-5"></div>
 
                         <div className="space-y-5">
-                          {[
-                            "Feature 1",
-                            "Feature 2",
-                            "Feature 3",
-                            "Feature 4",
-                          ].map((feature) => (
-                            <div className="flex items-center" key={feature}>
-                              <Check
-                                size={16}
-                                className="text-[#F9DB6F] mr-2"
-                              />
-                              <span className="font-urbanist font-normal text-[14.13px] text-[#707070]">
-                                {feature}
-                              </span>
-                            </div>
-                          ))}
+                          {planFeatures
+                            .find((p) => p.tier === plan.name)
+                            ?.features.map((feature) => (
+                              <div className="flex items-center" key={feature}>
+                                {/* <Check
+                                  size={16}
+                                  className="text-[#F9DB6F] mr-2"
+                                /> */}
+                                <img src="/billing-check.png" className="mr-2"/>
+                                <span className="font-urbanist font-normal text-[14.13px] text-[#707070]">
+                                  {feature}
+                                </span>
+                              </div>
+                            ))}
                         </div>
                       </div>
 

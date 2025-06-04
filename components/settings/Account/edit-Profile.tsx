@@ -107,6 +107,8 @@ const EditProfileModal = ({
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showCustomRole, setShowCustomRole] = useState(false);
+  const [customRoleInput, setCustomRoleInput] = useState("");
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [orgUsers, setOrgUsers] = useState<any[]>([]);
   const [isLoadingTeamMembers, setIsLoadingTeamMembers] = useState(false);
@@ -129,13 +131,18 @@ const EditProfileModal = ({
   // Reset form when userData changes
   useEffect(() => {
     if (userData) {
+      const isCustomRole = !user_roles.includes(userData.user_role);
       form.reset({
         firstName: userData.first_name || "",
         lastName: userData.last_name || "",
         username: userData.user_name || "",
         location: userData.location || "",
-        user_role: userData.user_role || "",
+        user_role: isCustomRole ? "Other" : userData.user_role || "",
       });
+      setShowCustomRole(isCustomRole);
+      if (isCustomRole) {
+        setCustomRoleInput(userData.user_role);
+      }
       setProfileImage(userData.profile_picture || null);
     }
   }, [userData, form]);
@@ -239,6 +246,17 @@ const EditProfileModal = ({
         return null;
       }
 
+      // Validate custom role if "Other" is selected
+      if (data.user_role === "Other") {
+        if (!customRoleInput || customRoleInput.length < 2) {
+          ShowToast(
+            "Please enter a valid custom role (2-50 characters)",
+            "error"
+          );
+          return;
+        }
+      }
+
       // Upload profile picture if available
       let profilePictureUrl = profileImage || "";
 
@@ -260,7 +278,8 @@ const EditProfileModal = ({
         user_name: data.username,
         first_name: data.firstName,
         last_name: data.lastName,
-        user_role: data.user_role,
+        user_role:
+          data.user_role === "Other" ? customRoleInput : data.user_role,
         location: data.location,
         profile_picture: profilePictureUrl,
       };
@@ -738,13 +757,23 @@ const EditProfileModal = ({
                       What best describes your role?
                     </FormLabel>
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setShowCustomRole(value === "Other");
+                        if (value !== "Other") {
+                          setCustomRoleInput("");
+                        }
+                      }}
                       value={field.value}
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full h-[48px] pl-4  bg-[#FFFFFF14] h-[44px] text-[#FFFFFF52] rounded-md border-none cursor-pointer">
-                          <SelectValue placeholder="Select your role" />
+                          <SelectValue placeholder="Select your role">
+                            {field.value === "Other" && customRoleInput
+                              ? customRoleInput
+                              : field.value}
+                          </SelectValue>
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-[#2C2D2E] text-white border-none">
@@ -757,12 +786,46 @@ const EditProfileModal = ({
                             {role}
                           </SelectItem>
                         ))}
+                        <SelectItem
+                          value="Other"
+                          className="focus:bg-[#2C2D2E]/80"
+                        >
+                          Other
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage className="text-red-400" />
                   </FormItem>
                 )}
               />
+
+              {showCustomRole && (
+                <FormField
+                  control={form.control}
+                  name="user_role"
+                  render={({field}) => (
+                    <FormItem>
+                      <FormLabel className="text-white font-urbanist">
+                        Please specify your role
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          value={customRoleInput}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setCustomRoleInput(value);
+                            field.onChange("Other");
+                          }}
+                          placeholder="Enter your role"
+                          className="h-[44px]  bg-[#FFFFFF14] text-[#FFFFFF52] rounded-md border-none"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
               {userData?.role === "admin" && userData?.team_id && (
                 <div className="mt-2 pt-2">
                   <h3 className="text-sm mb-4 text-white">

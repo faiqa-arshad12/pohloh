@@ -150,23 +150,7 @@ const CreateCardDropdown: React.FC = () => {
             /> */}
           </div>
           <div className="py-2 mx-[10px]">
-            <DropdownItem
-              icon={
-                <Image
-                  alt="Chevron Down"
-                  src="/icons/bi_card-text.svg"
-                  height={16}
-                  width={16}
-                  className={cn("ml-1 transition-transform duration-200")}
-                />
-              }
-              text="View Learning Path Drafts"
-              onClick={() =>
-                handleItemClick("/tutor/drafts", "View Learning Path Drafts")
-              }
-              isSelected={selectedItem === "View Learning Path Drafts"}
-            />
-            <DropdownItem
+                <DropdownItem
               icon={
                 <Image
                   alt="Chevron Down"
@@ -185,6 +169,23 @@ const CreateCardDropdown: React.FC = () => {
               }
               isSelected={selectedItem === "View Card Drafts"}
             />
+            <DropdownItem
+              icon={
+                <Image
+                  alt="Chevron Down"
+                  src="/icons/bi_card-text.svg"
+                  height={16}
+                  width={16}
+                  className={cn("ml-1 transition-transform duration-200")}
+                />
+              }
+              text="View Learning Path Drafts"
+              onClick={() =>
+                handleItemClick("/tutor/drafts", "View Learning Path Drafts")
+              }
+              isSelected={selectedItem === "View Learning Path Drafts"}
+            />
+
           </div>
         </div>
       )}

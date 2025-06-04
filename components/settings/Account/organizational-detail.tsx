@@ -112,7 +112,7 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
             // For custom departments, you might want to set different defaults
             lead_id: null,
             user_id: null,
-            icon: DEPARTMENTS.includes(department) ? department : null,
+            // icon: DEPARTMENTS.includes(department) ? department : null,
           }),
         });
 

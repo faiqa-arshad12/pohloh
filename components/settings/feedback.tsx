@@ -107,7 +107,8 @@ const Feedback: React.FC = () => {
           <h2 className="text-[32px] font-medium text-white font-urbanist">
             Help Us Improve{" "}
             <span className="text-[#F9E36C]">
-              {userData?.organizations?.name}
+              Pohloh
+              {/* {userData?.organizations?.name} */}
             </span>{" "}
             by letting us know your feedback!
           </h2>

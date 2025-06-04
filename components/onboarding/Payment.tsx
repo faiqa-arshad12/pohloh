@@ -136,11 +136,13 @@ export default function PaymentForm({
 
           <div className="mt-8 space-y-4">
             <div className="flex items-start gap-2">
-              <div className="w-[20px] h-[20px] bg-[#F9DB6F] rounded-full flex items-center justify-center mt-1">
+              {/* <div className="w-[20px] h-[20px] bg-[#F9DB6F] rounded-full flex items-center justify-center mt-1">
                 <Check className="w-4 h-4 text-gray-800" />
-              </div>
+              </div> */}
               <p className="text-[20px]">
-                Complete access to Pohloh (Knowledge Base, Tutor, etc)
+                {/* Complete access to Pohloh (Knowledge Base, Tutor, etc)
+                 */}
+                Additional features include:
               </p>
             </div>
             <div className="flex items-start gap-2">
@@ -148,21 +150,23 @@ export default function PaymentForm({
                 <Check className="w-4 h-4 text-gray-800" />
               </div>
               <p className="text-[20px]">
-                1 organization base + 2 Admin roles included
+                1 Organization Base + 2 Admin roles included.
               </p>
             </div>
             <div className="flex items-start gap-2">
               <div className="w-[20px] h-[20px] bg-[#F9DB6F] rounded-full flex items-center justify-center mt-1">
                 <Check className="w-4 h-4 text-gray-800" />
               </div>
-              <p className="text-[20px]">XX AI credits per month</p>
+              <p className="text-[20px]">
+                Team Management + Role based permissions
+              </p>
             </div>
             <div className="flex items-start gap-2">
               <div className="w-[20px] h-[20px] bg-[#F9DB6F] rounded-full flex items-center justify-center mt-1">
                 <Check className="w-4 h-4 text-gray-800" />
               </div>
               <p className="text-[20px]">
-                Access to our Customer Experience department + Help Desk
+                Access to our customer experience team + help desk
               </p>
             </div>
           </div>

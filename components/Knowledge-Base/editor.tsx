@@ -106,10 +106,13 @@ const TipTapEditor = ({
         types: ["heading", "paragraph"],
       }),
       Link.configure({
-        openOnClick: false,
+        openOnClick: true,
         HTMLAttributes: {
           class: "text-[#F9DB6F] hover:text-[#F9DB6F]/80",
+          rel: "noopener noreferrer",
+          target: "_blank",
         },
+        validate: (href) => /^https?:\/\//.test(href),
       }),
     ],
     content: content || "",
@@ -361,24 +364,66 @@ const TipTapEditor = ({
   const insertLink = () => {
     if (!editor) return;
 
-    const url = window.prompt("Enter link URL");
-    if (url) {
-      // If no text is selected, use the URL as the link text
-      if (editor.state.selection.empty) {
-        editor
-          .chain()
-          .focus()
-          .insertContent(`<a href="\${url}">\${url}</a>`)
-          .run();
-      } else {
-        // If text is selected, turn it into a link
-        editor
-          .chain()
-          .focus()
-          .extendMarkRange("link")
-          .setLink({href: url})
-          .run();
+    const {selection} = editor.state;
+    const isLink = editor.isActive("link");
+
+    // If text is selected
+    if (!selection.empty) {
+      // If it's already a link, unset it
+      if (isLink) {
+        editor.chain().focus().unsetLink().run();
+        return;
       }
+
+      // If not a link, prompt for URL and set link
+      const url = window.prompt("Enter link URL");
+
+      // cancelled
+      if (url === null) {
+        return;
+      }
+
+      // empty
+      if (url === "") {
+        editor.chain().focus().unsetLink().run();
+        return;
+      }
+
+      // add http if not present
+      const finalUrl = url.startsWith("http") ? url : `https://${url}`;
+
+      editor
+        .chain()
+        .focus()
+        .insertContent(`<a href="${finalUrl}">${finalUrl}</a>`)
+        .unsetLink()
+        .run();
+    } else {
+      // If no text is selected, insert the URL as a link
+      const previousUrl = editor.getAttributes("link").href;
+      const url = window.prompt("Enter link URL", previousUrl);
+
+      // cancelled
+      if (url === null) {
+        return;
+      }
+
+      // empty
+      if (url === "") {
+        // Do nothing if no text is selected and URL is empty
+        return;
+      }
+
+      // add http if not present
+      const finalUrl = url.startsWith("http") ? url : `https://${url}`;
+
+      // Insert the URL as a clickable link element
+      editor
+        .chain()
+        .focus()
+        .insertContent(`<a href="${finalUrl}">${finalUrl}</a>`)
+        .unsetLink()
+        .run();
     }
   };
 
@@ -709,4 +754,3 @@ const TipTapEditor = ({
 };
 
 export default TipTapEditor;
-

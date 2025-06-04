@@ -18,14 +18,13 @@ import {Button} from "../ui/button";
 import {ReassignUserModal} from "./reassign-user";
 import Image from "next/image";
 import {useUser} from "@clerk/nextjs";
-import Tag from "./tags";
 import {Skeleton} from "@/components/ui/skeleton";
 import {useRouter} from "next/navigation";
 import {ShowToast} from "../shared/show-toast";
 import {stripHtml} from "@/lib/stripeHtml";
 import {renderIcon} from "@/lib/renderIcon";
 import DeleteConfirmationModal from "../shared/delete-modal";
-import {apiUrl, CardStatus} from "@/utils/constant";
+import {apiUrl, CardStatus, getCategoryIcon} from "@/utils/constant";
 import {Icon} from "@iconify/react";
 import CreateAnnouncement from "../dashboard/modals/create-announcemnet";
 
@@ -731,12 +730,38 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
             {teams.map((team) => (
               <div key={team.id} className="min-w-50">
                 <NavItem
-                  icon={renderIcon(
-                    team.icon || "",
-                    activeTeam?.id === team.id
-                      ? "text-[black] h-5 w-5"
-                      : "invert-0 h-5 w-5"
-                  )}
+                  icon={
+                    team.icon ? (
+                      renderIcon(
+                        team.icon,
+                        activeTeam?.id === team.id
+                          ? "text-[black] h-5 w-5"
+                          : "invert-0 h-5 w-5"
+                      )
+                    ) : getCategoryIcon(team.name) ? (
+                      <Icon
+                        icon={getCategoryIcon(team.name)?.icon || ""}
+                        width={getCategoryIcon(team.name)?.width || 24}
+                        height={getCategoryIcon(team.name)?.height || 24}
+                        className={
+                          activeTeam?.id === team.id
+                            ? "text-[black]"
+                            : "text-white"
+                        }
+                      />
+                    ) : (
+                      <Icon
+                        icon="eva:bar-chart-2-outline"
+                        width={24}
+                        height={24}
+                        className={
+                          activeTeam?.id === team.id
+                            ? "text-[black]"
+                            : "text-white"
+                        }
+                      />
+                    )
+                  }
                   label={team.name}
                   active={activeTeam?.id === team.id}
                   highlight={activeTeam?.id === team.id}
@@ -1022,7 +1047,10 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
               </h3>
 
               <div className="font-urbanist font-medium text-[20px] leading-[40px] align-middle flex-grow overflow-auto h-[300px]">
-                <p className="mb-4">{stripHtml(activeItem.content)}</p>
+                <div
+                  className="mb-4"
+                  dangerouslySetInnerHTML={{__html: activeItem.content}}
+                />
               </div>
 
               <div className="mt-auto pt-4 ">
@@ -1054,35 +1082,37 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                         </div>
                       )}
                   </div>
-                  {activeItem && activeItem?.tags &&activeItem?.tags?.length>0 &&
-                  <div className="p-2 flex-shrink-0">
-                    <div
-                      className={`w-full max-w-xl relative h-[24px] cursor-pointer p-2`}
-                    >
-                      <div className="flex flex-wrap items-start rounded-[6px] px-3 py-2 bg-[#FFFFFF0F] gap-2 overflow-auto h-[50px] !max-w-xl">
-                        {activeItem?.tags?.map((tag, index) => (
-                          <div
-                            key={index}
-                            className="bg-[#F9DB6F] w-[114px] h-[24px] text-black px-2 sm:px-3 rounded-sm flex items-center text-xs sm:text-sm max-w-full justify-between"
-                          >
-                            <span className="truncate max-w-[120px] sm:max-w-[160px]">
-                              {tag}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="w-4 h-4 ml-1 p-0 text-black text-right hover:bg-black/10 hover:text-black focus-visible:ring-0 focus-visible:ring-offset-0 cursor-pointer"
-                              disabled
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
+                  {activeItem &&
+                    activeItem?.tags &&
+                    activeItem?.tags?.length > 0 && (
+                      <div className="p-2 flex-shrink-0">
+                        <div
+                          className={`w-full max-w-xl relative h-[24px] cursor-pointer p-2`}
+                        >
+                          <div className="flex flex-wrap items-start rounded-[6px] px-3 py-2 bg-[#FFFFFF0F] gap-2 overflow-auto h-[50px] !max-w-xl">
+                            {activeItem?.tags?.map((tag, index) => (
+                              <div
+                                key={index}
+                                className="bg-[#F9DB6F] w-[114px] h-[24px] text-black px-2 sm:px-3 rounded-sm flex items-center text-xs sm:text-sm max-w-full justify-between"
+                              >
+                                <span className="truncate max-w-[120px] sm:max-w-[160px]">
+                                  {tag}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="w-4 h-4 ml-1 p-0 text-black text-right hover:bg-black/10 hover:text-black focus-visible:ring-0 focus-visible:ring-offset-0 cursor-pointer"
+                                  disabled
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-}
+                    )}
                 </div>
               </div>
             </div>

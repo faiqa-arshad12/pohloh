@@ -42,7 +42,6 @@ import {
   visibilityLabels,
   visibilityOptions,
 } from "@/utils/constant";
-import {stripHtml} from "@/lib/stripeHtml";
 import ArrowBack from "../shared/ArrowBack";
 import {cn} from "@/lib/utils";
 import ChooseTeamModal from "./ChooseTeamModal";
@@ -123,9 +122,7 @@ const formSchema = z.object({
     message: "Verification date must be in the future",
   }),
   verificationPeriodType: z.string().optional(),
-  team_to_announce_id: z
-    .string()
-    .min(1, {message: "Please select a notifying team"}),
+  team_to_announce_id: z.string().optional(),
   content: z
     .string()
     .min(10, {message: "Content must be at least 10 characters"}),
@@ -253,7 +250,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
 
         const extractedData = {
           title: cardData.title || "",
-          content: cardData.content ? stripHtml(cardData.content) : "",
+          content: cardData.content || "",
           tags: cardData.tags || [],
           verificationperiod: cardData.verificationperiod
             ? new Date(cardData.verificationperiod)
@@ -263,10 +260,9 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           folder_id: cardData.folder_id?.id || "",
           card_owner_id: cardData.card_owner_id?.id || "",
           team: cardData?.team_access_id || null,
-          team_to_announce_id:
-            cardData.team_to_announce_id?.id ||
-            cardData.team_to_announce_id ||
-            "",
+          team_to_announce_id: cardData.team_to_announce_id
+            ? cardData.team_to_announce_id.id
+            : "none",
           visibility: cardData.visibility,
         };
 
@@ -427,12 +423,11 @@ export default function CreateCard({cardId}: {cardId?: string}) {
             const folderExists = data.subcategories.some(
               (sub: Subcategory) => sub.id === originalCardData.folder_id
             );
-            form.setValue(
-              "folder_id",
-              folderExists
-                ? originalCardData.folder_id
-                : data.subcategories[0]?.id || ""
-            );
+            if (folderExists) {
+              form.setValue("folder_id", originalCardData.folder_id);
+            } else {
+              form.setValue("folder_id", "");
+            }
           } else if (!isEditMode && data.subcategories.length > 0) {
             form.setValue("folder_id", data.subcategories[0].id);
           }
@@ -500,6 +495,10 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         content: editorContent,
         users: selectedUsers,
         team_access_id: team ? team.id : null,
+        team_to_announce_id:
+          values.team_to_announce_id === "none"
+            ? null
+            : values.team_to_announce_id,
         attachments: attachedFiles.map((file) => ({
           name: file.name,
           url: file.url,
@@ -595,6 +594,10 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         org_id,
         card_status: CardStatus.DRAFT,
         content: editorContent,
+        team_to_announce_id:
+          values.team_to_announce_id === "none"
+            ? null
+            : values.team_to_announce_id,
         attachments: attachedFiles.map((file) => ({
           name: file.name,
           url: file.url,
@@ -1135,19 +1138,20 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                         <FormItem>
                           <Select
                             onValueChange={field.onChange}
-                            value={field.value}
+                            value={field.value || ""}
                             disabled={loadingStates.teams}
                           >
                             <FormControl>
                               <SelectTrigger className="w-full h-[44px] bg-[#2C2D2E] text-[#FFFFFF52] border border-white/10 rounded-[6px] px-4 py-3 justify-between mt-2">
                                 {loadingStates.teams
                                   ? "Loading teams..."
-                                  : field.value && teams.length > 0
+                                  : field.value
                                   ? getTeamName(field.value)
                                   : "Select team"}
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-[#2C2D2E] border-none text-white">
+                              <SelectItem value="none">None</SelectItem>
                               {teams.map((team) => (
                                 <SelectItem key={team.id} value={team.id}>
                                   {team.name}
