@@ -401,7 +401,7 @@ export default function AnalyticsDashboard() {
 
               <div className="bg-[#191919] rounded-[30px] p-4 col-span-3">
                 <div className="flex justify-between mb-4">
-                  <h3 className="text-sm font-medium">Tutor Analytics</h3>
+                  <h3 className="text-[24px] font-medium py-4">Tutor Analytics</h3>
                   <div className="flex items-center gap-2 mb-2">
                     <Button className="w-[52px] h-[50px] bg-[#F9DB6F] hover:bg-[#F9DB6F] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
                       <Icon
