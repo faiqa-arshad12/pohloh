@@ -12,8 +12,10 @@ export default function Welcome({
   onStartSession,
   onClearSelectedPath,
   id,
+  onQuestionUpdate,
 }: WelcomeScreenProps) {
   const [sessionStarted, setSessionStarted] = useState(false);
+
   const [sessionComplete, setSessionComplete] = useState(false);
   const [sessionData, setSessionData] = useState<SessionData | undefined>(
     undefined
@@ -43,6 +45,10 @@ export default function Welcome({
     setSessionStarted(false);
     setSessionComplete(true);
     setSessionData(data);
+    // Trigger refresh of enrolled paths
+    if (onClearSelectedPath) {
+      onClearSelectedPath();
+    }
   };
 
   const handleCloseSummary = () => {
@@ -82,7 +88,7 @@ export default function Welcome({
           {selectedLearningPath && (
             <div className="text-center mb-4">
               <p className="font-urbanist font-[500] text-[20px] leading-[100%] text-center text-[#CDCDCD]">
-                Click start to begin the today’s session.
+                Click start to begin the today's session.
               </p>
             </div>
           )}
@@ -124,6 +130,7 @@ export default function Welcome({
           onSessionComplete={handleSessionComplete}
           completedQuestions={completedQuestions}
           questionsAnswered={selectedLearningPath!.questions_answered}
+          onQuestionUpdate={onQuestionUpdate}
         />
       )}
     </div>

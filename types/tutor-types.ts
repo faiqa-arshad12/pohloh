@@ -16,6 +16,7 @@ export interface SessionStartedProps {
     }>;
   }) => void;
   onQuestionAnswered?: () => void;
+  onQuestionUpdate?: () => void;
   completedQuestions?: number;
   questionsAnswered?: Array<{
     question_id: string;
@@ -61,6 +62,7 @@ export interface WelcomeScreenProps {
   } | null;
   onStartSession?: () => void;
   onClearSelectedPath?: () => void;
+  onQuestionUpdate?: () => void;
 }
 
 export interface SessionData {

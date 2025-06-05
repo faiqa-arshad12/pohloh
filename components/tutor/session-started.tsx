@@ -18,6 +18,7 @@ export default function SessionStarted({
   onSessionComplete,
   completedQuestions = 0,
   questionsAnswered = [],
+  onQuestionUpdate,
 }: SessionStartedProps) {
   const {sessionState, loadQuestions, evaluateAnswer, updateEvaluation} =
     useSession();
@@ -279,6 +280,9 @@ export default function SessionStarted({
         answerToSubmit,
         evaluation
       );
+
+      // Call onQuestionUpdate to refresh the enrolled paths list
+      onQuestionUpdate?.();
 
       // Move to next question after a short delay
       setTimeout(() => {

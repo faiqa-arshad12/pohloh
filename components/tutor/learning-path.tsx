@@ -91,6 +91,27 @@ export default function LearningPaths() {
     fetchEnrolledPaths();
   };
 
+  const handleQuestionUpdate = async () => {
+    try {
+      // Fetch fresh data without showing loading state
+      const response = await fetch(
+        `${apiUrl}/learning-paths/enrolled-paths/${userData?.id}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch data: ${response.status}`);
+      }
+
+      const data: EnrolledPathsApiResponse = await response.json();
+
+      if (data.success) {
+        setEnrolledPaths(data.paths);
+      }
+    } catch (err) {
+      console.error("Error updating enrolled paths:", err);
+    }
+  };
+
   return (
     <div className="flex text-white">
       <div className="flex flex-col w-full overflow-auto">
@@ -261,6 +282,7 @@ export default function LearningPaths() {
             selectedLearningPath={selectedLearningPath}
             id={id}
             onClearSelectedPath={handleClearSelectedPath}
+            onQuestionUpdate={handleQuestionUpdate}
           />
         </div>
 
