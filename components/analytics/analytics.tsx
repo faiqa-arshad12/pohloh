@@ -342,7 +342,7 @@ export default function AnalyticsDashboard() {
                   label="Completion Path"
                   icon={
                     <div className="">
-                      <img src="/check-icon.png" />
+                      <img src="/check-icon.png" alt='check'/>
                     </div>
                   }
                 />
@@ -352,7 +352,7 @@ export default function AnalyticsDashboard() {
                   label="Total Questions Answered"
                   icon={
                     <div className="">
-                      <img src="/total_question.png" />
+                      <img src="/total_question.png" alt='questions'/>
                     </div>
                   }
                 />
@@ -362,7 +362,7 @@ export default function AnalyticsDashboard() {
                     label="Team Rank"
                     icon={
                       <div className="">
-                        <img src="/rank.png" />
+                        <img src="/rank.png" alt='rank' />
                       </div>
                     }
                   />
@@ -372,7 +372,7 @@ export default function AnalyticsDashboard() {
                     label="Leaderboard"
                     icon={
                       <div className="">
-                        <img src="/goal.png" />
+                        <img src="/goal.png" alt='goal'/>
                       </div>
                     }
                   />

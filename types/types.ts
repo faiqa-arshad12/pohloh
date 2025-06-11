@@ -397,7 +397,7 @@ export interface ReportGenerationPayload {
   session_completed_at: string;
 }
 
-export type ReportGenerationResponse= {
+export type ReportGenerationResponse = {
   session_summary: {
     total_questions: number;
     score: string;
@@ -462,19 +462,69 @@ export interface LearningPathData {
   verification_period: string;
 }
 
-export interface EnrolledPath {
+export type EnrolledPath = {
   id: string;
-  user_id: User;
+  user_id: {
+    id: string;
+    role: string;
+    email: string;
+    org_id: string;
+    status: string;
+    team_id: string | null;
+    user_id: string;
+    location: string;
+    last_name: string;
+    user_name: string;
+    user_role: string;
+    week_days: string[] | null;
+    created_at: string;
+    first_name: string;
+    num_of_card: number;
+    num_of_days: string[];
+    profile_picture: string;
+    num_of_questions: number;
+  };
   question_completed: number;
-  learning_path_id: LearningPathData;
+  learning_path_id: {
+    id: string;
+    title: string;
+    org_id: string;
+    status: string;
+    category: {
+      id: string;
+      icon: string | null;
+      name: string;
+      org_id: string;
+      lead_id: string | null;
+      user_id: string | null;
+      created_at: string;
+    };
+    questions: Question_[];
+    created_at: string;
+    path_owner: string;
+    updated_at: string;
+    question_type: string;
+    num_of_questions: number;
+    verification_period: string;
+  };
   enrolled_at: string;
-  questions_answered?: Array<{
+  questions_answered: Array<{
     question_id: string;
     user_answer: string;
+    evaluation?: {
+      score: number;
+      status: string;
+      feedback: string;
+      question: string;
+      question_id: string;
+      user_answer: string;
+      correct_answer: string;
+      evaluation_timestamp: string;
+    };
   }>;
-  created_at: string;
-  updated_at: string;
-}
+  completed: boolean;
+  stared: boolean;
+};
 
 export interface EnrolledPathsApiResponse {
   success: boolean;

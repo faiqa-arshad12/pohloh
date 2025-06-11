@@ -338,7 +338,7 @@ export default function PricingPlan({
                                   size={16}
                                   className="text-[#F9DB6F] mr-2"
                                 /> */}
-                                <img src="/billing-check.png" className="mr-2"/>
+                                <img src="/billing-check.png" className="mr-2" alt="billing"/>
                                 <span className="font-urbanist font-normal text-[14.13px] text-[#707070]">
                                   {feature}
                                 </span>

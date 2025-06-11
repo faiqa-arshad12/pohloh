@@ -655,6 +655,7 @@ export default function Billing() {
                                 <img
                                   src="/billing-check.png"
                                   className="mr-2"
+                                  alt='billing'
                                 />
 
                                 <span className="font-urbanist font-normal text-[14.13px] text-[#707070]">

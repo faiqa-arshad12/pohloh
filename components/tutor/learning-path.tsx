@@ -1,7 +1,7 @@
 "use client";
 
 import {useEffect, useState} from "react";
-import {MoreVertical, Eye, Star, Trash2, FileBadge, Pen} from "lucide-react";
+import {MoreVertical, Eye, Trash2, FileBadge, Pen} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,12 +16,19 @@ import type {
   EnrolledPath,
   EnrolledPathsApiResponse,
 } from "@/types/types";
+import Leavefeedback from "./session-summary/leave-feedback";
+
 import {apiUrl} from "@/utils/constant";
 import {useUserHook} from "@/hooks/useUser";
+import {Icon} from "@iconify/react/dist/iconify.js";
+import {ShowToast} from "../shared/show-toast";
+import DeleteConfirmationModal from "./delete-modal";
 
 export default function LearningPaths() {
   const router = useRouter();
   const [showLeaveFeedback, setShowLeaveFeedback] = useState(false);
+  const [isOpen, setIsopen] = useState(false);
+
   const [enrolledPaths, setEnrolledPaths] = useState<EnrolledPath[]>([]);
   const [id, setId] = useState("");
   const [selectedLearningPath, setSelectedLearningPath] = useState<{
@@ -37,6 +44,9 @@ export default function LearningPaths() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const {userData} = useUserHook();
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (userData?.id) {
@@ -112,6 +122,69 @@ export default function LearningPaths() {
     }
   };
 
+  const handleStarToggle = async (pathId: string, currentStarred: boolean) => {
+    try {
+      const response = await fetch(`${apiUrl}/learning-paths/users/${pathId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          stared: !currentStarred,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to toggle star status");
+      }
+
+      // Update the local state after successful API call
+      setEnrolledPaths((prevPaths) =>
+        prevPaths.map((path) =>
+          path.id === pathId ? {...path, stared: !currentStarred} : path
+        )
+      );
+    } catch (error) {
+      console.error("Error toggling star status:", error);
+    }
+  };
+  const handleEdit = (row: string) => {
+    router.push(`/tutor/creating-learning-path?id=${row}`);
+    // Add your edit logic here
+    // router.push(`/edit-learning-path/${row.id}`);
+  };
+
+  // Function to handle deleting a learning path
+  const openDeleteModal = (id: string) => {
+    setItemToDelete(id);
+    setDeleteModalOpen(true);
+  };
+
+  // Function to handle confirming deletion
+  const confirmDelete = async (id: string) => {
+    try {
+      console.log(id, "string");
+      setIsDeleting(true);
+
+      if (itemToDelete !== null) {
+        const response = await fetch(`${apiUrl}/learning-paths/${id}`, {
+          method: "delete",
+          headers: {"Content-Type": "application/json"},
+        });
+        ShowToast(`Successfully deleted!`);
+        fetchEnrolledPaths();
+
+        if (!response.ok) throw new Error("Failed to delete learning path");
+      }
+    } catch (err) {
+      console.error(`Error deleting learningpath :`, err);
+      ShowToast(`Error occured while deleting learning path: ${err}`, "error");
+    } finally {
+      setIsDeleting(false);
+      setItemToDelete(null);
+      setDeleteModalOpen(false);
+    }
+  };
   return (
     <div className="flex text-white">
       <div className="flex flex-col w-full overflow-auto">
@@ -156,9 +229,8 @@ export default function LearningPaths() {
                 ) : (
                   <div className="font-urbanist font-[600] text-[20px] leading-[100%] tracking-[0] text-white py-4 h-[68vh] overflow-auto gap-4 space-y-2">
                     {enrolledPaths.map((path) => {
-                      const sessionCompleted =
-                        path.question_completed ===
-                        path.learning_path_id.num_of_questions;
+                      const sessionCompleted = path.completed;
+
                       const isSelected = selectedLearningPath?.id === path.id;
 
                       return (
@@ -213,40 +285,17 @@ export default function LearningPaths() {
                                 <MoreVertical className="h-4 w-4 cursor-pointer" />
                               </button>
                             </DropdownMenuTrigger>
-                            {sessionCompleted ? (
-                              <DropdownMenuContent
-                                align="end"
-                                className="bg-[#222222] text-white border border-[#222222] rounded-md p-1"
-                              >
-                                <DropdownMenuItem className="group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-white hover:bg-[#F9DB6F33] focus:bg-[#F9DB6F33]">
-                                  <Eye className="h-4 w-4 text-white group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F]" />
-                                  <span className="group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F] font-urbanist font-normal text-[14px] leading-[24px]">
-                                    View
-                                  </span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-white hover:bg-[#F9DB6F33] focus:bg-[#F9DB6F33]">
-                                  <Star className="h-4 w-4 text-white group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F]" />
-                                  <span className="group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F] font-urbanist font-normal text-[14px] leading-[24px]">
-                                    Star
-                                  </span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-white hover:bg-[#F9DB6F33] focus:bg-[#F9DB6F33]">
-                                  <Trash2 className="h-4 w-4 text-white group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F]" />
-                                  <span className="group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F] font-urbanist font-normal text-[14px] leading-[24px]">
-                                    Delete
-                                  </span>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            ) : (
-                              <DropdownMenuContent
-                                align="end"
-                                className="bg-[#222222] text-white border border-[#222222] rounded-md p-1"
-                              >
+                            <DropdownMenuContent
+                              align="end"
+                              className="bg-[#222222] text-white border border-[#222222] rounded-md p-1"
+                            >
+                              {sessionCompleted ? (
+                                // Show Leave Feedback for completed paths
                                 <DropdownMenuItem
                                   className="group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-white hover:bg-[#F9DB6F33] focus:bg-[#F9DB6F33]"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setShowLeaveFeedback(!showLeaveFeedback);
+                                    setIsopen(true);
                                   }}
                                 >
                                   <Pen className="h-4 w-4 text-white group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F]" />
@@ -254,8 +303,74 @@ export default function LearningPaths() {
                                     Leave Feedback
                                   </span>
                                 </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            )}
+                              ) : path.learning_path_id.path_owner ===
+                                userData?.id ? (
+                                // Show Edit, Delete, View for path owner
+                                <>
+                                  <DropdownMenuItem
+                                    className="group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-white hover:bg-[#F9DB6F33] focus:bg-[#F9DB6F33]"
+                                    onClick={() => {
+                                      handleEdit(path.learning_path_id.id);
+                                    }}
+                                  >
+                                    <Eye className="h-4 w-4 text-white group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F]" />
+                                    <span className="group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F] font-urbanist font-normal text-[14px] leading-[24px]">
+                                      View
+                                    </span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-white hover:bg-[#F9DB6F33] focus:bg-[#F9DB6F33]"
+                                    onClick={() => {
+                                      openDeleteModal(path.learning_path_id.id);
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-white group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F]" />
+                                    <span className="group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F] font-urbanist font-normal text-[14px] leading-[24px]">
+                                      Delete
+                                    </span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-white hover:bg-[#F9DB6F33] focus:bg-[#F9DB6F33]"
+                                    onClick={() => {
+                                      handleEdit(path.learning_path_id.id);
+                                    }}
+                                  >
+                                    <Icon
+                                      icon="iconamoon:edit-light"
+                                      width="24"
+                                      height="24"
+                                    />
+                                    <span className="group-hover:text-[#F9DB6F]">
+                                      Edit
+                                    </span>
+                                  </DropdownMenuItem>
+                                </>
+                              ) : (
+                                // Show Star option for other users
+                                <DropdownMenuItem
+                                  className="group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-white hover:bg-[#F9DB6F33] focus:bg-[#F9DB6F33]"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStarToggle(path.id, path.stared);
+                                  }}
+                                >
+                                  {path.stared ? (
+                                    <Icon
+                                      icon="mdi:star"
+                                      className="h-4 w-4 text-[#F9DB6F]"
+                                    />
+                                  ) : (
+                                    <Icon
+                                      icon="mdi:star-outline"
+                                      className="h-4 w-4 text-white group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F]"
+                                    />
+                                  )}
+                                  <span className="group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F] font-urbanist font-normal text-[14px] leading-[24px]">
+                                    {"Star"}
+                                  </span>
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
                       );
@@ -303,6 +418,19 @@ export default function LearningPaths() {
           </div>
         )}
       </div>
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        id={itemToDelete}
+        title="Enrolled Learning Path"
+        isLoading={isDeleting}
+      />
+      <Leavefeedback
+        isOpen={isOpen}
+        onClose={() => setIsopen(false)}
+        learningPathId={id}
+      />
     </div>
   );
 }

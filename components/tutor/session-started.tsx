@@ -285,20 +285,47 @@ export default function SessionStarted({
       onQuestionUpdate?.();
 
       // Move to next question after a short delay
-      setTimeout(() => {
+      setTimeout(async () => {
         if (currentQuestionIndex + 1 >= questions.length) {
-          const sessionData = {
-            questions: questionStates.map((qState) => ({
-              id: qState.question.id,
-              question: qState.question.question,
-              answer: qState.userAnswer,
-              type: qState.question.type,
-              options: qState.question.options,
-              correct_answer:
-                qState.question.correct_answer || qState.question.answer,
-            })),
-          };
-          onSessionComplete?.(sessionData);
+          // If this was the last question, mark the learning path as completed
+          try {
+            const updateResponse = await fetch(
+              `${apiUrl}/learning-paths/users/${learningPathId}`,
+              {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  user_id: userData?.id,
+                  completed: true,
+                  question_completed: questions.length,
+                  questions_answered: answeredQuestions,
+                }),
+              }
+            );
+
+            if (!updateResponse.ok) {
+              throw new Error(
+                "Failed to update learning path completion status"
+              );
+            }
+
+            const sessionData = {
+              questions: questionStates.map((qState) => ({
+                id: qState.question.id,
+                question: qState.question.question,
+                answer: qState.userAnswer,
+                type: qState.question.type,
+                options: qState.question.options,
+                correct_answer:
+                  qState.question.correct_answer || qState.question.answer,
+              })),
+            };
+            onSessionComplete?.(sessionData);
+          } catch (error) {
+            console.error("Error updating completion status:", error);
+          }
         } else {
           setCurrentQuestionIndex((prev) => prev + 1);
         }

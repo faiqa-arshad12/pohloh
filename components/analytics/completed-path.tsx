@@ -69,7 +69,7 @@ export function CompletedLearningPaths() {
             <div className="flex items-center gap-4 w-full">
               {/* Icon */}
               <div className="!mt-[-10px]">
-                <img src="/complete-path.png" />
+                <img src="/complete-path.png" alt='completed-path'/>
               </div>
 
               {/* Content */}

@@ -11,7 +11,7 @@ export default function TutorScoreCard() {
 
         {/* Headset Icon */}
         <div className="flex justify-center mb-8">
-          <img src="/headphone.png" />
+          <img src="/headphone.png" alt="head" />
 
           {/* <Headphones className="w-16 h-16 text-white" strokeWidth={1.5} /> */}
         </div>
@@ -39,6 +39,7 @@ export default function TutorScoreCard() {
             }}
             role="img"
             aria-label="Preview thumbnail"
+          
           >
             <div className="sr-only">Remaining {100 - score}%</div>
           </div>
