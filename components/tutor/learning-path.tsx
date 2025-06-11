@@ -304,7 +304,7 @@ export default function LearningPaths() {
                                   </span>
                                 </DropdownMenuItem>
                               ) : path.learning_path_id.path_owner ===
-                                userData?.id ? (
+                                  userData?.id || userData?.role === "owner" ? (
                                 // Show Edit, Delete, View for path owner
                                 <>
                                   <DropdownMenuItem

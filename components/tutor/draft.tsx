@@ -22,6 +22,12 @@ import {LearningPath} from "@/types/types";
 import {useUserHook} from "@/hooks/useUser";
 import DeleteConfirmationModal from "./delete-modal";
 import {ShowToast} from "../shared/show-toast";
+import {
+  TimeFilter,
+  TimePeriod,
+  filterByTimePeriod,
+} from "@/components/shared/TimeFilter";
+
 // Define interfaces based on the API response structure
 
 interface ApiResponse {
@@ -35,13 +41,16 @@ interface DraftTableData {
   courseName: string;
   verificationPeriod: string;
   totalQuestions: string;
-  originalData: LearningPath; // Store the original data for reference
+  originalData: LearningPath;
+  created_at: string;
 }
 
 export default function Drafts() {
   const router = useRouter();
   const [filterdata, setFilterData] = useState("");
   const [data, setData] = useState<DraftTableData[]>([]);
+  const [filteredData, setFilteredData] = useState<DraftTableData[]>([]);
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>(TimePeriod.ALL);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,6 +88,7 @@ export default function Drafts() {
             }),
             totalQuestions: card.num_of_questions.toString(),
             originalData: card,
+            created_at: card.created_at || card.verification_period,
           }));
 
         return draftPaths;
@@ -117,6 +127,32 @@ export default function Drafts() {
       fetchData();
     }
   }, [userData, fetchData]);
+
+  // Update filtered data when search term or time period changes
+  useEffect(() => {
+    let filtered = data;
+
+    // Apply time period filter
+    filtered = filterByTimePeriod(filtered, timePeriod);
+
+    // Apply search filter
+    if (filterdata) {
+      filtered = filtered.filter((row) =>
+        row.courseName.toLowerCase().includes(filterdata.toLowerCase())
+      );
+    }
+
+    setFilteredData(filtered);
+  }, [data, filterdata, timePeriod]);
+
+  const handleTimePeriodChange = (period: TimePeriod) => {
+    setTimePeriod(period);
+  };
+
+  const clearFilters = () => {
+    setFilterData("");
+    setTimePeriod(TimePeriod.ALL);
+  };
 
   // Function to handle publishing a learning path
   const handlePublish = async (row: DraftTableData) => {
@@ -189,11 +225,6 @@ export default function Drafts() {
     }
   };
 
-  // Filter data based on search input
-  const filteredData = data.filter((row) =>
-    row.courseName.toLowerCase().includes(filterdata.toLowerCase())
-  );
-
   // Render skeleton loading UI
   if (loading) {
     return (
@@ -211,13 +242,12 @@ export default function Drafts() {
               <div className="relative">
                 <SearchInput onChange={(value) => setFilterData(value)} />
               </div>
-              <Button
-                variant="outline"
-                size="icon"
-                className="bg-[#f0d568] hover:bg-[#e0c558] text-black rounded-md cursor-pointer"
-              >
-                <Funnel className="h-[24px] w-[24px]" />
-              </Button>
+              <TimeFilter
+                timePeriod={timePeriod}
+                onTimePeriodChange={handleTimePeriodChange}
+                onClearFilters={clearFilters}
+              />
+
             </div>
           </div>
           <div className="space-y-4">
@@ -280,7 +310,7 @@ export default function Drafts() {
           <DropdownMenuContent className="bg-[#2a2a2a] border border-gray-700 text-white w-[154px]">
             {/* {hasAccess ? ( */}
             <>
-              <DropdownMenuItem
+              {/* <DropdownMenuItem
                 onClick={() => handlePublish(row)}
                 className="group flex items-center gap-2 bg-transparent hover:!bg-[#F9DB6F33] cursor-pointer"
                 disabled={isProcessing}
@@ -291,7 +321,7 @@ export default function Drafts() {
                   height="24"
                 />
                 <span className="group-hover:text-[#F9DB6F]">Publish</span>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
 
               <DropdownMenuItem
                 onClick={() => handleEdit(row)}
@@ -327,7 +357,6 @@ export default function Drafts() {
   return (
     <div className="text-white py-4">
       <div className="">
-        {/* Header */}
         <div className="flex mb-6 md:mb-8 justify-between">
           <div className="flex flex-wrap items-center gap-4 sm:gap-7 cusror-pointer">
             <ArrowBack link="/knowledge-base" />
@@ -340,18 +369,12 @@ export default function Drafts() {
             <div className="relative">
               <SearchInput onChange={(value) => setFilterData(value)} />
             </div>
-            {/* {filterdata && (
-              <div className="ml-2 text-sm text-gray-400">
-                {filteredData.length} results found
-              </div>
-            )} */}
-            <Button
-              variant="outline"
-              size="icon"
-              className="bg-[#f0d568] hover:bg-[#e0c558] text-black rounded-md cursor-pointer w-[51px] h-[50px]"
-            >
-              <Funnel className=" " />
-            </Button>
+            <TimeFilter
+              timePeriod={timePeriod}
+              onTimePeriodChange={handleTimePeriodChange}
+              onClearFilters={clearFilters}
+            />
+
           </div>
         </div>
 

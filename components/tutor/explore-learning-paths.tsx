@@ -21,6 +21,11 @@ import {Icon} from "@iconify/react";
 import {useUserHook} from "@/hooks/useUser";
 import {ShowToast} from "../shared/show-toast";
 import DeleteConfirmationModal from "./delete-modal";
+import {
+  TimeFilter,
+  TimePeriod,
+  filterByTimePeriod,
+} from "@/components/shared/TimeFilter";
 
 interface ApiResponse {
   success: boolean;
@@ -64,6 +69,7 @@ interface LearningPathTableData {
   enrolledUsers: User[];
   enrolled: boolean;
   originalData: LearningPath;
+  created_at: string;
 }
 
 export default function ExploreLearningPath() {
@@ -72,6 +78,8 @@ export default function ExploreLearningPath() {
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [filterdata, setFilterData] = useState("");
   const [data, setData] = useState<LearningPathTableData[]>([]);
+  const [filteredData, setFilteredData] = useState<LearningPathTableData[]>([]);
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>(TimePeriod.ALL);
   const [loading, setLoading] = useState(true);
   const [isEnrolling, setEnrolling] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -98,8 +106,7 @@ export default function ExploreLearningPath() {
       if (apiData.success && apiData.cards) {
         // Filter to only include published learning paths
         const publishedCards = apiData.cards.filter(
-          (card) =>
-            card.status.toLowerCase() === "published" || "draft" || "generated"
+          (card) => card.status.toLowerCase() === "published"
         );
 
         // Create initial data with empty enrolled users
@@ -117,8 +124,9 @@ export default function ExploreLearningPath() {
             owner: card.path_owner.first_name + " " + card.path_owner.last_name,
             totalQuestions: card.num_of_questions.toString(),
             enrolledUsers: [],
-            enrolled: false, // We'll update this when we fetch enrolled users
+            enrolled: false,
             originalData: card,
+            created_at: card.created_at || card.verification_period,
           })
         );
 
@@ -268,17 +276,38 @@ export default function ExploreLearningPath() {
     }
   };
 
-  // Filter data based on search input
-  const filteredData = data.filter((item) => {
-    const searchTerm = filterdata.toLowerCase();
-    return (
-      item.courseName.toLowerCase().includes(searchTerm) ||
-      item.owner.toLowerCase().includes(searchTerm) ||
-      (item.originalData.category?.name || "")
-        .toLowerCase()
-        .includes(searchTerm)
-    );
-  });
+  // Update filtered data when search term or time period changes
+  useEffect(() => {
+    let filtered = data;
+
+    // Apply time period filter
+    filtered = filterByTimePeriod(filtered, timePeriod);
+
+    // Apply search filter
+    if (filterdata) {
+      filtered = filtered.filter((item) => {
+        const searchTerm = filterdata.toLowerCase();
+        return (
+          item.courseName.toLowerCase().includes(searchTerm) ||
+          item.owner.toLowerCase().includes(searchTerm) ||
+          (item.originalData.category?.name || "")
+            .toLowerCase()
+            .includes(searchTerm)
+        );
+      });
+    }
+
+    setFilteredData(filtered);
+  }, [data, filterdata, timePeriod]);
+
+  const handleTimePeriodChange = (period: TimePeriod) => {
+    setTimePeriod(period);
+  };
+
+  const clearFilters = () => {
+    setFilterData("");
+    setTimePeriod(TimePeriod.ALL);
+  };
 
   if (loading) {
     return (
@@ -295,18 +324,12 @@ export default function ExploreLearningPath() {
               <div className="relative">
                 <SearchInput onChange={(value) => setFilterData(value)} />
               </div>
-              {filterdata && (
-                <div className="ml-2 text-sm text-gray-400">
-                  {filteredData.length} results found
-                </div>
-              )}
-              <Button
-                variant="outline"
-                size="icon"
-                className="bg-[#f0d568] hover:bg-[#e0c558] text-black rounded-md"
-              >
-                <SlidersHorizontal size={16} />
-              </Button>
+              <TimeFilter
+                timePeriod={timePeriod}
+                onTimePeriodChange={handleTimePeriodChange}
+                onClearFilters={clearFilters}
+                isPath
+              />
             </div>
           </div>
         </div>
@@ -362,18 +385,12 @@ export default function ExploreLearningPath() {
             <div className="relative">
               <SearchInput onChange={(value) => setFilterData(value)} />
             </div>
-            {/* {filterdata && (
-              <div className="ml-2 text-sm text-gray-400">
-                {filteredData.length} results found
-              </div>
-            )} */}
-            <Button
-              variant="outline"
-              size="icon"
-              className="bg-[#f0d568] hover:bg-[#e0c558] text-black rounded-md w-[51px] h-[50px] cursor-pointer"
-            >
-              <SlidersHorizontal size={16} />
-            </Button>
+            <TimeFilter
+              timePeriod={timePeriod}
+              onTimePeriodChange={handleTimePeriodChange}
+              onClearFilters={clearFilters}
+              isPath
+            />
           </div>
         </div>
 

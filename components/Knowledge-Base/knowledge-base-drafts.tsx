@@ -1,17 +1,15 @@
 "use client";
 
 import {useState, useEffect, useCallback} from "react";
-import {MoreHorizontal, FilterIcon as Funnel, Trash2, X} from "lucide-react";
+import {MoreHorizontal, FilterIcon as  Trash2} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import {Button} from "@/components/ui/button";
 import Table from "@/components/ui/table";
-import {useRouter, useSearchParams} from "next/navigation";
+import {useRouter} from "next/navigation";
 import SearchInput from "@/components/shared/search-input";
 import {useUser} from "@clerk/nextjs";
 import {apiUrl, CardStatus} from "@/utils/constant";
@@ -22,6 +20,11 @@ import ArrowBack from "../shared/ArrowBack";
 import DeleteConfirmationModal from "./delete-card";
 import {Icon} from "@iconify/react";
 import {useUserHook} from "@/hooks/useUser";
+import {
+  TimeFilter,
+  TimePeriod,
+  filterByTimePeriod,
+} from "@/components/shared/TimeFilter";
 
 type Card = {
   id: string;
@@ -49,6 +52,7 @@ type KnowledgeBaseDraftProps = {
 
 type FilterState = {
   searchTerm: string;
+  timePeriod: TimePeriod;
 };
 
 export function KnowledgeBaseDraft({
@@ -62,6 +66,7 @@ export function KnowledgeBaseDraft({
   const getInitialFilters = () => {
     return {
       searchTerm: "",
+      timePeriod: TimePeriod.ALL,
     };
   };
 
@@ -141,8 +146,11 @@ export function KnowledgeBaseDraft({
 
   // Simplified filtering logic
   const applyFilters = useCallback((cards: Card[], filters: FilterState) => {
-    return cards.filter((card) => {
-      // Search term filter (for dynamic fields)
+    // First apply time period filter
+    const filteredCards = filterByTimePeriod(cards, filters.timePeriod);
+
+    // Then apply search term filter
+    return filteredCards.filter((card) => {
       const searchTermLower = filters.searchTerm.toLowerCase();
       return (
         filters.searchTerm === "" ||
@@ -161,7 +169,7 @@ export function KnowledgeBaseDraft({
     }
   }, [cards, filters, applyFilters]);
 
-  const handleFilterChange = (key: keyof FilterState, value: string) => {
+  const handleFilterChange = (key: keyof FilterState, value: string | null) => {
     const newFilters = {...filters, [key]: value};
     setFilters(newFilters);
   };
@@ -169,6 +177,7 @@ export function KnowledgeBaseDraft({
   const clearFilters = () => {
     const newFilters = {
       searchTerm: "",
+      timePeriod: TimePeriod.ALL,
     };
     setFilters(newFilters);
   };
@@ -248,45 +257,17 @@ export function KnowledgeBaseDraft({
               onChange={(term) => handleFilterChange("searchTerm", term)}
               placeholder="Search by title, department, tags..."
             />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  className="bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black rounded-md  w-[52px] h-[50px] cursor-pointer"
-                  aria-label="Filter"
-                >
-                  <Funnel className="h-8 w-8" />
-                </Button>
-              </DropdownMenuTrigger>
-              {/* <DropdownMenuContent className="w-56 bg-[#222] text-white">
-                <div className="p-2">
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F]"
-                    onClick={clearFilters}
-                  >
-                    <X className="mr-2 h-4 w-4" />
-                    Clear filters
-                  </Button>
-                </div>
-              </DropdownMenuContent> */}
-            </DropdownMenu>
+            <TimeFilter
+              timePeriod={filters.timePeriod}
+              onTimePeriodChange={(period) =>
+                handleFilterChange("timePeriod", period)
+              }
+              onClearFilters={clearFilters}
+            />
           </div>
         </header>
 
-        {/* Active filters display - only show when user has searched */}
-        {/* {filters.searchTerm && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            <div className="flex items-center gap-2 bg-[#F9DB6F33] text-[#F9DB6F] px-3 py-1 rounded-full">
-              <span>Search: {filters.searchTerm}</span>
-              <button
-                onClick={() => handleFilterChange("searchTerm", "")}
-                className="hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )} */}
+        {/* Active filters display - only show when user has searched or filtered */}
 
         <div className="mt-4 overflow-x-auto">
           {isLoading ? (
