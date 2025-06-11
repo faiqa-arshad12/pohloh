@@ -1367,11 +1367,12 @@ export default function CreateCard({cardId}: {cardId?: string}) {
 
                       {/* Tags Section */}
                       <div className="w-full sm:w-auto">
-                        <div className="flex flex-wrap gap-2 h-[50px] overflow-y-auto">
+                        <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto">
                           <Tag
                             initialTags={tags}
                             onTagsChange={handleTagsChange}
                             className="w-auto"
+                            orgId={org_id || undefined}
                           />
                         </div>
                       </div>
