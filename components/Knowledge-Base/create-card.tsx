@@ -594,6 +594,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         org_id,
         card_status: CardStatus.DRAFT,
         content: editorContent,
+        users:selectedUsers,
         team_to_announce_id:
           values.team_to_announce_id === "none"
             ? null
