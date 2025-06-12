@@ -1,145 +1,100 @@
-import Image from "next/image";
 import React from "react";
+import { Button } from "../ui/button";
+type NotificationsProps = {
+  setShowAllNotifications: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsNotificationsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isMobile?:boolean
 
-interface Notification {
-  id: number;
-  message: string;
-  subtext?: string;
-  time: string;
-}
+};
 
-const mockNotifications: Notification[] = [
-  {
-    id: 1,
-    message: "Courtney M. has been added to your Team",
-    time: "5 min ago",
-  },
-  {
-    id: 2,
-    message: "A new card has been added to CX.",
-    time: "5 min ago",
-  },
-  {
-    id: 3,
-    message: "Reminder: You're overdue for your Tutor session",
-    subtext: "Visit the Tutor section to get started.",
-    time: "5 min ago",
-  },
-  {
-    id: 4,
-    message: "One of your cards has expired. Re-verify it as soon as possible.",
-    subtext: "Warranty Policy",
-    time: "5 min ago",
-  },
-  {
-    id: 5,
-    message: "One of your cards has expired. Re-verify it as soon as possible.",
-    subtext: "Warranty Policy",
-    time: "5 min ago",
-  },
-  {
-    id: 6,
-    message: "One of your cards has expired. Re-verify it as soon as possible.",
-    subtext: "Warranty Policy",
-    time: "5 min ago",
-  },
-  {
-    id: 7,
-    message: "A new learning path from Marketing has been assigned to you.",
-    subtext: "Holiday Sale",
-    time: "5 min ago",
-  },
-];
+ const notifications = [
+    {
+      id: 1,
+      message: "Courtey M. has been added to your Team",
+      time: "3 min ago",
+    },
+    {
+      id: 2,
+      message: "A new card has been addded to CX",
+      time: "2 hours ago",
+    },
+    {
+      id: 3,
+      message: "Reminder: You're overdue for your Tutor session.",
+      subtext: "Visit the Tutor section to get started.",
+      time: "8 hours ago",
+    },
+    {
+      id: 4,
+      message:
+        "One of your cards has expired. Re-verify it as soon as possible.",
+      subtext: "Warranty Policy",
+      time: "2 days ago",
+    },
+    {
+      id: 5,
+      message: "A new learning path from Marketing has been assigned to you.",
+      subtext: "Holiday Sale",
+      time: "4 days ago",
+    },
+  ];
 
-const NotificationsPanel: React.FC = () => {
+export const Notifications = ({setShowAllNotifications,setIsNotificationsOpen, isMobile}: NotificationsProps) => {
   return (
-    <div className="text-white p-4">
-      <div>
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            Notifications
-            <span className="bg-[#F9DB6F] text-black rounded-full px-2">
-              {mockNotifications.length}
-            </span>
-          </h1>
+    <>
 
-          <div className="flex items-center flex-wrap gap-2 md:gap-4">
-            <a
-              href="#"
-              className="text-[#FFFFFF99] text-sm whitespace-nowrap underline"
-            >
-              View history
-            </a>
-            <a
-              href="#"
-              className="text-[#F9DB6F] text-sm whitespace-nowrap"
-            >
-              Mark all as read
-            </a>
+    <div className="absolute right-0 mt-2 w-[700px] bg-[#1a1a1a] rounded-lg shadow-lg border border-zinc-800 overflow-hidden z-50">
+      <div className="p-4 flex items-center justify-between border-b border-zinc-800">
+        <div className="flex items-center gap-2">
+          <h3 className="text-white font-semibold">Notifications</h3>
+          <span className="bg-[#F9DB6F] text-black text-xs px-2 py-0.5 rounded-full">
+            {notifications.length}
+          </span>
+        </div>
+        <div className="flex items-center text-xs text-[#F9DB6F]">
+          <Button
+            className="hover:underline bg-transparent text-[#F9DB6F] hover:bg-transparent"
+            onClick={() => {
+              setShowAllNotifications(false);
+              setIsNotificationsOpen(false);
+            }}
+          >
+            Show All
+          </Button>
+          <Button className="hover:underline bg-transparent text-[#F9DB6F] hover:bg-transparent">
+            Mark all as read
+          </Button>
+        </div>
+      </div>
+
+      <div className="max-h-[400px] overflow-y-auto">
+        {notifications.map((notification) => (
+          <div
+            key={notification.id}
+            className="flex items-start gap-3 p-4 border-b border-zinc-800 hover:bg-zinc-800 transition-colors cursor-pointer"
+          >
+            <div className="flex-shrink-0 mt-1">
+              <div className="w-8 h-8 bg-[#F9DB6F] rounded-full flex items-center justify-center text-black">
+                <img alt="notification" src="/logo/pohloh.svg" height={16} />
+              </div>
+            </div>
+            <div className="flex-grow">
+              <p className="text-white text-sm">{notification.message}</p>
+              {notification.subtext && (
+                <p className="text-[#F9DB6F] text-xs mt-1">
+                  {notification.subtext}
+                </p>
+              )}
+            </div>
+            <div className="flex-shrink-0 text-xs text-gray-400">
+              {notification.time}
+            </div>
           </div>
-        </div>
-
-        {/* Notifications List */}
-        <div className="bg-[#191919] rounded-lg p-4 space-y-4">
-          {mockNotifications.map((notification) => (
-            <NotificationItem key={notification.id} notification={notification} />
-          ))}
-        </div>
+        ))}
       </div>
     </div>
+    </>
   );
 };
 
-// interface BadgeProps {
-//   letter: string;
-//   color: string;
-// }
-
-//
-
-//   <div
-//     className={`text-white rounded-full w-8 h-8 flex items-center justify-center text-sm ${color}`}
-//   >
-//     {letter}
-//   </div>
-// );
-
-interface NotificationItemProps {
-  notification: Notification;
-}
-
-const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => {
-  const { message, subtext, time } = notification;
-
-  return (
-    <div>
-
-
-    <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2 h-[88px] ">
-      <div className="flex items-start gap-4">
-        <Image
-          src="/file.png"
-          alt="Notification icon"
-          className="w-10 h-10 rounded-full shrink-0"
-          width={40}
-          height={40}
-        />
-        <div className="text-sm sm:text-base">
-          <p>{message}</p>
-          {subtext && (
-            <p className="text-[#F9DB6F] text-sm mt-0.5">{subtext}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-right sm:text-left">
-        <span className="text-gray-500 text-xs">{time}</span>
-      </div>
-    </div>
-      <div className="border-b"></div>
-    </div>
-  );
-};
-
-export default NotificationsPanel;
+export default notifications;
