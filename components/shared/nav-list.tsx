@@ -22,7 +22,7 @@ const NavList = ({setShowAllNotifications}: HeaderProps) => {
     <div>
       <nav className="rounded-3xl p-2 md:p-0 md:rounded-full flex flex-col md:flex-row border-2 border-[#A2A2A2]" style={{padding:'5px'}}>
         {navItems.map((item) => {
-          const isActive = pathname.includes(item.href);
+          const isActive = pathname?.includes(item.href);
 
           return (
             <Link

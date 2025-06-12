@@ -65,7 +65,7 @@ export function Header({
 
   // Subscribe to notifications changes
   useEffect(() => {
-    if (!user) return;
+    if (!userData) return;
 
     // Initial fetch of unread count
     fetchUnreadCount();
@@ -79,9 +79,10 @@ export function Header({
           event: "*",
           schema: "public",
           table: "notifications",
-          filter: `user_id=eq.${user.id}`,
+          filter: `user_id=eq.${userData.id}`,
         },
         async () => {
+          console.log("Notification change detected, updating unread count");
           await fetchUnreadCount();
         }
       )
@@ -90,16 +91,17 @@ export function Header({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [userData]);
 
   const fetchUnreadCount = async () => {
-    if (!user) return;
+    if (!userData) return;
 
     try {
+      console.log("Fetching unread count for user:", userData.id);
       const {count, error} = await supabase
         .from("notifications")
         .select("*", {count: "exact", head: true})
-        .eq("user_id", user.id)
+        .eq("user_id", userData.id)
         .eq("read", false);
 
       if (error) {
@@ -107,6 +109,7 @@ export function Header({
         return;
       }
 
+      console.log("Unread count:", count);
       setUnreadCount(count || 0);
     } catch (error) {
       console.error("Error in fetchUnreadCount:", error);
@@ -178,6 +181,7 @@ export function Header({
               <Notifications
                 setIsNotificationsOpen={setShowAllNotifications}
                 setShowAllNotifications={setIsNotificationsOpen}
+                onUnreadCountChange={setUnreadCount}
               />
             )}
           </div>
