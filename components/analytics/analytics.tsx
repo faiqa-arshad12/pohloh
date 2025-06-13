@@ -45,7 +45,7 @@ function AnalyticsContent() {
                   className={`w-[64px] h-[40px] px-3 cursor-pointer ${
                     activeTab === "tutor"
                       ? "bg-[#F9DB6F] hover:bg-[#F9DB6F] text-black rounded-[90px]"
-                      : "bg-transparent hover:bg-transparent text-gray-700"
+                      : "bg-transparent hover:bg-transparent text-white"
                   }`}
                 >
                   Tutor
@@ -55,7 +55,7 @@ function AnalyticsContent() {
                   className={`w-[64px] h-[40px] px-3 cursor-pointer ${
                     activeTab === "Card"
                       ? "bg-[#F9DB6F] hover:bg-[#F9DB6F] text-black rounded-[90px]"
-                      : "bg-transparent hover:bg-transparent text-gray-700"
+                      : "bg-transparent hover:bg-transparent text-white"
                   }`}
                 >
                   Card
