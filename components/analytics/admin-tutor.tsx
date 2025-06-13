@@ -49,12 +49,6 @@ const AdminAanalytic = () => {
   const router = useRouter();
 
   useEffect(() => {
-    // console.log("User role detected", roleAccess);
-    // if (roleAccess === "user") {
-    //   setActiveTab("tutor");
-    // } else {
-    //   setActiveTab("");
-    // }
     setActiveTab("tutor");
   }, [roleAccess]);
 

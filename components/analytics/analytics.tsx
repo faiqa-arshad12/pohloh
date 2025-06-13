@@ -12,7 +12,6 @@ function AnalyticsContent() {
   const {roleAccess} = useRole();
   const [activeTab, setActiveTab] = useState("tutor");
   const [tutorId, setTutuorId] = useState<string | null | undefined>(null);
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
