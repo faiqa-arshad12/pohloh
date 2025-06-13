@@ -15,7 +15,6 @@ export default function Welcome({
   onQuestionUpdate,
 }: WelcomeScreenProps) {
   const [sessionStarted, setSessionStarted] = useState(false);
-
   const [sessionComplete, setSessionComplete] = useState(false);
   const [sessionData, setSessionData] = useState<SessionData | undefined>(
     undefined
@@ -46,9 +45,9 @@ export default function Welcome({
     setSessionComplete(true);
     setSessionData(data);
     // Trigger refresh of enrolled paths
-    if (onClearSelectedPath) {
-      onClearSelectedPath();
-    }
+    // if (onClearSelectedPath) {
+    //   onClearSelectedPath();
+    // }
   };
 
   const handleCloseSummary = () => {
@@ -65,6 +64,7 @@ export default function Welcome({
   const isPathCompleted =
     completedQuestions === questionCount && questionCount > 0;
 
+  // Show session summary when session is complete
   if (sessionComplete && sessionData) {
     return (
       <div className="w-full flex-1 flex flex-col bg-[#191919] rounded-[20px] p-12">
@@ -72,11 +72,13 @@ export default function Welcome({
           sessionData={sessionData}
           onClose={handleCloseSummary}
           id={id}
+          userLearningPath={selectedLearningPath!.id}
         />
       </div>
     );
   }
 
+  // Show welcome screen or session started
   return (
     <div className="w-full flex-1 flex flex-col items-center bg-[#191919] rounded-[20px] p-12 overflow-auto">
       {!sessionStarted ? (

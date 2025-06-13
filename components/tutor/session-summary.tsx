@@ -2,13 +2,15 @@ import React, {useState, useEffect} from "react";
 import {Button} from "../ui/button";
 import Leavefeedback from "./session-summary/leave-feedback";
 import {Loader2} from "lucide-react";
-import {apiUrl_AI_Tutor} from "@/utils/constant";
+import {apiUrl, apiUrl_AI_Tutor} from "@/utils/constant";
 import {SessionSummaryData, SessionSummaryProps} from "@/types/tutor-types";
+import {useUserHook} from "@/hooks/useUser";
 
 export default function SessionSummary({
   sessionData,
   onClose,
   id,
+  userLearningPath,
 }: SessionSummaryProps) {
   const [summaryData, setSummaryData] = useState<SessionSummaryData | null>(
     null
@@ -16,7 +18,6 @@ export default function SessionSummary({
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsopen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     const fetchSessionSummary = async () => {
       if (!sessionData) return;
@@ -41,8 +42,22 @@ export default function SessionSummary({
         }
 
         const data = await response.json();
-        console.log(data, "sdjhsh");
-        setSummaryData(data);
+        if (data) {
+          setSummaryData(data);
+          const updateResponse = await fetch(
+            `${apiUrl}/learning-paths/users/${userLearningPath}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                score: data?.session_summary?.percentage_score || 0,
+              }),
+            }
+          );
+          console.log(data?.session_summary?.percentage_score,'e');
+        }
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to load session summary"

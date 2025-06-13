@@ -126,4 +126,5 @@ export interface SessionSummaryProps {
   };
   onClose?: () => void;
   id: string;
+  userLearningPath?:string
 }

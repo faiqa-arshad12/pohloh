@@ -2,12 +2,11 @@
 
 import type React from "react";
 import {useState, useEffect, useRef} from "react";
-import {Send, Loader2, Download, TrendingUp} from "lucide-react";
+import {Send, Loader2} from "lucide-react";
 import Image from "next/image";
 import {useSession} from "@/hooks/use-session";
 import type {EvaluationResponse, ReportGenerationResponse} from "@/types/types";
 import {useUserHook} from "@/hooks/useUser";
-import {useRouter} from "next/navigation";
 import {apiUrl, apiUrl_AI_Tutor} from "@/utils/constant";
 import {QuestionState, SessionStartedProps} from "@/types/tutor-types";
 
@@ -127,7 +126,7 @@ export default function SessionStarted({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user_id: userData?.id,
+            // user_id: userData?.id,
             question_completed: currentQuestionIndex + 1,
             questions_answered: [...answeredQuestions, newAnswerData],
           }),
@@ -262,7 +261,6 @@ export default function SessionStarted({
         currentQuestion
       );
 
-      // Update state with evaluation
       setQuestionStates((prev) => {
         const newStates = [...prev];
         newStates[currentQuestionIndex] = {
@@ -270,25 +268,42 @@ export default function SessionStarted({
           evaluation: evaluation,
           correct_answer: evaluation.correct_answer,
         };
-
         return newStates;
       });
 
-      // Update progress in backend
       await updateQuestionProgress(
         currentQuestion.id,
         answerToSubmit,
         evaluation
       );
 
-      // Call onQuestionUpdate to refresh the enrolled paths list
       onQuestionUpdate?.();
 
-      // Move to next question after a short delay
       setTimeout(async () => {
         if (currentQuestionIndex + 1 >= questions.length) {
-          // If this was the last question, mark the learning path as completed
           try {
+            // Format session data for the summary
+            const sessionData = {
+              questions: questionStates.map((qState) => ({
+                id: qState.question.id,
+                question: qState.question.question,
+                answer: qState.userAnswer,
+                type: qState.question.type,
+                options: qState.question.options,
+                correct_answer:
+                  qState.evaluation?.correct_answer ||
+                  qState.question.correct_answer ||
+                  qState.question.answer,
+                user_answer: qState.userAnswer,
+                status: qState.evaluation?.status || "incorrect",
+                score: qState.evaluation?.score || 0,
+                feedback: qState.evaluation?.feedback || "",
+                // evaluation_timestamp:
+                //   qState.evaluation?.evaluation_timestamp ||
+                //   new Date().toISOString(),
+              })),
+            };
+
             const updateResponse = await fetch(
               `${apiUrl}/learning-paths/users/${learningPathId}`,
               {
@@ -297,7 +312,7 @@ export default function SessionStarted({
                   "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                  user_id: userData?.id,
+                  // user_id: userData?.id,
                   completed: true,
                   question_completed: questions.length,
                   questions_answered: answeredQuestions,
@@ -311,17 +326,7 @@ export default function SessionStarted({
               );
             }
 
-            const sessionData = {
-              questions: questionStates.map((qState) => ({
-                id: qState.question.id,
-                question: qState.question.question,
-                answer: qState.userAnswer,
-                type: qState.question.type,
-                options: qState.question.options,
-                correct_answer:
-                  qState.question.correct_answer || qState.question.answer,
-              })),
-            };
+            // Call onSessionComplete to show summary
             onSessionComplete?.(sessionData);
           } catch (error) {
             console.error("Error updating completion status:", error);
@@ -466,7 +471,7 @@ export default function SessionStarted({
                 </div>
               )}
 
-              {qState.evaluation && (
+              {/* {qState.evaluation && (
                 <div className="flex items-start gap-4 mb-6">
                   <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#F9DB6F] flex items-center justify-center overflow-hidden">
                     <Image
@@ -496,7 +501,6 @@ export default function SessionStarted({
                         </span>
                       </div>
 
-                      {/* Always show feedback from API */}
                       {qState.evaluation.feedback && (
                         <p className="font-urbanist font-medium text-[18px] leading-[100%] tracking-[0.1px] text-gray-300 mb-2">
                           {qState.evaluation.feedback}
@@ -529,151 +533,9 @@ export default function SessionStarted({
                     </div>
                   </div>
                 </div>
-              )}
+              )} */}
             </div>
           ))}
-
-          <div className="bg-[#222222] rounded-[20px] p-8 text-center">
-            <h2 className="font-urbanist font-extrabold text-[32px] mb-4 text-[#F9DB6F]">
-              Session Complete!
-            </h2>
-            <p className="font-urbanist font-medium text-[20px] text-gray-300 mb-6">
-              {"You've completed all questions in this learning path."}
-            </p>
-            <div className="bg-[#0E0F11] rounded-[20px] p-6 max-w-md mx-auto mb-6">
-              <div className="mb-4">
-                <div className="text-[48px] font-bold text-[#F9DB6F] mb-2">
-                  {percentage}%
-                </div>
-                <p className="font-urbanist font-medium text-[16px] text-gray-400 mb-2">
-                  {correctAnswers} out of {totalQuestions} correct
-                </p>
-                <p className="font-urbanist font-medium text-[14px] text-gray-400">
-                  Average Score: {averageScore.toFixed(2)}
-                </p>
-              </div>
-              <div className="w-full bg-[#333333] rounded-full h-3">
-                <div
-                  className="bg-[#F9DB6F] h-3 rounded-full transition-all duration-1000"
-                  style={{width: `${percentage}%`}}
-                ></div>
-              </div>
-            </div>
-
-            {isGeneratingReport && (
-              <div className="bg-[#0E0F11] rounded-[20px] p-6 mb-6">
-                <div className="flex items-center justify-center gap-3 mb-4">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#F9DB6F]" />
-                  <span className="font-urbanist font-medium text-[18px] text-gray-300">
-                    Generating your personalized report...
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {sessionReport && (
-              <div className="bg-[#0E0F11] rounded-[20px] p-6 text-left">
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp className="h-6 w-6 text-[#F9DB6F]" />
-                  <h3 className="font-urbanist font-bold text-[20px] text-[#F9DB6F]">
-                    Session Report
-                  </h3>
-                </div>
-
-                <div className="mb-6">
-                  <h4 className="font-urbanist font-semibold text-[18px] text-[#F9DB6F] mb-2">
-                    Session Summary
-                  </h4>
-                  <div className="bg-[#222222] rounded-lg p-4">
-                    <p className="font-urbanist text-[16px] text-gray-300 mb-2">
-                      Total Questions:{" "}
-                      {sessionReport.session_summary.total_questions}
-                    </p>
-                    <p className="font-urbanist text-[16px] text-gray-300 mb-2">
-                      Score: {sessionReport.session_summary.score}
-                    </p>
-                    <p className="font-urbanist text-[16px] text-gray-300 mb-2">
-                      Percentage:{" "}
-                      {sessionReport.session_summary.percentage_score}%
-                    </p>
-                    <p className="font-urbanist text-[16px] text-gray-300 mb-2">
-                      Performance Level:{" "}
-                      {sessionReport.session_summary.performance_level}
-                    </p>
-                    <p className="font-urbanist text-[16px] text-gray-300">
-                      {sessionReport.session_summary.session_feedback}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <h4 className="font-urbanist font-semibold text-[18px] text-[#F9DB6F] mb-2">
-                    Question Breakdown
-                  </h4>
-                  <div className="bg-[#222222] rounded-lg p-4">
-                    <p className="font-urbanist text-[16px] text-green-400 mb-2">
-                      Correct Answers:{" "}
-                      {sessionReport.question_breakdown.correct_answers}
-                    </p>
-                    <p className="font-urbanist text-[16px] text-red-400 mb-2">
-                      Incorrect Answers:{" "}
-                      {sessionReport.question_breakdown.incorrect_answers}
-                    </p>
-                    <p className="font-urbanist text-[16px] text-yellow-400">
-                      Partially Correct:{" "}
-                      {
-                        sessionReport.question_breakdown
-                          .partially_correct_answers
-                      }
-                    </p>
-                  </div>
-                </div>
-
-                {sessionReport.wrong_answers.length > 0 && (
-                  <div className="mb-6">
-                    <h4 className="font-urbanist font-semibold text-[18px] text-[#F9DB6F] mb-2">
-                      Areas for Improvement
-                    </h4>
-                    <div className="space-y-4">
-                      {sessionReport.wrong_answers.map((answer, index) => (
-                        <div
-                          key={index}
-                          className="bg-[#222222] rounded-lg p-4"
-                        >
-                          <p className="font-urbanist text-[16px] text-gray-300 mb-2">
-                            Question: {answer.question}
-                          </p>
-                          <p className="font-urbanist text-[16px] text-red-400 mb-2">
-                            Your Answer: {answer.user_answer}
-                          </p>
-                          <p className="font-urbanist text-[16px] text-green-400 mb-2">
-                            Correct Answer: {answer.correct_answer}
-                          </p>
-                          <p className="font-urbanist text-[16px] text-gray-300">
-                            Feedback: {answer.feedback}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {sessionReport.report_url && (
-                  <div className="mt-4 pt-4 border-t border-gray-600">
-                    <a
-                      href={sessionReport.report_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 bg-[#F9DB6F] text-black px-4 py-2 rounded-md font-urbanist font-medium text-[14px] hover:opacity-80 transition-opacity"
-                    >
-                      <Download className="h-4 w-4" />
-                      Download Full Report
-                    </a>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       </div>
     );
