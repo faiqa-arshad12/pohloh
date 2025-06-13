@@ -1,7 +1,7 @@
 "use client";
 
 import {useState, useEffect, useCallback} from "react";
-import {MoreHorizontal, FilterIcon as  Trash2} from "lucide-react";
+import {MoreHorizontal, FilterIcon as Trash2} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -345,7 +345,11 @@ export function KnowledgeBaseDraft({
                         }}
                         disabled={isProcessing}
                       >
-                        <Trash2 className="h-4 w-4 hover:bg-[#F9DB6F33] hover:text-[#F9DB6F]" />
+                        <Icon
+                          icon="fluent:delete-48-regular"
+                          width="24"
+                          height="24"
+                        />{" "}
                         <span>Delete</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>

@@ -89,20 +89,17 @@ export default function AIChat({onClose}: AIChatProps) {
       setIsLoading(true);
 
       try {
-        const response = await fetch(
-          `https://42d4-182-177-174-31.ngrok-free.app/api/chat-bot/chat`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              user_query: input,
-              user_id: "ad2c8be5-b36a-44a2-8942-25f268ddc479",
-              limit:30,
-            }),
-          }
-        );
+        const response = await fetch(`${apiUrl_AI}/chat-bot/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_query: input,
+            user_id: "ad2c8be5-b36a-44a2-8942-25f268ddc479",
+            limit: 30,
+          }),
+        });
 
         const data: AIResponse = await response.json();
         console.log(data, "data");
