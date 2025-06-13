@@ -32,6 +32,12 @@ const getNestedValue = (obj: any, path: string) => {
   }, obj);
 };
 
+// Helper function to truncate text
+const truncateText = (text: string, maxLength: number = 30) => {
+  if (!text) return "-";
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+};
+
 const Table = <T,>({
   columns,
   data,
@@ -145,7 +151,9 @@ const Table = <T,>({
                 </th>
               ))}
               {renderActions && (
-                <th className={`cursor-pointer ${cellClassName} font-medium`}>Actions</th>
+                <th className={`cursor-pointer ${cellClassName} font-medium`}>
+                  Actions
+                </th>
               )}
             </tr>
           </thead>
@@ -174,7 +182,10 @@ const Table = <T,>({
                     <td key={colIndex} className={cellClassName}>
                       {renderCell
                         ? renderCell(column.accessor, row)
-                        : getNestedValue(row, column.accessor) || "-"}
+                        : truncateText(
+                            getNestedValue(row, column.accessor)?.toString() ||
+                              "-"
+                          )}
                     </td>
                   ))}
                   {renderActions && (

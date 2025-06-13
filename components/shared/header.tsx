@@ -1,87 +1,204 @@
-"use client";
+"use client"
 
-import {
-  Bell,
-  Plus,
-  Menu,
-  X,
-  ChevronDown,
-  FileText,
-  FolderOpen,
-} from "lucide-react";
-import Image from "next/image";
-import NavList from "./nav-list";
-import SearchInput from "./search-input";
-import {TopBarIcons} from "./settings-dropdown";
-import {usePathname} from "next/navigation";
-import {Button} from "../ui/button";
-import Link from "next/link";
-import {useState, useEffect, useRef} from "react";
-import CreateCardDropdown from "./dropdown-button";
+import type React from "react"
 
-type HeaderProps = {
-  setShowAllNotifications: React.Dispatch<React.SetStateAction<boolean>>;
-  showAllNotifications: boolean;
-  userData: any;
-};
+import { Bell, Menu, X } from "lucide-react"
+import Image from "next/image"
+import NavList from "./nav-list"
+import SearchInput from "./search-input"
+import { TopBarIcons } from "./settings-dropdown"
+import { usePathname } from "next/navigation"
+import { Button } from "../ui/button"
+import { useState, useEffect, useRef } from "react"
+import CreateCardDropdown from "./dropdown-button"
+import { useRouter } from "next/navigation"
+import Loader from "./loader"
 
-interface DropdownItemProps {
-  icon: React.ReactNode;
-  text: string;
-  className?: string;
-  onClick: () => void;
-  isSelected?: boolean;
+interface SearchResult {
+  id: string
+  title: string
+  relevance_score: number
+  matched_fields: string[]
 }
 
-export function Header({
-  setShowAllNotifications,
-  showAllNotifications,
-  userData,
-}: HeaderProps) {
-  const pathname = usePathname();
+function useSearch(
+  setIsMobileMenuOpen: React.Dispatch<React.SetStateAction<boolean>>,
+  setIsNotificationsOpen: React.Dispatch<React.SetStateAction<boolean>>,
+) {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [isSearchResultsOpen, setIsSearchResultsOpen] = useState(false)
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const router = useRouter()
 
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [filter, setFilter] = useState("");
-  const [open, setOpen] = useState<boolean>(false);
-  const [selectedItem, setSelectedItem] = useState<string>("");
-  const notificationRef = useRef<HTMLDivElement>(null);
+  const handleSearch = async (input: string) => {
+    setSearchQuery(input)
 
-  const toggleDropdown = () => setOpen((prev) => !prev);
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
 
-  const handleItemClick = (item: string) => {
-    setSelectedItem(item);
-    setOpen(false); // optional: close dropdown on selection
-  };
+    // Set new timeout for debouncing
+    searchTimeoutRef.current = setTimeout(async () => {
+      if (!input.trim()) {
+        setSearchResults([])
+        setIsSearchResultsOpen(false)
+        return
+      }
+
+      setIsSearching(true)
+      setIsSearchResultsOpen(true)
+      try {
+        const response = await fetch(`https://42d4-182-177-174-31.ngrok-free.app/api/search/cards`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: input,
+            user_id: "ad2c8be5-b36a-44a2-8942-25f268ddc479",
+            limit: 20,
+          }),
+        })
+
+        const data = await response.json()
+        if (data.success) {
+          setSearchResults(data.cards)
+        }
+      } catch (error) {
+        console.error("Search error:", error)
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300) // 300ms debounce
+  }
+
+  const handleResultClick = (resultId: string) => {
+    router.push(`/knowledge-base?cardId=${resultId}`)
+
+    // Close all dropdowns and menus immediately
+    setIsSearchResultsOpen(false)
+    setIsMobileMenuOpen(false)
+    setIsNotificationsOpen(false)
+
+    // Clear search query and results
+    setSearchQuery("")
+    setSearchResults([])
+  }
+
+  const handleSearchFocus = () => {
+    // Show results if we have them when search input is focused
+    if (searchResults.length > 0) {
+      setIsSearchResultsOpen(true)
+    }
+  }
+
+  const handleSearchClose = () => {
+    setIsSearchResultsOpen(false)
+    setSearchResults([])
+    setSearchQuery("")
+  }
+
+  const closeSearchResults = () => {
+    setIsSearchResultsOpen(false)
+  }
+
+  return {
+    searchQuery,
+    searchResults,
+    isSearching,
+    isSearchResultsOpen,
+    handleSearch,
+    handleResultClick,
+    handleSearchFocus,
+    handleSearchClose,
+    closeSearchResults,
+    setIsSearchResultsOpen,
+  }
+}
+
+function SearchResultItem({ result, onClick }: { result: SearchResult; onClick: () => void }) {
+  return (
+    <div
+      className="p-3 border-b border-zinc-800 hover:bg-zinc-800 transition-colors cursor-pointer"
+      onMouseDown={(e) => {
+        // Prevent the input from losing focus when clicking on results
+        e.preventDefault()
+      }}
+      onClick={onClick}
+    >
+      <div className="flex justify-between items-start">
+        <h4 className="text-white text-sm font-medium">{result.title}</h4>
+        <span className="text-xs text-gray-400">{Math.round(result.relevance_score * 100)}%</span>
+      </div>
+      <div className="flex flex-wrap gap-1 mt-1">
+        {result.matched_fields.map((field) => (
+          <span
+            key={field}
+            className="text-xs px-2 py-0.5 bg-[#F9DB6F] text-black rounded-full uppercase font-semibold"
+          >
+            {field.replace(/_/g, " ")}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+type HeaderProps = {
+  setShowAllNotifications: React.Dispatch<React.SetStateAction<boolean>>
+  showAllNotifications: boolean
+  userData: any
+}
+
+export function Header({ setShowAllNotifications, showAllNotifications, userData }: HeaderProps) {
+  const pathname = usePathname()
+  const router = useRouter()
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const notificationRef = useRef<HTMLDivElement>(null)
+  const searchContainerRef = useRef<HTMLDivElement>(null)
+
+  const {
+    searchQuery,
+    searchResults,
+    isSearching,
+    isSearchResultsOpen,
+    handleSearch,
+    handleResultClick,
+    handleSearchFocus,
+    handleSearchClose,
+    closeSearchResults,
+  } = useSearch(setIsMobileMenuOpen, setIsNotificationsOpen)
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    // Set initial value
-    handleResize();
-    // Add event listener
-    window.addEventListener("resize", handleResize);
+      setIsMobile(window.innerWidth < 768)
+    }
+    handleResize()
+    window.addEventListener("resize", handleResize)
 
-    // Handle clicks outside notification dropdown
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        notificationRef.current &&
-        !notificationRef.current.contains(event.target as Node)
-      ) {
-        setIsNotificationsOpen(false);
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setIsNotificationsOpen(false)
       }
-    };
 
-    document.addEventListener("mousedown", handleClickOutside);
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        closeSearchResults()
+      }
+    }
 
-    // Clean up
+    document.addEventListener("mousedown", handleClickOutside)
+
     return () => {
-      window.removeEventListener("resize", handleResize);
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+      window.removeEventListener("resize", handleResize)
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
 
   const notifications = [
     {
@@ -102,8 +219,7 @@ export function Header({
     },
     {
       id: 4,
-      message:
-        "One of your cards has expired. Re-verify it as soon as possible.",
+      message: "One of your cards has expired. Re-verify it as soon as possible.",
       subtext: "Warranty Policy",
       time: "2 days ago",
     },
@@ -113,43 +229,26 @@ export function Header({
       subtext: "Holiday Sale",
       time: "4 days ago",
     },
-  ];
+  ]
 
   return (
     <>
       <header className="fixed w-[100%] top-0 z-50 bg-transparent backdrop-blur-sm flex items-center justify-between h-16 md:h-30 md:px-6 !px-16">
         {/* Left side - Logo and Hamburger */}
         <div className="flex items-center gap-4 md:gap-6 bg-[transparent] backdrop-blur-sm">
-          {/* Hamburger menu for mobile */}
-          <Button
-            className="md:hidden text-white"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
+          <Button className="md:hidden text-white" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </Button>
 
-          {/* Logo */}
           <div className="flex items-center gap-2">
             <div className="text-yellow-400 text-2xl">
-              <Image
-                alt="pohloh"
-                src="/logo/pohloh.svg"
-                height={40}
-                width={40}
-                style={{cursor: "pointer"}}
-              />
+              <Image alt="pohloh" src="/logo/pohloh.svg" height={40} width={40} style={{ cursor: "pointer" }} />
             </div>
-            <span className="text-white font-bold text-xl md:text-[25.33px]">
-              Pohloh
-            </span>
+            <span className="text-white font-bold text-xl md:text-[25.33px]">Pohloh</span>
           </div>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:block bg-[transparent] backdrop-blur-xl">
-            <NavList
-              setShowAllNotifications={setShowAllNotifications}
-              showAllNotifications={showAllNotifications}
-            />
+            <NavList setShowAllNotifications={setShowAllNotifications} showAllNotifications={showAllNotifications} />
           </div>
         </div>
 
@@ -157,8 +256,35 @@ export function Header({
         <div className="flex items-center gap-2 md:gap-4">
           <CreateCardDropdown />
 
-          <div className="hidden md:block">
-            <SearchInput onChange={(value) => setFilter(value)} />
+          <div className="hidden md:block relative" ref={searchContainerRef}>
+            <SearchInput
+              onChange={handleSearch}
+              onFocus={handleSearchFocus}
+              onClose={handleSearchClose}
+              value={searchQuery}
+            />
+
+            {/* Search Results Dropdown */}
+            {isSearchResultsOpen && (searchResults.length > 0 || isSearching) && (
+              <div className="absolute top-full left-0 mt-2 w-[350px] bg-[#1a1a1a] rounded-lg shadow-lg border border-zinc-800 overflow-hidden z-50">
+                <div className="p-2 border-b border-zinc-800">
+                  <h3 className="text-white text-sm font-medium">Search Results</h3>
+                </div>
+                {isSearching ? (
+                  <div className="p-3 text-center text-gray-400 flex justify-center items-center">
+                    <Loader />
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div className="max-h-[400px] overflow-y-auto">
+                    {searchResults.map((result) => (
+                      <SearchResultItem key={result.id} result={result} onClick={() => handleResultClick(result.id)} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-3 text-center text-gray-400">No results found.</div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Notification Bell with dropdown */}
@@ -187,8 +313,8 @@ export function Header({
                     <Button
                       className="hover:underline bg-transparent text-[#F9DB6F] hover:bg-transparent"
                       onClick={() => {
-                        setShowAllNotifications(false);
-                        setIsNotificationsOpen(false);
+                        setShowAllNotifications(false)
+                        setIsNotificationsOpen(false)
                       }}
                     >
                       Show All
@@ -207,27 +333,14 @@ export function Header({
                     >
                       <div className="flex-shrink-0 mt-1">
                         <div className="w-8 h-8 bg-[#F9DB6F] rounded-full flex items-center justify-center text-black">
-                          <Image
-                            alt="notification"
-                            src="/logo/pohloh.svg"
-                            height={16}
-                            width={16}
-                          />
+                          <Image alt="notification" src="/logo/pohloh.svg" height={16} width={16} />
                         </div>
                       </div>
                       <div className="flex-grow">
-                        <p className="text-white text-sm">
-                          {notification.message}
-                        </p>
-                        {notification.subtext && (
-                          <p className="text-[#F9DB6F] text-xs mt-1">
-                            {notification.subtext}
-                          </p>
-                        )}
+                        <p className="text-white text-sm">{notification.message}</p>
+                        {notification.subtext && <p className="text-[#F9DB6F] text-xs mt-1">{notification.subtext}</p>}
                       </div>
-                      <div className="flex-shrink-0 text-xs text-gray-400">
-                        {notification.time}
-                      </div>
+                      <div className="flex-shrink-0 text-xs text-gray-400">{notification.time}</div>
                     </div>
                   ))}
                 </div>
@@ -235,68 +348,73 @@ export function Header({
             )}
           </div>
 
-          {/* Avatar with dropdown */}
           <TopBarIcons userData={userData} />
         </div>
       </header>
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && isMobile && (
-        <div className="fixed inset-0 pb-15 z-40 bg-[#1a1a1a] pt-16 px-4  overflow-y-scroll md:hidden">
+        <div className="fixed inset-0 pb-15 z-40 bg-[#1a1a1a] pt-16 px-4 overflow-y-scroll md:hidden">
           <div className="flex flex-col h-full">
-            {/* Mobile Navigation */}
             <div className="mb-6">
-              <NavList
-                setShowAllNotifications={setShowAllNotifications}
-                showAllNotifications={showAllNotifications}
+              <NavList setShowAllNotifications={setShowAllNotifications} showAllNotifications={showAllNotifications} />
+            </div>
+
+            <div className="mb-6 relative" ref={searchContainerRef}>
+              <SearchInput
+                onChange={handleSearch}
+                onFocus={handleSearchFocus}
+                onClose={handleSearchClose}
+                value={searchQuery}
               />
+
+              {isSearchResultsOpen && (searchResults.length > 0 || isSearching) && (
+                <div className="mt-2 bg-[#1a1a1a] rounded-lg border border-zinc-800 overflow-hidden ">
+                  <div className="p-2 border-b border-zinc-800">
+                    <h3 className="text-white text-sm font-medium">Search Results</h3>
+                  </div>
+                  {isSearching ? (
+                    <div className="p-3 text-center text-gray-400 flex justify-center items-center">
+                      <Loader />
+                    </div>
+                  ) : searchResults.length > 0 ? (
+                    <div className="max-h-[300px] overflow-y-auto">
+                      {searchResults.map((result) => (
+                        <SearchResultItem
+                          key={result.id}
+                          result={result}
+                          onClick={() => handleResultClick(result.id)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-3 text-center text-gray-400">No results found.</div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Mobile Search */}
-            <div className="mb-6">
-              <SearchInput onChange={(value) => setFilter(value)} />
-            </div>
-
-            {/* Mobile Create Button */}
             <CreateCardDropdown />
-            {/* Mobile Notifications Section */}
+
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-white font-semibold">Notifications</h3>
-                <span className="bg-[#F9DB6F] text-black text-xs px-2 py-0.5 rounded-full">
-                  {notifications.length}
-                </span>
+                <span className="bg-[#F9DB6F] text-black text-xs px-2 py-0.5 rounded-full">{notifications.length}</span>
               </div>
 
               <div className="max-h-[300px] overflow-y-auto">
                 {notifications.slice(0, 3).map((notification) => (
-                  <div
-                    key={notification.id}
-                    className="flex items-start gap-3 p-3 border-b border-zinc-800"
-                  >
+                  <div key={notification.id} className="flex items-start gap-3 p-3 border-b border-zinc-800">
                     <div className="flex-shrink-0 mt-1">
                       <div className="w-6 h-6 bg-[#F9DB6F] rounded-full flex items-center justify-center text-black">
-                        <Image
-                          alt="notification"
-                          src="/logo/pohloh.svg"
-                          height={12}
-                          width={12}
-                        />
+                        <Image alt="notification" src="/logo/pohloh.svg" height={12} width={12} />
                       </div>
                     </div>
                     <div className="flex-grow">
-                      <p className="text-white text-sm">
-                        {notification.message}
-                      </p>
-                      {notification.subtext && (
-                        <p className="text-[#F9DB6F] text-xs mt-1">
-                          {notification.subtext}
-                        </p>
-                      )}
+                      <p className="text-white text-sm">{notification.message}</p>
+                      {notification.subtext && <p className="text-[#F9DB6F] text-xs mt-1">{notification.subtext}</p>}
                     </div>
-                    <div className="flex-shrink-0 text-xs text-gray-400">
-                      {notification.time}
-                    </div>
+                    <div className="flex-shrink-0 text-xs text-gray-400">{notification.time}</div>
                   </div>
                 ))}
               </div>
@@ -304,8 +422,8 @@ export function Header({
               <Button
                 className="w-full text-[#F9DB6F] text-sm text-center mt-2 bg-transparent"
                 onClick={() => {
-                  setShowAllNotifications(true);
-                  setIsMobileMenuOpen(false);
+                  setShowAllNotifications(true)
+                  setIsMobileMenuOpen(false)
                 }}
               >
                 View all notifications
@@ -315,7 +433,7 @@ export function Header({
         </div>
       )}
     </>
-  );
+  )
 }
 
-export default Header;
+export default Header

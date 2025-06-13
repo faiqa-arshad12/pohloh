@@ -1,4 +1,3 @@
-import {Headphones} from "lucide-react";
 
 export default function TutorScoreCard() {
   const score = 88;
@@ -39,7 +38,7 @@ export default function TutorScoreCard() {
             }}
             role="img"
             aria-label="Preview thumbnail"
-          
+
           >
             <div className="sr-only">Remaining {100 - score}%</div>
           </div>
