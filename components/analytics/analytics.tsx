@@ -6,7 +6,7 @@ import TutorAnalytics from "./tutor";
 import Card from "./card";
 import {useRole} from "../ui/Context/UserContext";
 import AdminAanalytic from "./admin-tutor";
-import {useRouter, useSearchParams} from "next/navigation";
+import { useSearchParams} from "next/navigation";
 
 function AnalyticsContent() {
   const {roleAccess} = useRole();

@@ -38,19 +38,14 @@ import TutorScoreCard from "./tutor-card";
 import {Icon} from "@iconify/react/dist/iconify.js";
 import MetricCard from "../matric-card";
 import TopPerformance from "./top-performance";
-import {USER_ROLES} from "@/utils/constant";
 import {useRouter} from "next/navigation";
 
 const AdminAanalytic = () => {
   const {roleAccess} = useRole();
   const [showActionMenu, setShowActionMenu] = useState(false);
-  const [activeTab, setActiveTab] = useState("tutor");
   const [interval, setInterval] = useState("monthly");
   const router = useRouter();
 
-  useEffect(() => {
-    setActiveTab("tutor");
-  }, [roleAccess]);
 
   const handleDelete = (id: number) => {
     alert("deleted" + id);

@@ -1,12 +1,5 @@
 import React, {useState} from "react";
-import {
-  ChevronRight,
-  ChevronLeft,
-  FileText,
-  HeadsetIcon,
-  Users,
-  ChartNoAxesCombined,
-} from "lucide-react";
+import {HeadsetIcon, Users, ChartNoAxesCombined} from "lucide-react";
 const CategoriesScore = () => {
   const categories = [
     {id: 1, name: "Marketing", score: 91, icon: "📢"},
