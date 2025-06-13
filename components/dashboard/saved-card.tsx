@@ -136,7 +136,7 @@ export function SavedCards({cards}: SavedCardsProp) {
           )}
         >
           <div className="flex justify-center items-start mb-2">
-            <h3 className="text-white font-normal text-[20px] p-4 line-clamp-1">
+                    <h3 className="text-[20px] text-white textfont-semibold overflow-hidden whitespace-nowrap text-ellipsis p-4">
               {displayedCard.title}
               {displayedCard.title?.slice(0, 50) +
                 (displayedCard.title?.length > 50 ? "..." : "")}
