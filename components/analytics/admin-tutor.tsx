@@ -66,8 +66,7 @@ const AdminAanalytic = () => {
     alert("deleted" + id);
   };
   const handleViewTutorScore = () => {
-    alert("wwhh");
-    router.push("/analytics?id=asfsfg");
+    router.push("/analytics?id=1");
   };
   const renderRowActionsTutor = (row: Tutor) => {
     return (
