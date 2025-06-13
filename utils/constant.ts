@@ -253,3 +253,10 @@ export const planFeatures = [
     ],
   },
 ];
+export const navItems = [
+  {name: "Dashboard", href: "/dashboard", icon: "/dashboard.svg"},
+  {name: "Knowledge Base", href: "/knowledge-base", icon: "/k-base.svg"},
+  {name: "Tutor", href: "/tutor", icon: "/tutor.svg"},
+  {name: "Settings", href: "/settings", icon: "/settings.svg"},
+  {name: "Analytics", href: "/analytics", icon: "/analytics.svg"},
+];
