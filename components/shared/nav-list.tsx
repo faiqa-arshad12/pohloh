@@ -3,17 +3,12 @@ import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {cn} from "@/lib/utils";
 import Image from "next/image";
+import { navItems } from "@/utils/constant";
 type HeaderProps = {
   setShowAllNotifications: React.Dispatch<React.SetStateAction<boolean>>;
   showAllNotifications: boolean;
 };
-const navItems = [
-  {name: "Dashboard", href: "/dashboard", icon: "/dashboard.svg"},
-  {name: "Knowledge Base", href: "/knowledge-base", icon: "/k-base.svg"},
-  {name: "Tutor", href: "/tutor", icon: "/tutor.svg"},
-  {name: "Settings", href: "/settings", icon: "/settings.svg"},
-  {name: "Analytics", href: "/analytics", icon: "/analytics.svg"},
-];
+
 
 const NavList = ({setShowAllNotifications}: HeaderProps) => {
   const pathname = usePathname();
@@ -22,7 +17,7 @@ const NavList = ({setShowAllNotifications}: HeaderProps) => {
     <div>
       <nav className="rounded-3xl p-2 md:p-0 md:rounded-full flex flex-col md:flex-row border-2 border-[#A2A2A2]" style={{padding:'5px'}}>
         {navItems.map((item) => {
-          const isActive = pathname.includes(item.href);
+          const isActive = pathname?.includes(item.href);
 
           return (
             <Link

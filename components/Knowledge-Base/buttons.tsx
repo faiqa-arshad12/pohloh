@@ -85,7 +85,7 @@ export function CategoryItem({
       className={`w-[auto] h-[58px] rounded-[6px] border px-[16px] py-[12px] flex items-center justify-between mt-3 mb-3 cursor-pointer bg-[#FFFFFF14] hover:bg-[#2C2D2E] ${
         active ? "border-[#F9DB6F]  " : " border-none"
       }
-            ${!active?"opacity-80 hover:opacity-100":""}
+            ${!active ? "opacity-80 hover:opacity-100" : ""}
 `}
     >
       <span className="font-urbanist font-normal text-[18px] leading-[20px] align-middle">

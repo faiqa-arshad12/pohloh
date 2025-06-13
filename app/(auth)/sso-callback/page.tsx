@@ -12,7 +12,8 @@ function SSOCallbackContent() {
   useEffect(() => {
     const finalizeSSO = async () => {
       try {
-        const params = Object.fromEntries(searchParams.entries());
+        if(searchParams){
+        const params = Object.fromEntries(searchParams?.entries());
 
         // safely cast the result
         const { createdSessionId } = (await handleRedirectCallback(params)) as {
@@ -20,6 +21,7 @@ function SSOCallbackContent() {
         };
         await setActive({ session: createdSessionId });
         router.replace("/dashboard");
+      }
       } catch (error) {
         console.error(error);
         router.replace("/login");
