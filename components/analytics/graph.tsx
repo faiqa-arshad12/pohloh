@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState, useEffect} from "react";
 import {
   XAxis,
   LineChart,
@@ -10,8 +10,13 @@ import {
   Area,
 } from "recharts";
 
-const Graph = () => {
-  const data = [
+interface GraphProps {
+  departmentId: string | null;
+}
+
+const Graph = ({departmentId}: GraphProps) => {
+  // Mock data for different departments or all departments
+  const allDepartmentsData = [
     {name: "Week 1", value: 4},
     {name: "Week 2", value: 5},
     {name: "Week 3", value: 4},
@@ -19,12 +24,46 @@ const Graph = () => {
     {name: "Week 5", value: 5.5},
     {name: "Week 6", value: 5},
   ];
+
+  const customerDepartmentData = [
+    {name: "Week 1", value: 3},
+    {name: "Week 2", value: 4},
+    {name: "Week 3", value: 3.5},
+    {name: "Week 4", value: 4},
+    {name: "Week 5", value: 4.5},
+    {name: "Week 6", value: 4},
+  ];
+
+  const operationsDepartmentData = [
+    {name: "Week 1", value: 5},
+    {name: "Week 2", value: 6},
+    {name: "Week 3", value: 5.5},
+    {name: "Week 4", value: 6},
+    {name: "Week 5", value: 6.5},
+    {name: "Week 6", value: 6},
+  ];
+
+  const [graphData, setGraphData] = useState(allDepartmentsData);
+
+  useEffect(() => {
+    if (departmentId === null) {
+      setGraphData(allDepartmentsData);
+    } else if (departmentId === "62e7b485-70c7-4807-b3e3-943a7d7e7d19") {
+      setGraphData(customerDepartmentData);
+    } else if (departmentId === "9bbec25d-a60a-433d-8f87-58f256fcc16f") {
+      setGraphData(operationsDepartmentData);
+    } else {
+      // For other departments or unknown IDs, fallback to all departments data
+      setGraphData(allDepartmentsData);
+    }
+  }, [departmentId]);
+
   return (
     <div>
       <div className="rounded-xl p-4 h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
-            data={data}
+            data={graphData}
             margin={{top: 10, right: 10, left: 0, bottom: 5}}
           >
             <defs>

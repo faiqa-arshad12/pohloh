@@ -530,3 +530,10 @@ export interface EnrolledPathsApiResponse {
   success: boolean;
   paths: EnrolledPath[];
 }
+
+
+export interface DateRangeOption {
+  label: string;
+  value: string;
+  description?: string;
+}

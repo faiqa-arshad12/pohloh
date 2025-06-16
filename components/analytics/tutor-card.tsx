@@ -1,6 +1,8 @@
+import {useUserHook} from "@/hooks/useUser";
 
 export default function TutorScoreCard() {
   const score = 88;
+  const {userData} = useUserHook();
 
   return (
     <div className="w-full">
@@ -10,13 +12,24 @@ export default function TutorScoreCard() {
 
         {/* Headset Icon */}
         <div className="flex justify-center mb-8">
-          <img src="/headphone.png" alt="head" />
+          <img
+            src={
+              userData?.organizations.org_picture || "/placeholder-profile.svg"
+            }
+            className="w-[120px] h-[120px] rounded-full"
+            alt="profile"
+          />
 
           {/* <Headphones className="w-16 h-16 text-white" strokeWidth={1.5} /> */}
         </div>
 
         {/* Subtitle */}
-        <p className="text-[16px] text-[#FFFFFF] mb-6">Overall Tutor Score</p>
+        <p className="text-[24px] text-[#FFFFFF] mb-3 font-bold">
+          {userData?.organizations.name}
+        </p>
+        <p className="text-[15px] text-[#FFFFFF] mb-6 font-medium">
+          pohloh@gmail.com
+        </p>
 
         {/* Progress Bar */}
         <div className="flex flex-row gap-0 w-full h-12 rounded overflow-hidden ">
@@ -35,10 +48,10 @@ export default function TutorScoreCard() {
               backgroundImage: "url('/Frame.png')",
               backgroundColor: "#f0f0f0",
               width: "20%",
+              borderRadius:'8px'
             }}
             role="img"
             aria-label="Preview thumbnail"
-
           >
             <div className="sr-only">Remaining {100 - score}%</div>
           </div>

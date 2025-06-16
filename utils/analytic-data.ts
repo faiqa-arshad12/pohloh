@@ -1,4 +1,3 @@
-
 export interface LearningPath {
   id: number;
   name: string;
@@ -7,6 +6,7 @@ export interface LearningPath {
   dueDate: string;
   priority: "Low" | "Medium" | "High";
   image: string;
+  departmentId?: string;
 }
 
 // Mock data
@@ -18,6 +18,7 @@ export const tutorsList: Tutor[] = [
     completionRate: "6%",
     strengths: ["Shopify", "Tier 1"],
     opportunities: ["Return Policy", "Troubleshooting"],
+    departmentId: "62e7b485-70c7-4807-b3e3-943a7d7e7d19", // Customer Department
   },
   {
     id: 2,
@@ -26,6 +27,7 @@ export const tutorsList: Tutor[] = [
     completionRate: "83%",
     strengths: ["Warranty", "Tier 2"],
     opportunities: ["Summer Sale", "Troubleshooting"],
+    departmentId: "9bbec25d-a60a-433d-8f87-58f256fcc16f", // Operations Department
   },
   {
     id: 3,
@@ -34,6 +36,7 @@ export const tutorsList: Tutor[] = [
     completionRate: "5%",
     strengths: ["Escalation", "Brand Language"],
     opportunities: ["Return Policy", "Troubleshooting"],
+    departmentId: "9b62f894-209c-4418-8779-16c8adde4eea", // Security Department
   },
   {
     id: 4,
@@ -42,6 +45,7 @@ export const tutorsList: Tutor[] = [
     completionRate: "41%",
     strengths: ["Call Script", "Summer Sale"],
     opportunities: ["Tier 1", "Troubleshooting"],
+    departmentId: "ff8d7ba1-ff9b-436f-bb1e-a7dbb83bbcff", // test Department
   },
   {
     id: 5,
@@ -50,6 +54,7 @@ export const tutorsList: Tutor[] = [
     completionRate: "6%",
     strengths: ["Shopify", "Tier 1"],
     opportunities: ["Return Policy", "Troubleshooting"],
+    departmentId: "62e7b485-70c7-4807-b3e3-943a7d7e7d19", // Customer Department
   },
   {
     id: 6,
@@ -58,6 +63,7 @@ export const tutorsList: Tutor[] = [
     completionRate: "83%",
     strengths: ["Warranty", "Tier 2"],
     opportunities: ["Summer Sale", "Troubleshooting"],
+    departmentId: "9bbec25d-a60a-433d-8f87-58f256fcc16f", // Operations Department
   },
   {
     id: 7,
@@ -66,6 +72,7 @@ export const tutorsList: Tutor[] = [
     completionRate: "5%",
     strengths: ["Escalation", "Brand Language"],
     opportunities: ["Return Policy", "Troubleshooting"],
+    departmentId: "9b62f894-209c-4418-8779-16c8adde4eea", // Security Department
   },
   {
     id: 8,
@@ -74,6 +81,7 @@ export const tutorsList: Tutor[] = [
     completionRate: "41%",
     strengths: ["Call Script", "Summer Sale"],
     opportunities: ["Tier 1", "Troubleshooting"],
+    departmentId: "ff8d7ba1-ff9b-436f-bb1e-a7dbb83bbcff", // test Department
   },
 ];
 
@@ -86,6 +94,7 @@ export const learningPaths: LearningPath[] = [
     completion: "30%",
     dueDate: "10 Sept 2024",
     priority: "High",
+    departmentId: "62e7b485-70c7-4807-b3e3-943a7d7e7d19",
   },
   {
     id: 2,
@@ -95,6 +104,7 @@ export const learningPaths: LearningPath[] = [
     completion: "40%",
     dueDate: "10 Sept 2024",
     priority: "Low",
+    departmentId: "9bbec25d-a60a-433d-8f87-58f256fcc16f",
   },
   {
     id: 3,
@@ -104,6 +114,7 @@ export const learningPaths: LearningPath[] = [
     completion: "40%",
     dueDate: "10 Sept 2024",
     priority: "Medium",
+    departmentId: "ff8d7ba1-ff9b-436f-bb1e-a7dbb83bbcff",
   },
   {
     id: 4,
@@ -113,6 +124,7 @@ export const learningPaths: LearningPath[] = [
     completion: "30%",
     dueDate: "10 Sept 2024",
     priority: "High",
+    departmentId: "62e7b485-70c7-4807-b3e3-943a7d7e7d19",
   },
   {
     id: 5,
@@ -122,6 +134,7 @@ export const learningPaths: LearningPath[] = [
     completion: "40%",
     dueDate: "10 Sept 2024",
     priority: "Low",
+    departmentId: "9bbec25d-a60a-433d-8f87-58f256fcc16f",
   },
   {
     id: 6,
@@ -131,6 +144,7 @@ export const learningPaths: LearningPath[] = [
     completion: "40%",
     dueDate: "10 Sept 2024",
     priority: "Medium",
+    departmentId: "ff8d7ba1-ff9b-436f-bb1e-a7dbb83bbcff",
   },
 ];
 export interface Tutor {
@@ -140,24 +154,25 @@ export interface Tutor {
   completionRate: string;
   strengths: string[];
   opportunities: string[];
+  departmentId?: string;
 }
 export const tutorColumns = [
-  {Header: "Tutor Name", accessor: "name"},
-  {Header: "Average Tutor Score", accessor: "rating"},
-  {Header: "Completion rate", accessor: "completionRate"},
-  {Header: "Strength", accessor: "strengths"},
-  {Header: "Opportunities", accessor: "opportunities"},
-  {Header: "Action", accessor: "action"},
+  { Header: "Tutor", accessor: "name" },
+  { Header: "Average Tutor Score", accessor: "rating" },
+  { Header: "Completion Rate", accessor: "completionRate" },
+  { Header: "Strength", accessor: "strengths" },
+  { Header: "Opportunities", accessor: "opportunities" },
+  { Header: "Action", accessor: "action" },
 ];
 
 // Define columns for learning paths table
 export const pathColumns = [
-  {Header: "Name", accessor: "name"},
-  {Header: "Learning Path", accessor: "path"},
-  {Header: "Completion", accessor: "completion"},
-  {Header: "Due Date", accessor: "dueDate"},
-  {Header: "Priority", accessor: "priority"},
-  {Header: "Action", accessor: "action"},
+  { Header: "Name", accessor: "name" },
+  { Header: "Learning Path", accessor: "path" },
+  { Header: "Completion", accessor: "completion" },
+  { Header: "Due Date", accessor: "dueDate" },
+  { Header: "Priority", accessor: "priority" },
+  { Header: "Action", accessor: "action" },
 ];
 export const policies = [
   {
@@ -189,22 +204,22 @@ export const policies = [
 
 
 export const strengths = [
-  {id: 1, name: "Warranty", color: "#BB6BD9"},
-  {id: 2, name: "Escalation", color: "#E86818"},
-  {id: 3, name: "Brand Language", color: "#EFBE0F"},
+  { id: 1, name: "Warranty", color: "#BB6BD9" },
+  { id: 2, name: "Escalation", color: "#E86818" },
+  { id: 3, name: "Brand Language", color: "#EFBE0F" },
 ];
 
 export const opportunities = [
-  {id: 1, name: "Return Policy", color: "#2ABF1D"},
-  {id: 2, name: "Troubleshooting", color: "#D72828"},
-  {id: 3, name: "Sale", color: "#306BE1"},
+  { id: 1, name: "Return Policy", color: "#2ABF1D" },
+  { id: 2, name: "Troubleshooting", color: "#D72828" },
+  { id: 3, name: "Sale", color: "#306BE1" },
 ];
 const columnsLeaderboardEntry = [
-  {Header: "Rank", accessor: "rankIcon"},
-  {Header: "Name", accessor: "name"},
-  {Header: "Completion Rate", accessor: "completion"},
-  {Header: "Created Card & Verified", accessor: "cards"},
-  {Header: "Engagement Level", accessor: "engagement"},
+  { Header: "Rank", accessor: "rankIcon" },
+  { Header: "Name", accessor: "name" },
+  { Header: "Completion Rate", accessor: "completion" },
+  { Header: "Created Card & Verified", accessor: "cards" },
+  { Header: "Engagement Level", accessor: "engagement" },
 ];
 interface LeaderboardEntry {
   name: string;

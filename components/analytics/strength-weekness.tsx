@@ -24,7 +24,7 @@ const StrengthWeekness = () => {
           {strengths.map((strength) => (
             <div
               key={strength.id}
-              className={`p-3 rounded-lg cursor-pointer transition-colors border-l-4 bg-[#25EF12] border-[#F9DB6F]`}
+              className={`p-3 rounded-lg cursor-pointer transition-colors border-l-4 bg-[#93C47D] border-[#F9DB6F]`}
               onClick={() => toggleExpanded(strength.id)}
             >
               {strength.name}
@@ -39,7 +39,7 @@ const StrengthWeekness = () => {
           {opportunities.map((opportunity) => (
             <div
               key={opportunity.id}
-              className="p-3 rounded-lg cursor-pointer transition-colors border-l-4 bg-[#E92B2B] border-[#F9DB6F] hover:bg-[#C80909E5]"
+              className="p-3 rounded-lg cursor-pointer transition-colors border-l-4 bg-[#EE8484E5] border-[#F9DB6F] hover:bg-[#C80909E5]"
               onClick={() => toggleExpanded(opportunity.id)}
             >
               {opportunity.name}

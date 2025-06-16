@@ -20,14 +20,17 @@ const TopPerformance = ({
 }: TopPerformanceProps) => {
   return (
     <div className="bg-[#191919] p-6 rounded-[12px] text-white shadow-md w-full">
-      <div className="flex flex-row justify-between">
-        <div className="flex flex-col justify-between">
-          <div className="mb-4">
-            <h4 className="font-urbanist font-bold text-[16px] leading-[140%] tracking-[0.01em] text-white">
-              {title}
-            </h4>
-          </div>
-          <div className="mt-2">
+      <div className="flex flex-col">
+        <div className="mb-4 flex justify-between items-center">
+          <h4 className="font-urbanist font-bold text-[16px] leading-[140%] tracking-[0.01em] text-white">
+            {title}
+          </h4>
+          <h4 className="font-urbanist font-bold text-[14px] text-[#F9DB6F] font-normal cursor-pointer underline">
+            View All
+          </h4>
+        </div>
+        <div className="mt-2 flex flex-row justify-between items-center">
+          <div>
             <h5 className="text-[#F9DB6F] font-urbanist font-normal text-[20px] leading-[120%] tracking-[0] mb-1">
               {subtitle}
             </h5>
@@ -35,13 +38,13 @@ const TopPerformance = ({
               {percentage}
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-full w-[80px] h-[80px] flex items-center justify-center">
-          {customIcon ? (
-            customIcon
-          ) : Icon ? (
-            <Icon size={iconSize} className="text-[#F9DB6F]" />
-          ) : null}
+          <div className="bg-white rounded-full w-[80px] h-[80px] flex items-center justify-center">
+            {customIcon ? (
+              customIcon
+            ) : Icon ? (
+              <Icon size={iconSize} className="text-[#F9DB6F]" />
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
