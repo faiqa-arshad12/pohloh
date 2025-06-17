@@ -10,7 +10,7 @@ import {CustomDateFilterModal} from "../shared/date-filter";
 import {getDropdownOptions} from "@/utils/constant";
 import {useRole} from "../ui/Context/UserContext";
 
-const AdminTutorAnalyticGraph = () => {
+const AdminTutorAnalyticGraph = ({id}: {id?: string | null}) => {
   const [selectedRange, setSelectedRange] = useState("Last 30 days");
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -86,7 +86,7 @@ const AdminTutorAnalyticGraph = () => {
       <div className="flex justify-between mb-4">
         <h3 className="text-[24px] font-medium py-4">Tutor Analytics</h3>
         <div className="flex items-center gap-2 mb-2">
-          {roleAccess !== "user" && (
+          {roleAccess !== "user" && !id && (
             <Button className="w-[52px] h-[50px] bg-[#F9DB6F] hover:bg-[#F9DB6F] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
               <Icon
                 icon="bi:filetype-pdf"

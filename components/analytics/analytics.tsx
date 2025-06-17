@@ -163,22 +163,25 @@ function AnalyticsContent() {
                     initialStartDate={startDate}
                     initialEndDate={endDate}
                   />
+                  </>
+                   )}
+                  {activeTab === "tutor" && roleAccess !== "user" && !tutorId && (
+                    <DateRangeDropdown
+                      selectedRange={selectedTeam}
+                      onRangeChange={setSelectedTeam}
+                      width="250px"
+                      disabled={isLoadingData}
+                      options={[
+                        {label: "All Department", value: "all"},
+                        ...teams.map((team: any) => ({
+                          label: team.name,
+                          value: team.id,
+                        })),
+                      ]}
+                    />
+                  )}
 
-                  <DateRangeDropdown
-                    selectedRange={selectedTeam}
-                    onRangeChange={setSelectedTeam}
-                    width="250px"
-                    disabled={isLoadingData}
-                    options={[
-                      {label: "All Department", value: "all"},
-                      ...teams.map((team: any) => ({
-                        label: team.name,
-                        value: team.id,
-                      })),
-                    ]}
-                  />
-                </>
-              )}
+
               {!(roleAccess !== "user" && tutorId) && (
                 <div className="flex items-center gap-2">
                   <div className="border border-[#FFFFFF] rounded-full overflow-hidden h-[56px] w-[full] px-3 flex items-center justify-center text-center gap-2">

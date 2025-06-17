@@ -54,50 +54,50 @@ const CategoriesScore = () => {
           Insights
         </h2>
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <Select value={interval} onValueChange={setInterval}>
-          <SelectTrigger
-            className="bg-black text-white w-[114px] border-0 rounded-[80px]"
-            style={{height: "40px"}}
-          >
-            <SelectValue placeholder="Monthly" />
-          </SelectTrigger>
-          <SelectContent className="bg-black text-white">
-            <SelectItem value="monthly">Monthly</SelectItem>
-            <SelectItem value="weekly">Weekly</SelectItem>
-            <SelectItem value="daily">Daily</SelectItem>
-          </SelectContent>
-        </Select>
-         {categories.length > categoriesPerPage && (
-        <div className="flex justify-end items-center">
-          <button
-            className={cn(
-              "w-6 h-6 flex items-center justify-center rounded-full",
-              !isFirstSet
-                ? "text-[#F9DB6F] border-2 border-[#F9DB6F] cursor-pointer"
-                : "bg-[#1e1e1e] text-gray-400 cursor-not-allowed"
-            )}
-            onClick={goToPrevious}
-            aria-label="Previous categories"
-            disabled={isFirstSet}
-          >
-            <ChevronLeft size={16} className="ml-[1px]" />
-          </button>
-          <button
-            className={cn(
-              "w-6 h-6 flex items-center justify-center rounded-full",
-              !isLastSet
-                ? "text-[#F9DB6F] border-2 border-[#F9DB6F] cursor-pointer"
-                : "bg-[#1e1e1e] text-gray-400 cursor-not-allowed"
-            )}
-            onClick={goToNext}
-            aria-label="Next categories"
-            disabled={isLastSet}
-          >
-            <ChevronRight size={16} className="mr-[-1px]" />
-          </button>
+          <Select value={interval} onValueChange={setInterval}>
+            <SelectTrigger
+              className="bg-black text-white w-[114px] border-0 rounded-[80px]"
+              style={{height: "40px"}}
+            >
+              <SelectValue placeholder="Monthly" />
+            </SelectTrigger>
+            <SelectContent className="bg-black text-white">
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="weekly">Weekly</SelectItem>
+              <SelectItem value="daily">Daily</SelectItem>
+            </SelectContent>
+          </Select>
+          {categories.length > categoriesPerPage && (
+            <div className="flex justify-end items-center">
+              <button
+                className={cn(
+                  "w-6 h-6 flex items-center justify-center rounded-full",
+                  !isFirstSet
+                    ? "text-[#F9DB6F] border-2 border-[#F9DB6F] cursor-pointer"
+                    : "bg-[#1e1e1e] text-gray-400 cursor-not-allowed"
+                )}
+                onClick={goToPrevious}
+                aria-label="Previous categories"
+                disabled={isFirstSet}
+              >
+                <ChevronLeft size={16} className="ml-[1px]" />
+              </button>
+              <button
+                className={cn(
+                  "w-6 h-6 flex items-center justify-center rounded-full",
+                  !isLastSet
+                    ? "text-[#F9DB6F] border-2 border-[#F9DB6F] cursor-pointer"
+                    : "bg-[#1e1e1e] text-gray-400 cursor-not-allowed"
+                )}
+                onClick={goToNext}
+                aria-label="Next categories"
+                disabled={isLastSet}
+              >
+                <ChevronRight size={16} className="mr-[-1px]" />
+              </button>
+            </div>
+          )}
         </div>
-      )}
-      </div>
       </div>
       <div className="w-full flex flex-row  gap-4 mb-6 overflow-y-hidden">
         {categories
@@ -121,7 +121,6 @@ const CategoriesScore = () => {
             </button>
           ))}
       </div>
-
     </>
   );
 };

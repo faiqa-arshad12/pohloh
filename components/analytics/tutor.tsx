@@ -1,6 +1,5 @@
 import React, {useEffect, useState} from "react";
 
-
 import TutorScoreCard from "./tutor-score";
 import {CompletedLearningPaths} from "./completed-path";
 import CategoriesScore from "./categories-score";
@@ -11,9 +10,7 @@ import {useRole} from "@/components/ui/Context/UserContext";
 import AdminTutorAnalyticGraph from "./tutor-analytic-graph";
 
 export default function TutorAnalytics({id}: {id?: string | null}) {
-
   const {roleAccess} = useRole();
-
 
   return (
     <div className="">
@@ -75,7 +72,7 @@ export default function TutorAnalytics({id}: {id?: string | null}) {
         <TutorScoreCard />
 
         {/* Tutor Analytics Card */}
-      <AdminTutorAnalyticGraph/>
+        <AdminTutorAnalyticGraph id={id} />
       </div>
 
       {/* Bottom Section Grid */}
@@ -88,8 +85,6 @@ export default function TutorAnalytics({id}: {id?: string | null}) {
         {/* Insights Section */}
         <div className="w-full">
           <div className="bg-[#1c1c1c] rounded-2xl p-6 shadow-lg">
-
-
             {/* Category Scores */}
             <CategoriesScore />
 
