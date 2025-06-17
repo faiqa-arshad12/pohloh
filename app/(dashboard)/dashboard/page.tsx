@@ -23,6 +23,7 @@ import {useUser} from "@clerk/nextjs";
 import {Skeleton} from "@/components/ui/skeleton";
 import {apiUrl} from "@/utils/constant";
 import {useUserHook} from "@/hooks/useUser";
+import AdminTutorAnalyticGraph from "@/components/analytics/tutor-analytic-graph";
 
 type ViewMode = "Monthly" | "Weekly" | "Daily";
 type Interval = "monthly" | "weekly" | "daily";
@@ -86,7 +87,6 @@ const Page = () => {
 
   useEffect(() => {
     const fetchCards = async () => {
-
       try {
         setIsLoading(true);
         if (!userData?.org_id) {
@@ -135,11 +135,9 @@ const Page = () => {
         setIsLoading(false);
       }
     };
-if(userData)
-{
-  fetchCards();
-
-}
+    if (userData) {
+      fetchCards();
+    }
   }, [userData]);
 
   const generateMonths = (count: number) => {
@@ -372,7 +370,7 @@ if(userData)
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-[#191919] rounded-2xl p-6 h-full">
+        {/* <div className="lg:col-span-2 bg-[#191919] rounded-2xl p-6 h-full">
           <div className="flex flex-col sm:flex-row justify-between mb-4">
             <h3 className="text-xl font-medium mb-2 sm:mb-0 text-white">
               Tutor Analytics
@@ -403,6 +401,9 @@ if(userData)
               priority
             />
           </div>
+        </div> */}
+        <div className="lg:col-span-2 bg-[#191919] rounded-2xl p-6 h-full">
+          <AdminTutorAnalyticGraph dashboard />
         </div>
         <div className="h-full w-full bg-[#191919] p-6 rounded-2xl">
           <Calendar

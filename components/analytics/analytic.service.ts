@@ -79,3 +79,21 @@ export const fetchCards = async (orgId: string, role: string, id: string) => {
     console.error("Error fetching cards:", error);
   }
 };
+export const fetchTutorScore = async (orgId: string) => {
+  try {
+    const response = await fetch(
+      `${apiUrl}/users/average-tutor-score/${orgId}`,
+      {
+        method: "GET",
+        headers: {"Content-Type": "application/json"},
+      }
+    );
+
+    if (!response.ok) throw new Error("Failed to fetch cards");
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Error fetching cards:", error);
+  }
+};
