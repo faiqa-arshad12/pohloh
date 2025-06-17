@@ -8,9 +8,38 @@ import MetricCard from "@/components/matric-card";
 import {Flame} from "lucide-react";
 import {useRole} from "@/components/ui/Context/UserContext";
 import AdminTutorAnalyticGraph from "./tutor-analytic-graph";
+import {fetchUserStats} from "./analytic.service";
+import {useUserHook} from "@/hooks/useUser";
 
 export default function TutorAnalytics({id}: {id?: string | null}) {
   const {roleAccess} = useRole();
+  const [data, setData] = useState<any>();
+  const {userData} = useUserHook();
+
+  useEffect(() => {
+    if (id) {
+      const fetchData = async () => {
+        try {
+          const response = await fetchUserStats(
+            roleAccess === "user" ? userData.id : id
+          );
+
+          if (response) {
+            setData(response);
+            console.log("Generated Chart Data:", response);
+          } else {
+            console.log("No valid data in response");
+            // Set default data if no valid response
+          }
+        } catch (error) {
+          console.error("Error fetching tutor score:", error);
+          // Set default data on error
+        } finally {
+        }
+      };
+      if (id) fetchData();
+    }
+  }, [id]);
 
   return (
     <div className="">
@@ -67,9 +96,9 @@ export default function TutorAnalytics({id}: {id?: string | null}) {
         />
       </div>
       {/* Top Section Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8 h-auto">
         {/* Overall Tutor Score Card */}
-        <TutorScoreCard />
+        <TutorScoreCard user={data?.user} />
 
         {/* Tutor Analytics Card */}
         <AdminTutorAnalyticGraph id={id} />

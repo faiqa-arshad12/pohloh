@@ -1,12 +1,38 @@
+"use client";
+
 import {useUserHook} from "@/hooks/useUser";
+import {useEffect, useState} from "react";
+import {fetchTutorScore} from "./analytic.service";
+import ScoreProgress from "../shared/score-progress";
 
 export default function TutorScoreCard() {
-  const score = 88;
   const {userData} = useUserHook();
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [data, setData] = useState<any>();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (userData?.organizations?.id) {
+        setIsLoadingData(true);
+        try {
+          const response = await fetchTutorScore(userData.organizations.id);
+          setData(response.score);
+        } catch (error) {
+          console.error("Error fetching tutor score:", error);
+        } finally {
+          setIsLoadingData(false);
+        }
+      } else {
+        console.log("No organization ID available");
+      }
+    };
+
+    fetchData();
+  }, [userData]);
 
   return (
-    <div className="w-full">
-      <div className="bg-[#191919] rounded-[30px] p-4 py-8 flex items-center flex-col">
+    <div className="w-full h-auto">
+      <div className="bg-[#191919] rounded-[30px] p-4 py-8 flex items-center flex-col h-full">
         {/* Title */}
         <h2 className="text-[24px] font-medium mb-8">Average Tutor Score</h2>
 
@@ -27,35 +53,12 @@ export default function TutorScoreCard() {
         <p className="text-[24px] text-[#FFFFFF] mb-3 font-bold">
           {userData?.organizations.name}
         </p>
-        <p className="text-[15px] text-[#FFFFFF] mb-6 font-medium">
-          pohloh@gmail.com
+        <p className="text-[15px] text-[#FFFFFF] mb-8 font-medium">
+          {data?.owner?.email}
         </p>
 
         {/* Progress Bar */}
-        <div className="flex flex-row gap-0 w-full h-12 rounded overflow-hidden ">
-          {/* Filled portion */}
-          <div
-            className="bg-[#F9DB6F] text-black flex items-center justify-center font-bold text-lg transition-all duration-300"
-            style={{width: `${score}%`}}
-          >
-            {score}%
-          </div>
-
-          {/* Unfilled portion with diagonal stripes */}
-          <div
-            className="bg-gray-700 flex-1 relative overflow-hidden"
-            style={{
-              backgroundImage: "url('/Frame.png')",
-              backgroundColor: "#f0f0f0",
-              width: "20%",
-              borderRadius:'8px'
-            }}
-            role="img"
-            aria-label="Preview thumbnail"
-          >
-            <div className="sr-only">Remaining {100 - score}%</div>
-          </div>
-        </div>
+        <ScoreProgress score={data?.overall} />
       </div>
     </div>
   );

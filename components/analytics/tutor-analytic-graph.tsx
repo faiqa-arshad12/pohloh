@@ -85,7 +85,13 @@ const CustomTooltip = ({active, payload, label}: any) => {
   return null;
 };
 
-const AdminTutorAnalyticGraph = ({id, dashboard}: {id?: string | null, dashboard?:boolean}) => {
+const AdminTutorAnalyticGraph = ({
+  id,
+  dashboard,
+}: {
+  id?: string | null;
+  dashboard?: boolean;
+}) => {
   const [selectedRange, setSelectedRange] = useState("Last 30 days");
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -236,7 +242,7 @@ const AdminTutorAnalyticGraph = ({id, dashboard}: {id?: string | null, dashboard
       <div className="flex justify-between mb-6">
         <h3 className="text-[24px] font-medium text-white">Tutor Analytics</h3>
         <div className="flex items-center gap-2">
-          {roleAccess !== "user" && !id && !dashboard &&(
+          {roleAccess !== "user" && !id && !dashboard && (
             <Button className="w-[52px] h-[50px] bg-[#F9DB6F] hover:bg-[#F9DB6F] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
               <Icon
                 icon="bi:filetype-pdf"
@@ -251,11 +257,16 @@ const AdminTutorAnalyticGraph = ({id, dashboard}: {id?: string | null, dashboard
       </div>
 
       <div
-        className={`relative w-full h-80 transition-opacity duration-300 ${
+        className={`relative w-full h-80 transition-opacity duration-300 flex justify-center ${
           isLoadingData ? "opacity-50" : "opacity-100"
         }`}
       >
-        {isLoadingData && <Loader />}
+        {isLoadingData && (
+          <div className="flex flex-row justify-center items-center">
+            {/* <Loader /> */}
+            Loading...
+          </div>
+        )}
 
         {chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">

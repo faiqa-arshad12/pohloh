@@ -89,7 +89,7 @@ const AdminAanalytic = ({selectedTeam}: AdminAanalyticProps) => {
         )}
       </div>
       {/* Tutor Score Section */}
-      <div className=" flex flex-col md:grid md:grid-cols-4 gap-4 mb-8">
+      <div className="flex flex-col md:grid md:grid-cols-4 gap-4 mb-8 h-full">
         <TutorScoreCard />
         <AdminTutorAnalyticGraph />
       </div>
