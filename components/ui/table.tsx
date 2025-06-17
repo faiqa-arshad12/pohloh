@@ -4,6 +4,7 @@ import {useState, useEffect} from "react";
 import type React from "react";
 import Loader from "../shared/loader";
 import {ArrowLeft, ArrowRight} from "lucide-react";
+import { NoData } from "../shared/NoData";
 
 interface TableProps<T> {
   columns: {Header: string; accessor: string}[];
@@ -172,7 +173,7 @@ const Table = <T,>({
                   colSpan={columns.length + (renderActions ? 1 : 0)}
                   className="text-center text-gray-500 py-4"
                 >
-                  No data found.
+               <NoData/>
                 </td>
               </tr>
             ) : (
@@ -199,7 +200,7 @@ const Table = <T,>({
       </div>
 
       {/* Pagination Controls */}
-      {totalPages > 0 && totalItems > 5 && (
+      {totalPages > 0 && (
         <div className="flex justify-end items-center mt-4 gap-5">
           <div className="text-[18px] font-normal text-[#FFFFFF]">
             Rows per page: {itemsPerPage} &nbsp;&nbsp;{" "}

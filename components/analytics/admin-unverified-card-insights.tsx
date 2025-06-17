@@ -6,41 +6,72 @@ import {Button} from "../ui/button";
 import Table from "../ui/table";
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import {LearningPath, learningPaths} from "@/utils/analytic-data";
 import {Icon} from "@iconify/react/dist/iconify.js";
+import {fetchCards} from "./analytic.service";
+import {useUserHook} from "@/hooks/useUser";
+import TableLoader from "../shared/table-loader";
+import {NoData} from "../shared/NoData";
 
-interface AdminUnverifiedCardProps {
-  departmentId: string | null;
+interface UnverifiedCard {
+  id: string;
+  category_id: {
+    name: string;
+  };
+  card_owner_id: {
+    first_name: string;
+    last_name: string;
+  };
+  title: string;
+  created_at: string;
 }
 
-const AdminUnverifiedCard = ({departmentId}: AdminUnverifiedCardProps) => {
+const AdminUnverifiedCard = () => {
+  const {userData} = useUserHook();
   const [showActionMenu, setShowActionMenu] = useState(false);
-  const [filteredUnverifiedCards, setFilteredUnverifiedCards] =
-    useState<LearningPath[]>(learningPaths);
+  const [filteredUnverifiedCards, setFilteredUnverifiedCards] = useState<
+    UnverifiedCard[]
+  >([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (departmentId === null) {
-      setFilteredUnverifiedCards(learningPaths);
-    } else {
-      const filtered = learningPaths.filter(
-        (card) => card.departmentId === departmentId
-      );
-      setFilteredUnverifiedCards(filtered);
-    }
-  }, [departmentId]);
+    const getUnverifiedCards = async () => {
+      try {
+        setIsLoading(true);
+        if (userData?.organizations.id && userData?.id && userData?.role) {
+          const cards = await fetchCards(
+            userData.organizations.id,
+            userData.role,
+            userData.id
+          );
+          if (cards) {
+            console.log(cards, "card");
+            const unverifiedCards = cards.filter(
+              (card: any) => card.is_verified === false
+            );
+            setFilteredUnverifiedCards(unverifiedCards);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching unverified cards:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    getUnverifiedCards();
+  }, [userData]);
 
-  const handleDeletePath = (id: number) => {
+  const handleDeletePath = (id: string) => {
     alert("deleted" + id);
   };
   const unverfiedCardColumns = [
-    {Header: "Card Name", accessor: "name"},
-    {Header: "Category", accessor: "path"},
-    {Header: "Date", accessor: "completion"},
-    {Header: "Owner", accessor: "dueDate"},
+    {Header: "Card Name", accessor: "title"},
+    {Header: "Category", accessor: "category_id.name"},
+    {Header: "Date", accessor: "created_at"},
+    {Header: "Owner", accessor: "ownerName"},
     {Header: "Action", accessor: "action"},
   ];
   // Custom cell renderer for tutors
-  const renderRowActionsPath = (row: LearningPath) => {
+  const renderRowActionsPath = (row: UnverifiedCard) => {
     return (
       <div className="flex justify-start">
         <DropdownMenu.Root>
@@ -56,10 +87,10 @@ const AdminUnverifiedCard = ({departmentId}: AdminUnverifiedCardProps) => {
             sideOffset={4}
             className="min-w-[200px] bg-[#222222] border border-[#333] rounded-md shadow-lg py-2 p-2 z-50"
           >
-            <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
+            {/* <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
               <GraduationCap className="h-4 w-4" />
               <span>Ressign Learning Path</span>
-            </DropdownMenu.Item>
+            </DropdownMenu.Item> */}
 
             <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
               <Icon icon="iconamoon:edit-light" width="24" height="24" />
@@ -80,22 +111,30 @@ const AdminUnverifiedCard = ({departmentId}: AdminUnverifiedCardProps) => {
   };
 
   // Custom cell renderer for learning paths
-  const renderPathCell = (column: string, row: LearningPath) => {
+  const renderPathCell = (column: string, row: UnverifiedCard) => {
     switch (column) {
-      case "name":
-        return <div className="flex items-center gap-2">{row.name}</div>;
-      case "priority":
-        const priorityColor =
-          row.priority === "High"
-            ? "bg-red-500"
-            : row.priority === "Medium"
-            ? "bg-yellow-500"
-            : "bg-green-500";
-
+      case "title":
+        return (
+          <div className="flex items-center gap-2 truncate">{row.title}</div>
+        );
+      case "category_id.name":
+        return (
+          <div className="flex items-center gap-2">{row.category_id.name}</div>
+        );
+      case "created_at":
         return (
           <div className="flex items-center gap-2">
-            <div className={`h-3 w-3 rounded-full ${priorityColor}`}></div>
-            {row.priority}
+            {new Date(row.created_at).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })}
+          </div>
+        );
+      case "ownerName":
+        return (
+          <div className="flex items-center gap-2">
+            {row.card_owner_id.first_name} {row.card_owner_id.last_name}
           </div>
         );
       case "action":
@@ -108,7 +147,7 @@ const AdminUnverifiedCard = ({departmentId}: AdminUnverifiedCardProps) => {
           </button>
         );
       default:
-        return row[column as keyof LearningPath];
+        return null;
     }
   };
   return (
@@ -127,16 +166,24 @@ const AdminUnverifiedCard = ({departmentId}: AdminUnverifiedCardProps) => {
           />
         </Button>
       </div>
-      <Table
-        columns={unverfiedCardColumns.slice(0, -1)}
-        data={filteredUnverifiedCards}
-        renderCell={renderPathCell}
-        renderActions={(row) => renderRowActionsPath(row as LearningPath)}
-        tableClassName="w-full text-sm"
-        headerClassName="bg-[#F9DB6F] text-black text-left font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0]"
-        bodyClassName="divide-y divide-gray-700 w-[171px] h-[68px]"
-        cellClassName="py-2 px-4 border-t border-[#E0EAF5] relative w-[171px] h-[68px] overflow-visible font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0]"
-      />
+      <div className="mt-4 overflow-x-auto">
+        {isLoading ? (
+          <TableLoader />
+        ) : filteredUnverifiedCards.length === 0 ? (
+          <NoData />
+        ) : (
+          <Table
+            columns={unverfiedCardColumns.slice(0, -1)}
+            data={filteredUnverifiedCards}
+            renderCell={renderPathCell}
+            renderActions={(row) => renderRowActionsPath(row as UnverifiedCard)}
+            tableClassName="w-full text-sm"
+            headerClassName="bg-[#F9DB6F] text-black text-left font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0]"
+            bodyClassName="divide-y divide-gray-700 w-[171px] h-[68px]"
+            cellClassName="py-2 px-4 border-t border-[#E0EAF5] relative w-[171px] h-[68px] overflow-visible font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0]"
+          />
+        )}
+      </div>
     </div>
   );
 };

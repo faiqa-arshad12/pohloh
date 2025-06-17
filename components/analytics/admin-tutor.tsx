@@ -94,10 +94,10 @@ const AdminAanalytic = ({selectedTeam}: AdminAanalyticProps) => {
         <AdminTutorAnalyticGraph />
       </div>
 
-      <TutorList departmentId={departmentId} />
+      <TutorList departmentId={departmentId} orgId={userData?.org_id} />
 
-      <AdminLearnignPath departmentId={departmentId} />
-      <AdminUnverifiedCard departmentId={departmentId} />
+      <AdminLearnignPath  orgId={userData?.org_id} />
+      <AdminUnverifiedCard />
 
       <div className="flex flex-col">
         <AdminCardCreated />

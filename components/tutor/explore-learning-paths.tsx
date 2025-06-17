@@ -26,6 +26,7 @@ import {
   TimePeriod,
   filterByTimePeriod,
 } from "@/components/shared/TimeFilter";
+import TableLoader from "../shared/table-loader";
 
 interface ApiResponse {
   success: boolean;
@@ -334,18 +335,7 @@ export default function ExploreLearningPath() {
           </div>
         </div>
         {/* Table skeleton */}
-        <div className="space-y-4">
-          {Array.from({length: 5}).map((_, i) => {
-            const widthPercent = Math.floor(70 + Math.random() * 30); // between 70% and 100%
-            return (
-              <Skeleton
-                key={i}
-                className="h-[28px]"
-                style={{width: `${widthPercent}%`}}
-              />
-            );
-          })}
-        </div>
+       <TableLoader/>
       </div>
     );
   }

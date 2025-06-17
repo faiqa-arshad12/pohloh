@@ -10,80 +10,80 @@ export interface LearningPath {
 }
 
 // Mock data
-export const tutorsList: Tutor[] = [
-  {
-    id: 1,
-    name: "John Henry",
-    rating: "91%",
-    completionRate: "6%",
-    strengths: ["Shopify", "Tier 1"],
-    opportunities: ["Return Policy", "Troubleshooting"],
-    departmentId: "62e7b485-70c7-4807-b3e3-943a7d7e7d19", // Customer Department
-  },
-  {
-    id: 2,
-    name: "Darlene Robertson",
-    rating: "83%",
-    completionRate: "83%",
-    strengths: ["Warranty", "Tier 2"],
-    opportunities: ["Summer Sale", "Troubleshooting"],
-    departmentId: "9bbec25d-a60a-433d-8f87-58f256fcc16f", // Operations Department
-  },
-  {
-    id: 3,
-    name: "Albert Flores",
-    rating: "5%",
-    completionRate: "5%",
-    strengths: ["Escalation", "Brand Language"],
-    opportunities: ["Return Policy", "Troubleshooting"],
-    departmentId: "9b62f894-209c-4418-8779-16c8adde4eea", // Security Department
-  },
-  {
-    id: 4,
-    name: "Cameron Williamson",
-    rating: "39",
-    completionRate: "41%",
-    strengths: ["Call Script", "Summer Sale"],
-    opportunities: ["Tier 1", "Troubleshooting"],
-    departmentId: "ff8d7ba1-ff9b-436f-bb1e-a7dbb83bbcff", // test Department
-  },
-  {
-    id: 5,
-    name: "John ",
-    rating: "91%",
-    completionRate: "6%",
-    strengths: ["Shopify", "Tier 1"],
-    opportunities: ["Return Policy", "Troubleshooting"],
-    departmentId: "62e7b485-70c7-4807-b3e3-943a7d7e7d19", // Customer Department
-  },
-  {
-    id: 6,
-    name: "Robertson",
-    rating: "83%",
-    completionRate: "83%",
-    strengths: ["Warranty", "Tier 2"],
-    opportunities: ["Summer Sale", "Troubleshooting"],
-    departmentId: "9bbec25d-a60a-433d-8f87-58f256fcc16f", // Operations Department
-  },
-  {
-    id: 7,
-    name: "Flores",
-    rating: "5%",
-    completionRate: "5%",
-    strengths: ["Escalation", "Brand Language"],
-    opportunities: ["Return Policy", "Troubleshooting"],
-    departmentId: "9b62f894-209c-4418-8779-16c8adde4eea", // Security Department
-  },
-  {
-    id: 8,
-    name: "Williamson",
-    rating: "39",
-    completionRate: "41%",
-    strengths: ["Call Script", "Summer Sale"],
-    opportunities: ["Tier 1", "Troubleshooting"],
-    departmentId: "ff8d7ba1-ff9b-436f-bb1e-a7dbb83bbcff", // test Department
-  },
-];
+// export const tutorsList: Tutor[] = [
+//   {
+//     id: 1,
+//     name: "John Henry",
+//     rating: "91%",
+//     completionRate: "6%",
+//     strengths: ["Shopify", "Tier 1"],
+//     opportunities: ["Return Policy", "Troubleshooting"],
+//     departmentId: "62e7b485-70c7-4807-b3e3-943a7d7e7d19", // Customer Department
+//   },
+//   {
+//     id: 2,
+//     name: "Darlene Robertson",
+//     rating: "83%",
+//     completionRate: "83%",
+//     strengths: ["Warranty", "Tier 2"],
+//     opportunities: ["Summer Sale", "Troubleshooting"],
+//     departmentId: "9bbec25d-a60a-433d-8f87-58f256fcc16f", // Operations Department
+//   },
+//   {
+//     id: 3,
+//     name: "Albert Flores",
+//     rating: "5%",
+//     completionRate: "5%",
+//     strengths: ["Escalation", "Brand Language"],
+//     opportunities: ["Return Policy", "Troubleshooting"],
+//     departmentId: "9b62f894-209c-4418-8779-16c8adde4eea", // Security Department
+//   },
+//   {
+//     id: 4,
+//     name: "Cameron Williamson",
+//     rating: "39",
+//     completionRate: "41%",
+//     strengths: ["Call Script", "Summer Sale"],
+//     opportunities: ["Tier 1", "Troubleshooting"],
+//     departmentId: "ff8d7ba1-ff9b-436f-bb1e-a7dbb83bbcff", // test Department
+//   },
+//   {
+//     id: 5,
+//     name: "John ",
+//     rating: "91%",
+//     completionRate: "6%",
+//     strengths: ["Shopify", "Tier 1"],
+//     opportunities: ["Return Policy", "Troubleshooting"],
+//     departmentId: "62e7b485-70c7-4807-b3e3-943a7d7e7d19", // Customer Department
+//   },
+//   {
+//     id: 6,
+//     name: "Robertson",
+//     rating: "83%",
+//     completionRate: "83%",
+//     strengths: ["Warranty", "Tier 2"],
+//     opportunities: ["Summer Sale", "Troubleshooting"],
+//     departmentId: "9bbec25d-a60a-433d-8f87-58f256fcc16f", // Operations Department
+//   },
+//   {
+//     id: 7,
+//     name: "Flores",
+//     rating: "5%",
+//     completionRate: "5%",
+//     strengths: ["Escalation", "Brand Language"],
+//     opportunities: ["Return Policy", "Troubleshooting"],
+//     departmentId: "9b62f894-209c-4418-8779-16c8adde4eea", // Security Department
+//   },
+//   {
+//     id: 8,
+//     name: "Williamson",
+//     rating: "39",
+//     completionRate: "41%",
+//     strengths: ["Call Script", "Summer Sale"],
+//     opportunities: ["Tier 1", "Troubleshooting"],
+//     departmentId: "ff8d7ba1-ff9b-436f-bb1e-a7dbb83bbcff", // test Department
+//   },
+// ];
 
 export const learningPaths: LearningPath[] = [
   {
@@ -148,17 +148,22 @@ export const learningPaths: LearningPath[] = [
   },
 ];
 export interface Tutor {
-  id: number;
+  id: string;
   name: string;
-  rating: string;
-  completionRate: string;
-  strengths: string[];
-  opportunities: string[];
-  departmentId?: string;
+  email?: string;
+  profile_picture?: string;
+  averageScore?: number;
+  completionRate?: number;
+  totalPaths?: number;
+  completedPaths?: number;
+  totalQuestionsAnswered?: string;
+  totalQuestionsCompleted?: number;
+  strengths?: string[];
+  opportunities?: string[];
 }
 export const tutorColumns = [
   { Header: "Tutor", accessor: "name" },
-  { Header: "Average Tutor Score", accessor: "rating" },
+  { Header: "Average Tutor Score", accessor: "averageScore" },
   { Header: "Completion Rate", accessor: "completionRate" },
   { Header: "Strength", accessor: "strengths" },
   { Header: "Opportunities", accessor: "opportunities" },
@@ -169,9 +174,9 @@ export const tutorColumns = [
 export const pathColumns = [
   { Header: "Name", accessor: "name" },
   { Header: "Learning Path", accessor: "path" },
-  { Header: "Completion", accessor: "completion" },
-  { Header: "Due Date", accessor: "dueDate" },
-  { Header: "Priority", accessor: "priority" },
+  { Header: "Overall Score", accessor: "completion" },
+  { Header: "Completed", accessor: "dueDate" },
+  // { Header: "Priority", accessor: "priority" },
   { Header: "Action", accessor: "action" },
 ];
 export const policies = [

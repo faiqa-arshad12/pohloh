@@ -27,6 +27,7 @@ import {
   TimePeriod,
   filterByTimePeriod,
 } from "@/components/shared/TimeFilter";
+import TableLoader from "../shared/table-loader";
 
 // Define interfaces based on the API response structure
 
@@ -247,21 +248,9 @@ export default function Drafts() {
                 onTimePeriodChange={handleTimePeriodChange}
                 onClearFilters={clearFilters}
               />
-
             </div>
           </div>
-          <div className="space-y-4">
-            {Array.from({length: 5}).map((_, i) => {
-              const widthPercent = Math.floor(70 + Math.random() * 30); // between 70% and 100%
-              return (
-                <Skeleton
-                  key={i}
-                  className="h-[28px]"
-                  style={{width: `${widthPercent}%`}}
-                />
-              );
-            })}
-          </div>
+          <TableLoader />
         </div>
       </div>
     );
@@ -374,7 +363,6 @@ export default function Drafts() {
               onTimePeriodChange={handleTimePeriodChange}
               onClearFilters={clearFilters}
             />
-
           </div>
         </div>
 

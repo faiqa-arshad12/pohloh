@@ -1,41 +1,104 @@
 import {useEffect, useState} from "react";
-
 import {MoreHorizontal, Trash2, GraduationCap, Ellipsis} from "lucide-react";
 import React from "react";
 import {Button} from "../ui/button";
 import Image from "next/image";
 import Table from "../ui/table";
-
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import {LearningPath, learningPaths, pathColumns} from "@/utils/analytic-data";
 import {Icon} from "@iconify/react/dist/iconify.js";
+import {apiUrl} from "@/utils/constant";
+import {Avatar} from "../shared/avatar";
+import TableLoader from "../shared/table-loader";
+import {NoData} from "../shared/NoData";
 
-interface AdminLearnignPathProps {
-  departmentId: string | null;
+interface LearningPathInsight {
+  id: string;
+  name: string;
+  learning_path_name: string;
+  learning_path_id: string;
+  overall_completion: string;
+  questions_completed: number;
+  total_questions: number;
+  completed_at: string;
+  updated_at: string;
+  profile_picture: string;
 }
 
-const AdminLearnignPath = ({departmentId}: AdminLearnignPathProps) => {
-  const [showActionMenu, setShowActionMenu] = useState(false);
-  const [filteredLearningPaths, setFilteredLearningPaths] =
-    useState<LearningPath[]>(learningPaths);
+interface ApiResponse {
+  success: boolean;
+  paths: LearningPathInsight[];
+}
+
+interface AdminLearnignPathProps {
+  orgId: string | null;
+}
+
+const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
+  const [filteredLearningPaths, setFilteredLearningPaths] = useState<
+    LearningPathInsight[]
+  >([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (departmentId === null) {
-      setFilteredLearningPaths(learningPaths);
-    } else {
-      const filtered = learningPaths.filter(
-        (path) => path.departmentId === departmentId
-      );
-      setFilteredLearningPaths(filtered);
-    }
-  }, [departmentId]);
+    fetchLearningPaths();
+  }, [orgId]);
 
-  const handleDeletePath = (id: number) => {
+  const fetchLearningPaths = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(
+        `${apiUrl}/users/learning-paths-insights/${orgId || ""}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch learning paths");
+      }
+
+      const data: ApiResponse = await response.json();
+
+      if (data.success) {
+        setFilteredLearningPaths(data.paths);
+      }
+    } catch (error) {
+      console.error("Error fetching learning paths:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeletePath = (id: string) => {
     alert("deleted" + id);
   };
 
+  // Custom cell renderer for learning paths
+  const renderPathCell = (column: string, row: LearningPathInsight) => {
+    switch (column) {
+      case "name":
+        return (
+          <div className="flex items-center gap-2">
+            <Avatar
+              name={row.name || ""}
+              profilePicture={row.profile_picture}
+            />
+          </div>
+        );
+      case "learning_path_name":
+        return row.learning_path_name;
+      case "overall_completion":
+        return row.overall_completion;
+      // case "questions_completed":
+      //   return `${row.questions_completed}/${row.total_questions}`;
+      case "completed_at":
+        return new Date(row.completed_at).toLocaleDateString();
+      case "action":
+        return renderRowActionsPath(row);
+      default:
+        return row[column as keyof LearningPathInsight];
+    }
+  };
+
   // Custom cell renderer for tutors
-  const renderRowActionsPath = (row: LearningPath) => {
+  const renderRowActionsPath = (row: LearningPathInsight) => {
     return (
       <div className="flex justify-start">
         <DropdownMenu.Root>
@@ -53,13 +116,7 @@ const AdminLearnignPath = ({departmentId}: AdminLearnignPathProps) => {
           >
             <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
               <GraduationCap className="h-4 w-4" />
-              <span>Ressign Learning Path</span>
-            </DropdownMenu.Item>
-
-            <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
-              <Icon icon="iconamoon:edit-light" width="24" height="24" />
-
-              <span>Edit</span>
+              <span>Reassign Learning Path</span>
             </DropdownMenu.Item>
             <DropdownMenu.Item
               onSelect={() => handleDeletePath(row.id)}
@@ -74,58 +131,22 @@ const AdminLearnignPath = ({departmentId}: AdminLearnignPathProps) => {
     );
   };
 
-  // Custom cell renderer for learning paths
-  const renderPathCell = (column: string, row: LearningPath) => {
-    switch (column) {
-      case "name":
-        return (
-          <div className="flex items-center gap-2">
-            <div className="rounded-full h-8 w-8 flex items-center justify-center overflow-hidden">
-              <Image
-                src="/pic1.png"
-                alt="Avatar"
-                width={32}
-                height={32}
-                className="object-cover"
-              />
-            </div>
-            {row.name}
-          </div>
-        );
-      case "priority":
-        const priorityColor =
-          row.priority === "High"
-            ? "bg-red-500"
-            : row.priority === "Medium"
-            ? "bg-yellow-500"
-            : "bg-green-500";
+  const columns = [
+    {Header: "Name", accessor: "name"},
+    {Header: "Learning Path", accessor: "learning_path_name"},
+    {Header: "Overall Score", accessor: "overall_completion"},
+    // {Header: "Questions", accessor: "questions_completed"},
+    {Header: "Completed At", accessor: "completed_at"},
+    {Header: "Actions", accessor: "action"},
+  ];
 
-        return (
-          <div className="flex items-center gap-2">
-            <div className={`h-3 w-3 rounded-full ${priorityColor}`}></div>
-            {row.priority}
-          </div>
-        );
-      case "action":
-        return (
-          <button
-            onClick={() => setShowActionMenu(!showActionMenu)}
-            className="text-gray-400"
-          >
-            <MoreHorizontal size={16} />
-          </button>
-        );
-      default:
-        return row[column as keyof LearningPath];
-    }
-  };
   return (
     <div className="bg-[#191919] rounded-[30px] p-10 mb-8 relative">
       <div className="flex justify-between mb-4 items-center">
         <h3 className="font-urbanist font-medium text-[24px] leading-[21.9px] tracking-[0]">
           Learning Path Insights
         </h3>
-        <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border  px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
+        <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
           <Icon
             icon="bi:filetype-pdf"
             width="24"
@@ -135,16 +156,25 @@ const AdminLearnignPath = ({departmentId}: AdminLearnignPathProps) => {
           />
         </Button>
       </div>
-      <Table
-        columns={pathColumns.slice(0, -1)}
-        data={filteredLearningPaths}
-        renderCell={renderPathCell}
-        renderActions={(row) => renderRowActionsPath(row as LearningPath)}
-        tableClassName="w-full text-sm"
-        headerClassName="bg-[#F9DB6F] text-black text-left font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0]"
-        bodyClassName="divide-y divide-gray-700 w-[171px] h-[68px]"
-        cellClassName="py-2 px-4 border-t border-[#E0EAF5] relative w-[171px] h-[68px] overflow-visible font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0]"
-      />
+      <div className="mt-4 overflow-x-auto">
+        {isLoading ? (
+          <TableLoader />
+        ) : filteredLearningPaths.length === 0 ? (
+          <NoData />
+        ) : (
+          <Table
+            columns={columns}
+            data={filteredLearningPaths}
+            renderCell={renderPathCell}
+            tableClassName="w-full text-sm"
+            headerClassName="bg-[#F9DB6F] text-black text-left font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0]"
+            bodyClassName="divide-y divide-gray-700 w-[171px] h-[68px]"
+            cellClassName="py-2 px-4 border-t border-[#E0EAF5] relative w-[171px] h-[68px] overflow-visible font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0]"
+            defaultItemsPerPage={4}
+            isLoading={isLoading}
+          />
+        )}
+      </div>
     </div>
   );
 };

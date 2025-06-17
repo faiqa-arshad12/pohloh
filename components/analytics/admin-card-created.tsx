@@ -6,13 +6,14 @@ import {Icon} from "@iconify/react/dist/iconify.js";
 import TopPerformance from "./top-performance";
 import {DateRangeDropdown} from "../shared/custom-date-picker";
 import {useUserHook} from "@/hooks/useUser";
-import {fetchTeams} from "./analytic.service";
+import {fetchTeams, fetchCards} from "./analytic.service";
 
 const AdminCardCreated = () => {
   const {userData} = useUserHook();
   const [teams, setTeams] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState("all");
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [cardData, setCardData] = useState([]);
 
   useEffect(() => {
     if (userData) {
@@ -23,6 +24,59 @@ const AdminCardCreated = () => {
       fetchteams();
     }
   }, [userData]);
+
+  useEffect(() => {
+    const getCards = async () => {
+      try {
+        setIsLoadingData(true);
+        if (userData?.organizations.id && userData?.id && userData?.role) {
+          const cards = await fetchCards(
+            userData.organizations.id,
+            userData.role,
+            userData.id
+          );
+          if (cards) {
+            setCardData(cards);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching cards:", error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    getCards();
+  }, [userData]);
+
+  // Process card data for graph
+  const processCardData = () => {
+    const last6Weeks = Array.from({length: 6}, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - i * 7);
+      return date;
+    }).reverse();
+
+    const weeklyData = last6Weeks.map((weekStart, index) => {
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+
+      const filteredCards = cardData.filter((card: any) => {
+        const cardDate = new Date(card.created_at);
+        const isInWeek = cardDate >= weekStart && cardDate <= weekEnd;
+        const matchesDepartment =
+          selectedTeam === "all" ||
+          (card.category_id && card.category_id.id === selectedTeam);
+        return isInWeek && matchesDepartment;
+      });
+
+      return {
+        name: `Week ${index + 1}`,
+        value: filteredCards.length,
+      };
+    });
+
+    return weeklyData;
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-ful mb-8">
@@ -56,7 +110,10 @@ const AdminCardCreated = () => {
           </div>
         </div>
 
-        <Graph departmentId={selectedTeam !== "all" ? selectedTeam : ""} />
+        <Graph
+          departmentId={selectedTeam !== "all" ? selectedTeam : ""}
+          data={processCardData()}
+        />
       </div>
 
       {/* Right Section: Top Performing Learning Paths */}
