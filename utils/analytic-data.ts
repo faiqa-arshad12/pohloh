@@ -160,6 +160,7 @@ export interface Tutor {
   totalQuestionsCompleted?: number;
   strengths?: string[];
   opportunities?: string[];
+  category?:string
 }
 export const tutorColumns = [
   { Header: "Tutor", accessor: "name" },

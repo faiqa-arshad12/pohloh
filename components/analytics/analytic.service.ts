@@ -112,3 +112,30 @@ export const fetchUserStats = async (userId: string) => {
     console.error("Error fetching cards:", error);
   }
 };
+export const getUserCompletedCards = async (
+  userId: string,
+  orgId: string,
+  team?: string,
+  startDate?: string,
+  endDate?: string
+) => {
+  try {
+    const response = await fetch(`${apiUrl}/learning-paths/completed-path/${userId}`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        orgId,
+        team,
+        startDate,
+        endDate,
+      }),
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch user");
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Error fetching cards:", error);
+  }
+};

@@ -69,7 +69,7 @@ const Table = <T,>({
 
   // Filter data
   const filteredData = data
-    .filter((row) => {
+    ?.filter((row) => {
       if (
         (loggedInUserId && (row as any).user_id === loggedInUserId) ||
         (row as any).role === "owner"

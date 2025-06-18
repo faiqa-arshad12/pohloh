@@ -9,6 +9,8 @@ import {type Tutor, tutorColumns} from "@/utils/analytic-data";
 import {Icon} from "@iconify/react/dist/iconify.js";
 import {useRouter} from "next/navigation";
 import {fetchTutorList} from "./analytic.service";
+import {useUserHook} from "@/hooks/useUser";
+import {useRole} from "../ui/Context/UserContext";
 import TableLoader from "../shared/table-loader";
 import {Avatar} from "../shared/avatar";
 import {NoData} from "../shared/NoData";
@@ -70,8 +72,9 @@ const DropdownMenuContent = React.memo(
 
 DropdownMenuContent.displayName = "DropdownMenuContent";
 
-
 const TutorList = ({departmentId, orgId}: TutorListProps) => {
+  const {userData} = useUserHook();
+  const {roleAccess} = useRole();
   const [filteredTutors, setFilteredTutors] = useState<Tutor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,9 +86,21 @@ const TutorList = ({departmentId, orgId}: TutorListProps) => {
     try {
       setLoading(true);
       setError(null);
+
       const tutors = await fetchTutorList(orgId);
       if (tutors) {
-        setFilteredTutors(tutors);
+        let filteredTutorList = tutors;
+
+        // Apply role-based filtering
+        if (roleAccess === "admin" && userData?.team_id) {
+          // Admin can only see tutors where category matches their team_id
+          filteredTutorList = tutors.filter((tutor: Tutor) => {
+            return tutor.category === userData.team_id;
+          });
+        }
+        // If roleAccess === "owner", show all tutors (no additional filtering needed)
+
+        setFilteredTutors(filteredTutorList);
       }
     } catch (error) {
       setError("Failed to load tutors. Please try again later.");
@@ -93,7 +108,7 @@ const TutorList = ({departmentId, orgId}: TutorListProps) => {
     } finally {
       setLoading(false);
     }
-  }, [orgId]);
+  }, [orgId, roleAccess, userData]);
 
   useEffect(() => {
     loadTutors();
@@ -159,9 +174,11 @@ const TutorList = ({departmentId, orgId}: TutorListProps) => {
   const headerContent = useMemo(
     () => (
       <div className="flex justify-between mb-4 flex-wrap items-center">
-        <h3 className="font-urbanist text-[24px] leading-[21.9px] tracking-[0] font-medium">
-          Tutors
-        </h3>
+        <div className="flex items-center gap-4">
+          <h3 className="font-urbanist text-[24px] leading-[21.9px] tracking-[0] font-medium">
+            Tutors
+          </h3>
+        </div>
         <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border flex items-center justify-center gap-[10px] cursor-pointer">
           <Icon
             icon="bi:filetype-pdf"
@@ -173,7 +190,7 @@ const TutorList = ({departmentId, orgId}: TutorListProps) => {
         </Button>
       </div>
     ),
-    []
+    [roleAccess]
   );
 
   if (error) {

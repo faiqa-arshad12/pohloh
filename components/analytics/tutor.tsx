@@ -98,7 +98,7 @@ export default function TutorAnalytics({id}: {id?: string | null}) {
       {/* Top Section Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8 h-auto">
         {/* Overall Tutor Score Card */}
-        <TutorScoreCard user={data?.user} />
+        <TutorScoreCard user={roleAccess ==='user' ?userData:data?.user} />
 
         {/* Tutor Analytics Card */}
         <AdminTutorAnalyticGraph id={id} />
@@ -108,7 +108,7 @@ export default function TutorAnalytics({id}: {id?: string | null}) {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Completed Learning Paths */}
         <div className="w-full max-w-2xl">
-          <CompletedLearningPaths />
+          <CompletedLearningPaths id={id}/>
         </div>
 
         {/* Insights Section */}

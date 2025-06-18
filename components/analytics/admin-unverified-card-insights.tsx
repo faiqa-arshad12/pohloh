@@ -1,20 +1,21 @@
-import {useState, useEffect} from "react";
+"use client";
 
-import {MoreHorizontal, Trash2, GraduationCap, Ellipsis} from "lucide-react";
-import React from "react";
+import {useState, useEffect} from "react";
+import {MoreHorizontal, Trash2, Ellipsis} from "lucide-react";
 import {Button} from "../ui/button";
 import Table from "../ui/table";
-
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {Icon} from "@iconify/react/dist/iconify.js";
 import {fetchCards} from "./analytic.service";
 import {useUserHook} from "@/hooks/useUser";
+import {useRole} from "../ui/Context/UserContext";
 import TableLoader from "../shared/table-loader";
 import {NoData} from "../shared/NoData";
 
 interface UnverifiedCard {
   id: string;
   category_id: {
+    id: string;
     name: string;
   };
   card_owner_id: {
@@ -27,6 +28,7 @@ interface UnverifiedCard {
 
 const AdminUnverifiedCard = () => {
   const {userData} = useUserHook();
+  const {roleAccess} = useRole();
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [filteredUnverifiedCards, setFilteredUnverifiedCards] = useState<
     UnverifiedCard[]
@@ -45,10 +47,25 @@ const AdminUnverifiedCard = () => {
           );
           if (cards) {
             console.log(cards, "card");
+
+            // First filter for unverified cards
             const unverifiedCards = cards.filter(
               (card: any) => card.is_verified === false
             );
-            setFilteredUnverifiedCards(unverifiedCards);
+
+            // Then apply role-based filtering
+            let roleFilteredCards = unverifiedCards;
+
+            if (roleAccess === "admin") {
+              // Admin can only see cards where category_id matches their team_id
+              roleFilteredCards = unverifiedCards.filter(
+                (card: any) =>
+                  card.category_id && card.category_id.id === userData?.team_id
+              );
+            }
+            // If roleAccess === "owner", show all unverified cards (no additional filtering needed)
+
+            setFilteredUnverifiedCards(roleFilteredCards);
           }
         }
       } catch (error) {
@@ -58,11 +75,12 @@ const AdminUnverifiedCard = () => {
       }
     };
     getUnverifiedCards();
-  }, [userData]);
+  }, [userData, roleAccess]);
 
   const handleDeletePath = (id: string) => {
     alert("deleted" + id);
   };
+
   const unverfiedCardColumns = [
     {Header: "Card Name", accessor: "title"},
     {Header: "Category", accessor: "category_id.name"},
@@ -70,6 +88,7 @@ const AdminUnverifiedCard = () => {
     {Header: "Owner", accessor: "ownerName"},
     {Header: "Action", accessor: "action"},
   ];
+
   // Custom cell renderer for tutors
   const renderRowActionsPath = (row: UnverifiedCard) => {
     return (
@@ -87,14 +106,8 @@ const AdminUnverifiedCard = () => {
             sideOffset={4}
             className="min-w-[200px] bg-[#222222] border border-[#333] rounded-md shadow-lg py-2 p-2 z-50"
           >
-            {/* <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
-              <GraduationCap className="h-4 w-4" />
-              <span>Ressign Learning Path</span>
-            </DropdownMenu.Item> */}
-
             <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
               <Icon icon="iconamoon:edit-light" width="24" height="24" />
-
               <span>Edit</span>
             </DropdownMenu.Item>
             <DropdownMenu.Item
@@ -150,13 +163,16 @@ const AdminUnverifiedCard = () => {
         return null;
     }
   };
+
   return (
     <div className="bg-[#191919] rounded-[30px] p-10 mb-8 relative">
       <div className="flex justify-between mb-4 items-center">
-        <h3 className="font-urbanist font-medium text-[24px] leading-[21.9px] tracking-[0]">
-          Unverified Cards Insights
-        </h3>
-        <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border  px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
+        <div className="flex items-center gap-4">
+          <h3 className="font-urbanist font-medium text-[24px] leading-[21.9px] tracking-[0]">
+            Unverified Cards Insights
+          </h3>
+        </div>
+        <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
           <Icon
             icon="bi:filetype-pdf"
             width="24"

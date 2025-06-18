@@ -1,5 +1,7 @@
-import {ChevronDown, Trophy} from "lucide-react";
-import React, {useState, useEffect} from "react";
+"use client";
+
+import {Trophy} from "lucide-react";
+import {useState, useEffect} from "react";
 import {Button} from "../ui/button";
 import Graph from "./graph";
 import {Icon} from "@iconify/react/dist/iconify.js";
@@ -7,6 +9,7 @@ import TopPerformance from "./top-performance";
 import {DateRangeDropdown} from "../shared/custom-date-picker";
 import {useUserHook} from "@/hooks/useUser";
 import {fetchTeams, fetchCards} from "./analytic.service";
+import {useRole} from "../ui/Context/UserContext";
 
 const AdminCardCreated = () => {
   const {userData} = useUserHook();
@@ -14,9 +17,10 @@ const AdminCardCreated = () => {
   const [selectedTeam, setSelectedTeam] = useState("all");
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [cardData, setCardData] = useState([]);
+  const {roleAccess} = useRole();
 
   useEffect(() => {
-    if (userData) {
+    if (userData && roleAccess === "owner") {
       const fetchteams = async () => {
         const response = await fetchTeams((userData.org_id as string) || "");
         setTeams(response);
@@ -63,9 +67,20 @@ const AdminCardCreated = () => {
       const filteredCards = cardData.filter((card: any) => {
         const cardDate = new Date(card.created_at);
         const isInWeek = cardDate >= weekStart && cardDate <= weekEnd;
-        const matchesDepartment =
-          selectedTeam === "all" ||
-          (card.category_id && card.category_id.id === selectedTeam);
+
+        let matchesDepartment = false;
+
+        if (roleAccess === "owner") {
+          // Owner can see all cards or filter by selected department
+          matchesDepartment =
+            selectedTeam === "all" ||
+            (card.category_id && card.category_id.id === selectedTeam);
+        } else if (roleAccess === "admin") {
+          // Admin can only see cards where category_id matches their team_id
+          matchesDepartment =
+            card.category_id && card.category_id.id === userData?.team_id;
+        }
+
         return isInWeek && matchesDepartment;
       });
 
@@ -93,25 +108,35 @@ const AdminCardCreated = () => {
                 className="cursor-pointer"
               />
             </Button>
-            <DateRangeDropdown
-              selectedRange={selectedTeam}
-              onRangeChange={setSelectedTeam}
-              width="300px"
-              disabled={isLoadingData}
-              bg="bg-[black]"
-              options={[
-                {label: "All Department", value: "all"},
-                ...teams.map((team: any) => ({
-                  label: team.name,
-                  value: team.id,
-                })),
-              ]}
-            />
+            {/* Only show department filter for owners */}
+            {roleAccess === "owner" && (
+              <DateRangeDropdown
+                selectedRange={selectedTeam}
+                onRangeChange={setSelectedTeam}
+                width="300px"
+                disabled={isLoadingData}
+                bg="bg-[black]"
+                options={[
+                  {label: "All Department", value: "all"},
+                  ...teams.map((team: any) => ({
+                    label: team.name,
+                    value: team.id,
+                  })),
+                ]}
+              />
+            )}
+            {/* Show current team info for admins */}
           </div>
         </div>
 
         <Graph
-          departmentId={selectedTeam !== "all" ? selectedTeam : ""}
+          departmentId={
+            roleAccess === "owner"
+              ? selectedTeam !== "all"
+                ? selectedTeam
+                : ""
+              : userData?.team_id || ""
+          }
           data={processCardData()}
         />
       </div>

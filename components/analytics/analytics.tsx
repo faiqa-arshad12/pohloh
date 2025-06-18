@@ -28,8 +28,7 @@ function AnalyticsContent() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [teams, setTeams] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState("all");
-  const [selectedPath, setSelectedPath] = useState("all");
-
+// alert(roleAccess)
   useEffect(() => {
     if (roleAccess === "user") {
       setTutorId(userData?.id);
@@ -165,7 +164,7 @@ function AnalyticsContent() {
                   />
                   </>
                    )}
-                  {activeTab === "tutor" && roleAccess !== "user" && !tutorId && (
+                  {activeTab === "tutor" && roleAccess === "owner" && !tutorId && (
                     <DateRangeDropdown
                       selectedRange={selectedTeam}
                       onRangeChange={setSelectedTeam}
@@ -221,7 +220,7 @@ function AnalyticsContent() {
           }`}
         >
           {activeTab === "tutor" &&
-          (roleAccess == "user" || tutorId !== null) ? (
+          (roleAccess === "user" || tutorId!== null) ? (
             <TutorAnalytics id={tutorId} />
           ) : activeTab === "tutor" && roleAccess !== "user" && !tutorId ? (
             <AdminAanalytic selectedTeam={selectedTeam} />

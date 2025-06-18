@@ -1,13 +1,15 @@
+"use client";
+
 import {useEffect, useState} from "react";
-import {MoreHorizontal, Trash2, GraduationCap, Ellipsis} from "lucide-react";
-import React from "react";
+import {Trash2, GraduationCap, Ellipsis} from "lucide-react";
 import {Button} from "../ui/button";
-import Image from "next/image";
 import Table from "../ui/table";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {Icon} from "@iconify/react/dist/iconify.js";
 import {apiUrl} from "@/utils/constant";
 import {Avatar} from "../shared/avatar";
+import {useUserHook} from "@/hooks/useUser";
+import {useRole} from "../ui/Context/UserContext";
 import TableLoader from "../shared/table-loader";
 import {NoData} from "../shared/NoData";
 
@@ -16,6 +18,7 @@ interface LearningPathInsight {
   name: string;
   learning_path_name: string;
   learning_path_id: string;
+  category: string;
   overall_completion: string;
   questions_completed: number;
   total_questions: number;
@@ -34,6 +37,8 @@ interface AdminLearnignPathProps {
 }
 
 const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
+  const {userData} = useUserHook();
+  const {roleAccess} = useRole();
   const [filteredLearningPaths, setFilteredLearningPaths] = useState<
     LearningPathInsight[]
   >([]);
@@ -41,13 +46,15 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
 
   useEffect(() => {
     fetchLearningPaths();
-  }, [orgId]);
+  }, [orgId, userData, roleAccess]);
 
   const fetchLearningPaths = async () => {
     try {
       setIsLoading(true);
       const response = await fetch(
-        `${apiUrl}/users/learning-paths-insights/${orgId || ""}`
+        `${apiUrl}/users/learning-paths-insights/${
+          userData?.organizations.id || ""
+        }`
       );
 
       if (!response.ok) {
@@ -57,7 +64,18 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
       const data: ApiResponse = await response.json();
 
       if (data.success) {
-        setFilteredLearningPaths(data.paths);
+        let filteredPaths = data.paths;
+
+        // Apply role-based filtering
+        if (roleAccess === "admin" && userData?.team_id) {
+          // Admin can only see learning paths where category matches their team_id
+          filteredPaths = data.paths.filter(
+            (path) => path.category === userData.team_id
+          );
+        }
+        // If roleAccess === "owner", show all learning paths (no additional filtering needed)
+
+        setFilteredLearningPaths(filteredPaths);
       }
     } catch (error) {
       console.error("Error fetching learning paths:", error);
@@ -86,8 +104,6 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
         return row.learning_path_name;
       case "overall_completion":
         return row.overall_completion;
-      // case "questions_completed":
-      //   return `${row.questions_completed}/${row.total_questions}`;
       case "completed_at":
         return new Date(row.completed_at).toLocaleDateString();
       case "action":
@@ -135,7 +151,6 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
     {Header: "Name", accessor: "name"},
     {Header: "Learning Path", accessor: "learning_path_name"},
     {Header: "Overall Score", accessor: "overall_completion"},
-    // {Header: "Questions", accessor: "questions_completed"},
     {Header: "Completed At", accessor: "completed_at"},
     {Header: "Actions", accessor: "action"},
   ];
@@ -143,9 +158,11 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
   return (
     <div className="bg-[#191919] rounded-[30px] p-10 mb-8 relative">
       <div className="flex justify-between mb-4 items-center">
-        <h3 className="font-urbanist font-medium text-[24px] leading-[21.9px] tracking-[0]">
-          Learning Path Insights
-        </h3>
+        <div className="flex items-center gap-4">
+          <h3 className="font-urbanist font-medium text-[24px] leading-[21.9px] tracking-[0]">
+            Learning Path Insights
+          </h3>
+        </div>
         <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
           <Icon
             icon="bi:filetype-pdf"
