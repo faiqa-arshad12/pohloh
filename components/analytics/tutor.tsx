@@ -8,13 +8,24 @@ import MetricCard from "@/components/matric-card";
 import {Flame} from "lucide-react";
 import {useRole} from "@/components/ui/Context/UserContext";
 import AdminTutorAnalyticGraph from "./tutor-analytic-graph";
-import {fetchUserStats} from "./analytic.service";
+import {fetchTutorStats, fetchUserStats} from "./analytic.service";
 import {useUserHook} from "@/hooks/useUser";
 
-export default function TutorAnalytics({id}: {id?: string | null}) {
+export default function TutorAnalytics({
+  id,
+  startDate,
+  endDate,
+  team,
+}: {
+  id?: string | null;
+  startDate?: Date;
+  endDate?: Date;
+  team?: string;
+}) {
   const {roleAccess} = useRole();
   const [data, setData] = useState<any>();
   const {userData} = useUserHook();
+  const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
     if (id) {
@@ -29,11 +40,9 @@ export default function TutorAnalytics({id}: {id?: string | null}) {
             console.log("Generated Chart Data:", response);
           } else {
             console.log("No valid data in response");
-            // Set default data if no valid response
           }
         } catch (error) {
           console.error("Error fetching tutor score:", error);
-          // Set default data on error
         } finally {
         }
       };
@@ -41,12 +50,26 @@ export default function TutorAnalytics({id}: {id?: string | null}) {
     }
   }, [id]);
 
+  useEffect(() => {
+    const fetchStats = async () => {
+      const stats = await fetchTutorStats(
+        roleAccess === "user" ? userData.id : id,
+        startDate ? startDate.toISOString() : undefined,
+        endDate ? endDate.toISOString() : undefined,
+        team !== "all" ? team : undefined
+      );
+      setStats(stats?.stats);
+    };
+
+    if (id || userData) fetchStats();
+  }, [id, userData, startDate, endDate, team]);
+
   return (
     <div className="">
       {/* <AnalyticsDashboard/> */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
         <MetricCard
-          value="08"
+          value={stats?.completedLearningPaths | 0}
           label="Learning Paths Completed"
           icon={
             <div className="">
@@ -56,7 +79,7 @@ export default function TutorAnalytics({id}: {id?: string | null}) {
         />
 
         <MetricCard
-          value="160"
+          value={stats?.totalQuestionsAnswered | 0}
           label="Total Questions Answered"
           icon={
             <div className="">
@@ -95,29 +118,21 @@ export default function TutorAnalytics({id}: {id?: string | null}) {
           }
         />
       </div>
-      {/* Top Section Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8 h-auto">
-        {/* Overall Tutor Score Card */}
-        <TutorScoreCard user={roleAccess ==='user' ?userData:data?.user} />
+        <TutorScoreCard user={roleAccess === "user" ? userData : data?.user} />
 
-        {/* Tutor Analytics Card */}
         <AdminTutorAnalyticGraph id={id} />
       </div>
 
-      {/* Bottom Section Grid */}
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Completed Learning Paths */}
         <div className="w-full max-w-2xl">
-          <CompletedLearningPaths id={id}/>
+          <CompletedLearningPaths id={id} />
         </div>
 
-        {/* Insights Section */}
         <div className="w-full">
           <div className="bg-[#1c1c1c] rounded-2xl p-6 shadow-lg">
-            {/* Category Scores */}
             <CategoriesScore />
 
-            {/* Strengths & Opportunities */}
             <StrengthWeekness />
           </div>
         </div>
