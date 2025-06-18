@@ -12,9 +12,9 @@ import {
   Cell,
   ReferenceDot,
 } from "recharts";
-import {fetchTutorScore} from "./analytic.service";
+import {fetchTutorScore, fetchTeams} from "./analytic.service";
 import {useUserHook} from "@/hooks/useUser";
-import Loader from "../shared/loader";
+import {DateRangeDropdown} from "../shared/custom-date-picker";
 
 const generateChartData = (monthlyData: any[]) => {
   // Get current month index (0-11)
@@ -98,8 +98,21 @@ const AdminTutorAnalyticGraph = ({
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState("all");
   const {roleAccess} = useRole();
   const {userData} = useUserHook();
+
+  // Fetch teams for owner
+  useEffect(() => {
+    if (userData && roleAccess === "owner") {
+      const fetchteams = async () => {
+        const response = await fetchTeams((userData.org_id as string) || "");
+        setTeams(response || []);
+      };
+      fetchteams();
+    }
+  }, [userData, roleAccess]);
 
   // Initialize default date range (Last 30 days)
   useEffect(() => {
@@ -110,39 +123,41 @@ const AdminTutorAnalyticGraph = ({
     setEndDate(today);
   }, []);
 
-  // Fetch initial data
+  // Fetch initial data and when selectedTeam changes
   useEffect(() => {
     const fetchData = async () => {
       if (userData?.organizations?.id) {
         setIsLoadingData(true);
         try {
-          const response = await fetchTutorScore(userData.organizations.id);
+          let category = undefined;
+          if (roleAccess === "owner") {
+            category = selectedTeam !== "all" ? selectedTeam : undefined;
+          } else if (roleAccess === "admin") {
+            category = userData?.team_id;
+          }
+          const response = await fetchTutorScore(
+            id ? id : userData.id,
+            category
+          );
 
           if (response && response.score && response.score.monthly) {
             const generatedData = generateChartData(response.score.monthly);
-            console.log("Generated Chart Data:", generatedData);
             setChartData(generatedData);
           } else {
-            console.log("No valid data in response");
-            // Set default data if no valid response
             setChartData(generateChartData([]));
           }
         } catch (error) {
-          console.error("Error fetching tutor score:", error);
-          // Set default data on error
           setChartData(generateChartData([]));
         } finally {
           setIsLoadingData(false);
         }
       } else {
-        console.log("No organization ID available");
-        // Set default data if no org ID
         setChartData(generateChartData([]));
       }
     };
 
     fetchData();
-  }, [userData]);
+  }, [userData, selectedTeam, roleAccess]);
 
   const handleRangeChange = async (range: string) => {
     setSelectedRange(range);
@@ -252,6 +267,22 @@ const AdminTutorAnalyticGraph = ({
                 className="cursor-pointer"
               />
             </Button>
+          )}
+          {/* Department filter for owners */}
+          {roleAccess === "owner" && !id && !dashboard && (
+            <DateRangeDropdown
+              selectedRange={selectedTeam}
+              onRangeChange={setSelectedTeam}
+              width="250px"
+              disabled={isLoadingData}
+              options={[
+                {label: "All Department", value: "all"},
+                ...teams.map((team: any) => ({
+                  label: team.name,
+                  value: team.id,
+                })),
+              ]}
+            />
           )}
         </div>
       </div>

@@ -15,7 +15,7 @@ export default function TutorScoreCard() {
       if (userData?.organizations?.id) {
         setIsLoadingData(true);
         try {
-          const response = await fetchTutorScore(userData.organizations.id);
+          const response = await fetchTutorScore(userData.id);
           setData(response.score);
         } catch (error) {
           console.error("Error fetching tutor score:", error);

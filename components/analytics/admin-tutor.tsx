@@ -1,4 +1,4 @@
-import {useEffect} from "react";
+import {useEffect, useState} from "react";
 
 import {Flame} from "lucide-react";
 import React from "react";
@@ -96,7 +96,7 @@ const AdminAanalytic = ({selectedTeam}: AdminAanalyticProps) => {
 
       <TutorList departmentId={departmentId} orgId={userData?.org_id} />
 
-      <AdminLearnignPath  orgId={userData?.org_id} />
+      <AdminLearnignPath orgId={userData?.org_id} />
       <AdminUnverifiedCard />
 
       <div className="flex flex-col">
