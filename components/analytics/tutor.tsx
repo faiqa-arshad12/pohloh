@@ -86,29 +86,8 @@ export default function TutorAnalytics({
             </div>
           }
         />
-        {roleAccess !== "user" ? (
-          <MetricCard
-            value="3/11"
-            label="Team Rank"
-            icon={
-              <div className="">
-                <img src="/rank.png" alt="rank" />
-              </div>
-            }
-          />
-        ) : (
-          <MetricCard
-            value="#14"
-            label="Leaderboard"
-            icon={
-              <div className="">
-                <img src="/goal.png" alt="goal" />
-              </div>
-            }
-          />
-        )}
         <MetricCard
-          value="82%"
+          value="---"
           label="Daily Goal Achieved"
           icon={
             <div className="bg-[#6B91D933] p-2 rounded-full">
@@ -116,7 +95,23 @@ export default function TutorAnalytics({
             </div>
           }
         />
+        <MetricCard
+          value={
+            stats?.teamRank?.rank &&
+            stats.teamRank.rank !== 0 &&
+            stats?.teamRank?.teamSize
+              ? `${stats.teamRank.rank} / ${stats.teamRank.teamSize}`
+              : "---"
+          }
+          label="Team Rank"
+          icon={
+            <div className="">
+              <img src="/rank.png" alt="rank" />
+            </div>
+          }
+        />
       </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8 h-auto">
         <TutorScoreCard user={roleAccess === "user" ? userData : data?.user} />
 

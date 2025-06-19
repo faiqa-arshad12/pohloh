@@ -64,80 +64,67 @@ const AdminAanalytic = ({
 
   return (
     <div>
+      <>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+          <MetricCard
+            value={stats?.completedLearningPaths | 0}
+            label="Learning Paths Completed"
+            icon={
+              <div className="">
+                <img src="/check-icon.png" alt="check" />
+              </div>
+            }
+            loading={loading}
+          />
 
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+          <MetricCard
+            value={stats?.totalQuestionsAnswered | 0}
+            label="Total Questions Answered"
+            icon={
+              <div className="">
+                <img src="/total_question.png" alt="questions" />
+              </div>
+            }
+            loading={loading}
+          />
+          <MetricCard
+            value="---"
+            label="Daily Goal Achieved"
+            icon={
+              <div className="bg-[#6B91D933] p-2 rounded-full">
+                <Flame className="text-[#EFBE0F] w-10 h-10" />
+              </div>
+            }
+            loading={loading}
+          />
             <MetricCard
-              value={stats?.completedLearningPaths | 0}
-              label="Learning Paths Completed"
+              value={`${stats?.verifiedPercentage||0}%`}
+              label="Org Trust Score"
               icon={
                 <div className="">
-                  <img src="/check-icon.png" alt="check" />
+                  <img src="/rank.png" alt="rank" />
                 </div>
               }
               loading={loading}
             />
 
-            <MetricCard
-              value={stats?.totalQuestionsAnswered | 0}
-              label="Total Questions Answered"
-              icon={
-                <div className="">
-                  <img src="/total_question.png" alt="questions" />
-                </div>
-              }
-              loading={loading}
-            />
-            <MetricCard
-              value="82%"
-              label="Daily Goal Achieved"
-              icon={
-                <div className="bg-[#6B91D933] p-2 rounded-full">
-                  <Flame className="text-[#EFBE0F] w-10 h-10" />
-                </div>
-              }
-              loading={loading}
-            />
-            {roleAccess !== "user" ? (
-              <MetricCard
-                value="3/11"
-                label="Org Trust Score"
-                icon={
-                  <div className="">
-                    <img src="/rank.png" alt="rank" />
-                  </div>
-                }
-                loading={loading}
-              />
-            ) : (
-              <MetricCard
-                value="#14"
-                label="Leaderboard"
-                icon={
-                  <div className="">
-                    <img src="/goal.png" alt="goal" />
-                  </div>
-                }
-                loading={loading}
-              />
-            )}
-          </div>
-          {/* Tutor Score Section */}
-          <div className="flex flex-col md:grid md:grid-cols-4 gap-4 mb-8 h-full">
-            <TutorScoreCard />
-            <AdminTutorAnalyticGraph />
-          </div>
+        </div>
+        {/* Tutor Score Section */}
+        <div className="flex flex-col md:grid md:grid-cols-4 gap-4 mb-8 h-full">
+          <TutorScoreCard />
+          <AdminTutorAnalyticGraph />
+        </div>
 
-          <TutorList departmentId={departmentId} orgId={userData?.org_id} />
+        <TutorList departmentId={departmentId} orgId={userData?.org_id} />
 
-          <AdminLearnignPath orgId={userData?.org_id} />
-          <AdminUnverifiedCard />
+        <AdminLearnignPath orgId={userData?.org_id} />
+        <AdminUnverifiedCard />
 
-          <div className="flex flex-col">
-            <AdminCardCreated />
-            <AdminLeaderBoard />
-          </div>
-        </>
+        <div className="flex flex-col">
+          <AdminCardCreated />
+          <AdminLeaderBoard />
+        </div>
+      </>
     </div>
   );
 };

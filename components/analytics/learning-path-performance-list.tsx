@@ -18,10 +18,6 @@ interface LearningPathPerformanceData {
   averageScore: number;
 }
 
-function getStatusLabel(score: number) {
-  return score < 50 ? "Low" : "High";
-}
-
 export default function LearningPathsPerformanceList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [data, setData] = useState<LearningPathPerformanceData[]>([]);
@@ -56,8 +52,7 @@ export default function LearningPathsPerformanceList() {
     return data.filter(
       (row) =>
         row.title.toLowerCase().includes(query) ||
-        row.averageScore.toString().includes(query) ||
-        getStatusLabel(row.averageScore).toLowerCase().includes(query)
+        row.averageScore.toString().includes(query)
     );
   }, [data, searchQuery]);
 
@@ -65,7 +60,6 @@ export default function LearningPathsPerformanceList() {
   const columns = [
     {Header: "Learning Paths", accessor: "title"},
     {Header: "Overall Score", accessor: "averageScore"},
-    {Header: "Status Label", accessor: "statusLabel"},
   ];
 
   // Render cell
@@ -75,9 +69,6 @@ export default function LearningPathsPerformanceList() {
     }
     if (column === "title") {
       return row.title;
-    }
-    if (column === "statusLabel") {
-      return getStatusLabel(row.averageScore);
     }
     return "-";
   };
@@ -94,7 +85,7 @@ export default function LearningPathsPerformanceList() {
         <div className="flex items-center gap-2">
           <SearchInput
             onChange={setSearchQuery}
-            placeholder="Search by title, score, or status..."
+            placeholder="Search by title or score..."
           />
         </div>
       </div>
