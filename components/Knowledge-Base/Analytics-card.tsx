@@ -805,7 +805,8 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                   {expandedSubcategories[subcategory.id] &&
                     subcategory.knowledge_card &&
                     subcategory.knowledge_card.length > 0 && (
-                      <div className="mx-5 mt-2 space-y-3 max-h-[450px] overflow-auto flex flex-col items-center">
+                    <div className="mx-5 mt-2 space-y-3 max-h-[450px] overflow-auto flex flex-col items-center gap-2 pr-1">
+
                         {" "}
                         {subcategory.knowledge_card.map((item) => (
                           <div
@@ -858,8 +859,8 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                 <div className="flex items-center">
                   <div className="relative group">
                     <h2 className="font-urbanist font-semibold text-[40px] leading-normal align-middle mr-3 break-all overflow-hidden">
-                      {activeItem.title.length > 12
-                        ? `${activeItem.title.substring(0, 12)}...`
+                      {activeItem.title.length > 30
+                        ? `${activeItem.title.substring(0, 30)}...`
                         : activeItem.title}
                     </h2>
                     <div className="absolute z-10 hidden group-hover:block bg-[#191919] text-white text-sm rounded px-2 py-1 top-full mt-1 left-0 whitespace-nowrap">
