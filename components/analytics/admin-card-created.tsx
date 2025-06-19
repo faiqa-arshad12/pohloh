@@ -8,7 +8,11 @@ import {Icon} from "@iconify/react/dist/iconify.js";
 import TopPerformance from "./top-performance";
 import {DateRangeDropdown} from "../shared/custom-date-picker";
 import {useUserHook} from "@/hooks/useUser";
-import {fetchTeams, fetchCards} from "./analytic.service";
+import {
+  fetchTeams,
+  fetchCards,
+  fetchLeaningPathPerformance,
+} from "./analytic.service";
 import {useRole} from "../ui/Context/UserContext";
 
 const AdminCardCreated = () => {
@@ -18,6 +22,9 @@ const AdminCardCreated = () => {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [cardData, setCardData] = useState([]);
   const {roleAccess} = useRole();
+  const [learningPathPerformance, setLearningPathPerformance] =
+    useState<any>(null);
+  const [isLoadingPerformance, setIsLoadingPerformance] = useState(false);
 
   useEffect(() => {
     if (userData && roleAccess === "owner") {
@@ -50,6 +57,23 @@ const AdminCardCreated = () => {
       }
     };
     getCards();
+  }, [userData]);
+
+  useEffect(() => {
+    const getPerformance = async () => {
+      if (userData?.id) {
+        setIsLoadingPerformance(true);
+        try {
+          const result = await fetchLeaningPathPerformance(userData.id);
+          setLearningPathPerformance(result?.path || null);
+        } catch (error) {
+          setLearningPathPerformance(null);
+        } finally {
+          setIsLoadingPerformance(false);
+        }
+      }
+    };
+    getPerformance();
   }, [userData]);
 
   // Process card data for graph
@@ -145,14 +169,48 @@ const AdminCardCreated = () => {
       <div className="col-span-1 md:col-span-2 lg:col-span-1 space-y-6">
         <TopPerformance
           title="Top Performing Learning Path"
-          subtitle="Warrant Policy"
-          percentage="92%"
+          subtitle={
+            isLoadingPerformance
+              ? "Loading..."
+              : learningPathPerformance?.top?.title
+              ? learningPathPerformance.top.title
+              : learningPathPerformance && !learningPathPerformance.top
+              ? "No data available"
+              : "-"
+          }
+          percentage={
+            isLoadingPerformance
+              ? "--"
+              : learningPathPerformance?.top?.averageScore !== undefined &&
+                learningPathPerformance?.top?.averageScore !== null
+              ? `${learningPathPerformance.top.averageScore}%`
+              : learningPathPerformance && !learningPathPerformance.top
+              ? "--"
+              : "-"
+          }
           icon={Trophy}
         />
         <TopPerformance
           title="Worst Performing Learning Path"
-          subtitle="Warrant Policy"
-          percentage="50%"
+          subtitle={
+            isLoadingPerformance
+              ? "Loading..."
+              : learningPathPerformance?.worst?.title
+              ? learningPathPerformance.worst.title
+              : learningPathPerformance && !learningPathPerformance.worst
+              ? "No data available"
+              : "-"
+          }
+          percentage={
+            isLoadingPerformance
+              ? "--"
+              : learningPathPerformance?.worst?.averageScore !== undefined &&
+                learningPathPerformance?.worst?.averageScore !== null
+              ? `${learningPathPerformance.worst.averageScore}%`
+              : learningPathPerformance && !learningPathPerformance.worst
+              ? "--"
+              : "-"
+          }
           customIcon={
             <img src="/triangle-alert.png" alt="Alert" className="" />
           }

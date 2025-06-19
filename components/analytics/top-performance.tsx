@@ -1,4 +1,5 @@
 import type {LucideIcon} from "lucide-react";
+import {useRouter} from "next/navigation";
 import type {ReactNode} from "react";
 
 interface TopPerformanceProps {
@@ -18,6 +19,10 @@ const TopPerformance = ({
   customIcon,
   iconSize = 40,
 }: TopPerformanceProps) => {
+  const router = useRouter();
+  const handleViewAll = () => {
+    router.push("/analytics/learning-path-performance");
+  };
   return (
     <div className="bg-[#191919] p-6 rounded-[12px] text-white shadow-md w-full">
       <div className="flex flex-col">
@@ -25,7 +30,12 @@ const TopPerformance = ({
           <h4 className="font-urbanist font-bold text-[16px] leading-[140%] tracking-[0.01em] text-white">
             {title}
           </h4>
-          <h4 className="font-urbanist font-bold text-[14px] text-[#F9DB6F] font-normal cursor-pointer underline">
+          <h4
+            className="font-urbanist font-bold text-[14px] text-[#F9DB6F] font-normal cursor-pointer underline"
+            onClick={() => {
+              handleViewAll();
+            }}
+          >
             View All
           </h4>
         </div>

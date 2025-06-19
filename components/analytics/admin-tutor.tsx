@@ -135,7 +135,7 @@ const AdminAanalytic = ({
 
           <div className="flex flex-col">
             <AdminCardCreated />
-            <AdminLeaderBoard departmentId={departmentId} />
+            <AdminLeaderBoard />
           </div>
         </>
     </div>

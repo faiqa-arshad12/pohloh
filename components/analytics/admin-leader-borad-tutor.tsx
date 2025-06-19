@@ -14,7 +14,7 @@ interface AdminLeaderBoardProps {
   departmentId: string | null;
 }
 
-const AdminLeaderBoard = ({departmentId}: AdminLeaderBoardProps) => {
+const AdminLeaderBoard = () => {
   interface LeaderboardEntry {
     name: string;
     completion: string;
