@@ -14,6 +14,7 @@ import {useRole} from "../ui/Context/UserContext";
 import TableLoader from "../shared/table-loader";
 import {Avatar} from "../shared/avatar";
 import {NoData} from "../shared/NoData";
+import {exportToPDF} from "@/utils/exportToPDF";
 
 interface TutorListProps {
   departmentId: string | null;
@@ -42,9 +43,11 @@ TagList.displayName = "TagList";
 const DropdownMenuContent = React.memo(
   ({
     onViewClick,
+    onExportPDF,
     tutor,
   }: {
     onViewClick: (tutor: Tutor) => void;
+    onExportPDF: (tutor: Tutor) => void;
     tutor: Tutor;
   }) => (
     <DropdownMenu.Content
@@ -53,7 +56,10 @@ const DropdownMenuContent = React.memo(
       sideOffset={4}
       className="min-w-[200px] bg-[#222222] border border-[#333] rounded-md shadow-lg py-2 p-2 z-50"
     >
-      <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
+      <DropdownMenu.Item
+        className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer"
+        onClick={() => onExportPDF(tutor)}
+      >
         <Icon icon="proicons:pdf" width="24" height="24" />
         <span>Export as PDF</span>
       </DropdownMenu.Item>
@@ -119,6 +125,66 @@ const TutorList = ({orgId}: TutorListProps) => {
     [router]
   );
 
+  const exportSingleTutorToPDF = useCallback((tutor: Tutor) => {
+    // Create a filtered object with only the fields we want to export
+    const filteredTutorData = {
+      name: tutor.name,
+      email: tutor.email,
+      averageScore: tutor.averageScore,
+      strengths: tutor.strengths,
+      opportunities: tutor.opportunities,
+      completionRate: tutor.completionRate,
+      totalPaths: tutor.totalPaths,
+      completedPaths: tutor.completedPaths,
+    };
+
+    exportToPDF({
+      title: "Tutor Details",
+      filename: `tutor-${
+        tutor.name?.replace(/\s+/g, "-").toLowerCase() || "details"
+      }`,
+      data: filteredTutorData,
+      type: "details",
+      headers: {
+        name: "Name",
+        email: "Email",
+        averageScore: "Average Score",
+        strengths: "Strengths",
+        opportunities: "Opportunities",
+        completionRate: "Completion Rate",
+        totalPaths: "Total Paths",
+        completedPaths: "Completed Paths",
+      },
+    });
+  }, []);
+
+  const exportAllTutorsToPDF = useCallback(() => {
+    if (filteredTutors.length === 0) return;
+
+    exportToPDF({
+      title: "Tutors List",
+      filename: "tutors-list",
+      data: filteredTutors,
+      type: "table",
+      columns: [
+        "name",
+        "email",
+        "averageScore",
+        "completionRate",
+        "strengths",
+        "opportunities",
+      ],
+      headers: {
+        name: "Name",
+        email: "Email",
+        averageScore: "Tutor Score",
+        completionRate: "Completion Rate",
+        strengths: "Strengths",
+        opportunities: "Opportunities",
+      },
+    });
+  }, [filteredTutors]);
+
   const cellRenderers = useMemo(
     () => ({
       strengths: (row: Tutor) => <TagList items={row.strengths} />,
@@ -147,11 +213,15 @@ const TutorList = ({orgId}: TutorListProps) => {
               <Ellipsis className="h-5 w-5 text-white" />
             </button>
           </DropdownMenu.Trigger>
-          <DropdownMenuContent onViewClick={handleViewTutorScore} tutor={row} />
+          <DropdownMenuContent
+            onViewClick={handleViewTutorScore}
+            onExportPDF={exportSingleTutorToPDF}
+            tutor={row}
+          />
         </DropdownMenu.Root>
       </div>
     ),
-    [handleViewTutorScore]
+    [handleViewTutorScore, exportSingleTutorToPDF]
   );
 
   const tableColumns = useMemo(() => tutorColumns.slice(0, -1), []);
@@ -173,7 +243,11 @@ const TutorList = ({orgId}: TutorListProps) => {
             Tutors
           </h3>
         </div>
-        <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border flex items-center justify-center gap-[10px] cursor-pointer">
+        <Button
+          className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border flex items-center justify-center gap-[10px] cursor-pointer"
+          onClick={exportAllTutorsToPDF}
+          disabled={loading || filteredTutors.length === 0}
+        >
           <Icon
             icon="bi:filetype-pdf"
             width="24"
@@ -184,7 +258,7 @@ const TutorList = ({orgId}: TutorListProps) => {
         </Button>
       </div>
     ),
-    [roleAccess]
+    [exportAllTutorsToPDF, loading, filteredTutors.length]
   );
 
   if (error) {
