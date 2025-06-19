@@ -21,7 +21,7 @@ import {ShowToast} from "@/components/shared/show-toast";
 import {iconCategories, iconComponents, renderIcon} from "@/lib/renderIcon";
 import {IconName} from "@/types/types";
 import {Skeleton} from "@/components/ui/skeleton";
-import { apiUrl } from "@/utils/constant";
+import {apiUrl} from "@/utils/constant";
 
 // Types
 type KnowledgeCard = {
@@ -97,11 +97,17 @@ const convertApiDataToCategoryItems = (data: ApiResponse): CategoryItem[] => {
   }));
 };
 
-export function ManageCategory() {
+export function ManageCategory({
+  onCategoriesChanged,
+}: {
+  onCategoriesChanged?: () => void;
+}) {
   // State management
   const [open, setOpen] = useState(false);
   const [newItemName, setNewItemName] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null
+  );
   const [isAddingSubcategory, setIsAddingSubcategory] = useState(false);
   const [openInput, setOpenInput] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
@@ -166,16 +172,13 @@ export function ManageCategory() {
     setIsLoading(true);
     try {
       // Fetch user details
-      const response = await fetch(
-        `${apiUrl}/users/${user?.id}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          // credentials: "include",
-        }
-      );
+      const response = await fetch(`${apiUrl}/users/${user?.id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // credentials: "include",
+      });
 
       if (!response.ok) throw new Error("Failed to fetch user details");
       const userData = await response.json();
@@ -270,21 +273,18 @@ export function ManageCategory() {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(
-        `${apiUrl}/teams`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          // credentials: "include",
-          body: JSON.stringify({
-            name: newItemName,
-            org_id: userDetails.user.organizations?.id,
-            icon: selectedIcon,
-          }),
-        }
-      );
+      const response = await fetch(`${apiUrl}/teams`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // credentials: "include",
+        body: JSON.stringify({
+          name: newItemName,
+          org_id: userDetails.user.organizations?.id,
+          icon: selectedIcon,
+        }),
+      });
 
       if (!response.ok) throw new Error("Failed to add category");
       const teamData = await response.json();
@@ -305,6 +305,7 @@ export function ManageCategory() {
 
       resetStates();
       ShowToast("Category has been added successfully", "success");
+      if (onCategoriesChanged) onCategoriesChanged();
     } catch (err) {
       console.error("Error adding category:", err);
       setError(err instanceof Error ? err.message : "Failed to add category");
@@ -333,27 +334,25 @@ export function ManageCategory() {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(
-        `${apiUrl}/sub-categories`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          // credentials: "include",
-          body: JSON.stringify({
-            name: newItemName,
-            team_id: selectedCategoryId,
-            org_id: userDetails.user.org_id,
-          }),
-        }
-      );
+      const response = await fetch(`${apiUrl}/sub-categories`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // credentials: "include",
+        body: JSON.stringify({
+          name: newItemName,
+          team_id: selectedCategoryId,
+          org_id: userDetails.user.org_id,
+        }),
+      });
 
       if (!response.ok) throw new Error("Failed to add subcategory");
 
       fetchData();
       resetStates();
       ShowToast("Subcategory has been added successfully", "success");
+      if (onCategoriesChanged) onCategoriesChanged();
     } catch (err) {
       console.error("Error adding subcategory:", err);
       setError(
@@ -396,7 +395,8 @@ export function ManageCategory() {
         // credentials: "include",
       });
 
-      if (!response.ok) throw new Error(`Failed to delete ${itemToDelete.type}`);
+      if (!response.ok)
+        throw new Error(`Failed to delete ${itemToDelete.type}`);
 
       // Update local state
       if (itemToDelete.type === "category") {
@@ -406,7 +406,8 @@ export function ManageCategory() {
           categories.map((cat) => ({
             ...cat,
             children:
-              cat.children?.filter((child) => child.id !== itemToDelete.id) || [],
+              cat.children?.filter((child) => child.id !== itemToDelete.id) ||
+              [],
           }))
         );
       }
@@ -416,13 +417,18 @@ export function ManageCategory() {
           itemToDelete.name
         }" has been deleted successfully`
       );
+      if (onCategoriesChanged) onCategoriesChanged();
     } catch (err) {
       console.error(`Error deleting ${itemToDelete.type}:`, err);
       setError(
-        err instanceof Error ? err.message : `Failed to delete ${itemToDelete.type}`
+        err instanceof Error
+          ? err.message
+          : `Failed to delete ${itemToDelete.type}`
       );
       ShowToast(
-        err instanceof Error ? err.message : `Failed to delete ${itemToDelete.type}`,
+        err instanceof Error
+          ? err.message
+          : `Failed to delete ${itemToDelete.type}`,
         "error"
       );
     } finally {
@@ -475,6 +481,7 @@ export function ManageCategory() {
         } has been updated successfully`,
         "success"
       );
+      if (onCategoriesChanged) onCategoriesChanged();
     } catch (err) {
       console.error(`Error updating ${editingItem.type}:`, err);
       setError(
@@ -1023,7 +1030,10 @@ export function ManageCategory() {
       </Dialog.Root>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog.Root open={deleteConfirmationOpen} onOpenChange={setDeleteConfirmationOpen}>
+      <Dialog.Root
+        open={deleteConfirmationOpen}
+        onOpenChange={setDeleteConfirmationOpen}
+      >
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[102]" />
           <Dialog.Content className="fixed z-[103] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E1E1E] text-white rounded-lg w-[90vw] max-w-[400px] p-6 shadow-xl">
@@ -1040,7 +1050,8 @@ export function ManageCategory() {
 
             <div className="mb-6">
               <p>
-                Are you sure you want to delete "{itemToDelete?.name}"? This action cannot be undone.
+                Are you sure you want to delete "{itemToDelete?.name}"? This
+                action cannot be undone.
               </p>
             </div>
 

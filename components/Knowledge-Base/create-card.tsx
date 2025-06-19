@@ -314,84 +314,86 @@ export default function CreateCard({cardId}: {cardId?: string}) {
     if (cardId) fetchCardData();
   }, [cardId, fetchCardData]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
+  // Move fetchData outside useEffect so it can be called from anywhere
+  const fetchData = useCallback(async () => {
+    if (!user) return;
 
-      setLoading("teams", true);
-      setLoading("users", true);
+    setLoading("teams", true);
+    setLoading("users", true);
 
-      try {
-        const userResponse = await fetch(`${apiUrl}/users/${user.id}`, {
+    try {
+      const userResponse = await fetch(`${apiUrl}/users/${user.id}`, {
+        method: "GET",
+        headers: {"Content-Type": "application/json"},
+      });
+
+      if (!userResponse.ok) throw new Error("Failed to fetch user details");
+
+      const userData = await userResponse.json();
+      const orgId = userData.user.organizations?.id || org_id;
+
+      if (!orgId) {
+        console.error("No organization ID found");
+        return;
+      }
+
+      setOrganizationId(orgId);
+
+      const [usersResponse, teamsResponse] = await Promise.all([
+        fetch(`${apiUrl}/users/organizations/${orgId}`, {
           method: "GET",
           headers: {"Content-Type": "application/json"},
-        });
+        }),
+        fetch(`${apiUrl}/teams/organizations/${orgId}`, {
+          method: "GET",
+          headers: {"Content-Type": "application/json"},
+        }),
+      ]);
 
-        if (!userResponse.ok) throw new Error("Failed to fetch user details");
-
-        const userData = await userResponse.json();
-        const orgId = userData.user.organizations?.id || org_id;
-
-        if (!orgId) {
-          console.error("No organization ID found");
-          return;
+      if (!usersResponse.ok) throw new Error("Failed to fetch users");
+      const usersData = await usersResponse.json();
+      if (usersData.success && Array.isArray(usersData.data)) {
+        setUsers(usersData.data);
+        if (isEditMode && originalCardData?.card_owner_id) {
+          form.setValue("card_owner_id", originalCardData.card_owner_id);
+        } else if (!isEditMode && usersData.data.length > 0) {
+          form.setValue("card_owner_id", usersData.data[0].id);
         }
-
-        setOrganizationId(orgId);
-
-        const [usersResponse, teamsResponse] = await Promise.all([
-          fetch(`${apiUrl}/users/organizations/${orgId}`, {
-            method: "GET",
-            headers: {"Content-Type": "application/json"},
-          }),
-          fetch(`${apiUrl}/teams/organizations/${orgId}`, {
-            method: "GET",
-            headers: {"Content-Type": "application/json"},
-          }),
-        ]);
-
-        if (!usersResponse.ok) throw new Error("Failed to fetch users");
-        const usersData = await usersResponse.json();
-        if (usersData.success && Array.isArray(usersData.data)) {
-          setUsers(usersData.data);
-          if (isEditMode && originalCardData?.card_owner_id) {
-            form.setValue("card_owner_id", originalCardData.card_owner_id);
-          } else if (!isEditMode && usersData.data.length > 0) {
-            form.setValue("card_owner_id", usersData.data[0].id);
-          }
-        }
-
-        if (!teamsResponse.ok) throw new Error("Failed to fetch teams");
-        const teamsData = await teamsResponse.json();
-        if (teamsData.success && Array.isArray(teamsData.teams)) {
-          setTeams(teamsData.teams);
-          if (isEditMode && originalCardData) {
-            if (originalCardData.category_id) {
-              form.setValue("category_id", originalCardData.category_id);
-            }
-            if (originalCardData.team_to_announce_id) {
-              form.setValue(
-                "team_to_announce_id",
-                originalCardData.team_to_announce_id
-              );
-            }
-          } else if (!isEditMode && teamsData.teams.length > 0) {
-            form.setValue("category_id", teamsData.teams[0].id);
-            form.setValue("team_to_announce_id", teamsData.teams[0].id);
-          }
-        }
-
-        setDataLoaded(true);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setError("users", "Failed to load users. Please try again.");
-      } finally {
-        setLoading("teams", false);
-        setLoading("users", false);
       }
-    };
 
+      if (!teamsResponse.ok) throw new Error("Failed to fetch teams");
+      const teamsData = await teamsResponse.json();
+      if (teamsData.success && Array.isArray(teamsData.teams)) {
+        setTeams(teamsData.teams);
+        if (isEditMode && originalCardData) {
+          if (originalCardData.category_id) {
+            form.setValue("category_id", originalCardData.category_id);
+          }
+          if (originalCardData.team_to_announce_id) {
+            form.setValue(
+              "team_to_announce_id",
+              originalCardData.team_to_announce_id
+            );
+          }
+        } else if (!isEditMode && teamsData.teams.length > 0) {
+          form.setValue("category_id", teamsData.teams[0].id);
+          form.setValue("team_to_announce_id", teamsData.teams[0].id);
+        }
+      }
+
+      setDataLoaded(true);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setError("users", "Failed to load users. Please try again.");
+    } finally {
+      setLoading("teams", false);
+      setLoading("users", false);
+    }
+  }, [user, org_id, isEditMode, originalCardData, form]);
+
+  useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, form, isEditMode, org_id, originalCardData]);
 
   useEffect(() => {
@@ -854,6 +856,10 @@ export default function CreateCard({cardId}: {cardId?: string}) {
     );
   };
 
+  const handleCategoriesChanged = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
+
   return (
     <div className="text-white py-4 md:py-6 min-h-screen flex flex-col">
       <div className="w-full flex-1">
@@ -865,7 +871,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
             </h1>
           </div>
           <div className="flex justify-end items-center">
-            <ManageCategory />
+            <ManageCategory onCategoriesChanged={handleCategoriesChanged} />
           </div>
         </div>
 
@@ -915,11 +921,15 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                                     "border-red-500"
                                 )}
                               >
-                                {loadingStates.teams
-                                  ? "Loading categories..."
-                                  : field.value && teams.length > 0
-                                  ? getTeamName(field.value)
-                                  :  <span className="text-[#FFFFFF52]">Select the Category</span>}
+                                {loadingStates.teams ? (
+                                  "Loading categories..."
+                                ) : field.value && teams.length > 0 ? (
+                                  getTeamName(field.value)
+                                ) : (
+                                  <span className="text-[#FFFFFF52]">
+                                    Select the Category
+                                  </span>
+                                )}
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-[#2C2D2E] border-none text-white">
@@ -955,15 +965,19 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                           >
                             <FormControl>
                               <SelectTrigger className="w-full h-[44px] bg-[#2C2D2E]  border border-white/10 rounded-[6px] mt-2 justify-between">
-                                {loadingStates.subcategories
-                                  ? "Loading folders..."
-                                  : !selectedCategory
-                                  ? "Select a category first"
-                                  : field.value && subcategories.length > 0
-                                  ? subcategories.find(
-                                      (sub) => sub.id === field.value
-                                    )?.name || "Select folder"
-                                  : <span className="text-[#FFFFFF52]">Select folder</span>}
+                                {loadingStates.subcategories ? (
+                                  "Loading folders..."
+                                ) : !selectedCategory ? (
+                                  "Select a category first"
+                                ) : field.value && subcategories.length > 0 ? (
+                                  subcategories.find(
+                                    (sub) => sub.id === field.value
+                                  )?.name || "Select folder"
+                                ) : (
+                                  <span className="text-[#FFFFFF52]">
+                                    Select folder
+                                  </span>
+                                )}
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-[#2C2D2E] border-none text-white">
@@ -1087,11 +1101,13 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                             <FormControl>
                               <SelectTrigger className="w-full h-[44px] bg-[#2C2D2E]   border border-white/10 rounded-[6px] px-4 py-3 justify-between mt-2">
                                 <SelectValue placeholder="Select verification period">
-                                  {field.value
-                                    ? formatPeriodDisplay(field.value)
-                                    :
-                                     <span className="text-[#FFFFFF52]">
-                                    Select period</span>}
+                                  {field.value ? (
+                                    formatPeriodDisplay(field.value)
+                                  ) : (
+                                    <span className="text-[#FFFFFF52]">
+                                      Select period
+                                    </span>
+                                  )}
                                 </SelectValue>
                               </SelectTrigger>
                             </FormControl>
@@ -1154,11 +1170,15 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                           >
                             <FormControl>
                               <SelectTrigger className="w-full h-[44px] bg-[#2C2D2E]   border border-white/10 rounded-[6px] px-4 py-3 justify-between mt-2">
-                                {loadingStates.teams
-                                  ? "Loading teams..."
-                                  : field.value
-                                  ? getTeamName(field.value)
-                                  :  <span className="text-[#FFFFFF52]">Select Team</span>}
+                                {loadingStates.teams ? (
+                                  "Loading teams..."
+                                ) : field.value ? (
+                                  getTeamName(field.value)
+                                ) : (
+                                  <span className="text-[#FFFFFF52]">
+                                    Select Team
+                                  </span>
+                                )}
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-[#2C2D2E] border-none text-white">
