@@ -66,7 +66,6 @@ export default function TutorAnalytics({
 
   return (
     <div className="">
-      {/* <AnalyticsDashboard/> */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
         <MetricCard
           value={stats?.completedLearningPaths | 0}

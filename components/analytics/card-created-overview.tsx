@@ -11,7 +11,6 @@ const CardCreatedOverview = () => {
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
-  // Initialize default date range (Last 30 days)
   useEffect(() => {
     const today = new Date();
     const thirtyDaysAgo = new Date();

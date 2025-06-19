@@ -173,3 +173,29 @@ export const fetchTutorStats = async (
     console.error("Error fetching cards:", error);
   }
 };
+export const fetchLeaderBoard = async (
+  userId: string,
+
+  startDate?: string,
+  endDate?: string,
+  category?: string
+) => {
+  try {
+    const response = await fetch(`${apiUrl}/users/leaderboard/${userId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        category,
+        startDate,
+        endDate,
+      }),
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch user");
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Error fetching cards:", error);
+  }
+};

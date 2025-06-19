@@ -15,6 +15,8 @@ import {
 import {fetchTutorScore, fetchTeams} from "./analytic.service";
 import {useUserHook} from "@/hooks/useUser";
 import {DateRangeDropdown} from "../shared/custom-date-picker";
+import {Skeleton} from "../ui/skeleton";
+import Loader from "../shared/loader";
 
 const generateChartData = (monthlyData: any[]) => {
   // Get current month index (0-11)
@@ -269,11 +271,12 @@ const AdminTutorAnalyticGraph = ({
             </Button>
           )}
           {/* Department filter for owners */}
-          {roleAccess === "owner" && !id && !dashboard && (
+          {roleAccess === "owner" && !id && (
             <DateRangeDropdown
               selectedRange={selectedTeam}
               onRangeChange={setSelectedTeam}
               width="250px"
+              bg={dashboard ? "bg-[black]" : undefined}
               disabled={isLoadingData}
               options={[
                 {label: "All Department", value: "all"},
@@ -289,17 +292,14 @@ const AdminTutorAnalyticGraph = ({
 
       <div
         className={`relative w-full h-80 transition-opacity duration-300 flex justify-center ${
-          isLoadingData ? "opacity-50" : "opacity-100"
+          isLoadingData ? "opacity-100" : "opacity-100"
         }`}
       >
-        {isLoadingData && (
-          <div className="flex flex-row justify-center items-center">
-            {/* <Loader /> */}
-            Loading...
+        {isLoadingData ? (
+          <div className="flex flex-col justify-center items-center w-full h-full gap-4">
+            <Loader size={40} />
           </div>
-        )}
-
-        {chartData.length > 0 ? (
+        ) : chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}

@@ -53,7 +53,7 @@ export default function Card() {
         />
       </div>
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
-        <CardCreatedOverview/>
+        <CardCreatedOverview />
 
         <div className="w-full lg:w-1/3">
           <UnverifiedCards cards={[]} />

@@ -20,7 +20,6 @@ interface TutorListProps {
   orgId: string;
 }
 
-// Memoized TagList component with optimized rendering
 const TagList = React.memo(({items}: {items?: string[]}) => {
   const tagElements = useMemo(
     () =>
@@ -40,7 +39,6 @@ const TagList = React.memo(({items}: {items?: string[]}) => {
 
 TagList.displayName = "TagList";
 
-// Memoized dropdown menu content
 const DropdownMenuContent = React.memo(
   ({
     onViewClick,
@@ -72,7 +70,7 @@ const DropdownMenuContent = React.memo(
 
 DropdownMenuContent.displayName = "DropdownMenuContent";
 
-const TutorList = ({departmentId, orgId}: TutorListProps) => {
+const TutorList = ({orgId}: TutorListProps) => {
   const {userData} = useUserHook();
   const {roleAccess} = useRole();
   const [filteredTutors, setFilteredTutors] = useState<Tutor[]>([]);
@@ -121,7 +119,6 @@ const TutorList = ({departmentId, orgId}: TutorListProps) => {
     [router]
   );
 
-  // Optimized cell renderers using a lookup object instead of switch
   const cellRenderers = useMemo(
     () => ({
       strengths: (row: Tutor) => <TagList items={row.strengths} />,
@@ -157,10 +154,8 @@ const TutorList = ({departmentId, orgId}: TutorListProps) => {
     [handleViewTutorScore]
   );
 
-  // Memoize table columns to prevent unnecessary recalculations
   const tableColumns = useMemo(() => tutorColumns.slice(0, -1), []);
 
-  // Memoize error content
   const errorContent = useMemo(
     () => (
       <div className="bg-[#191919] rounded-[30px] p-10 mb-8 relative">
@@ -170,7 +165,6 @@ const TutorList = ({departmentId, orgId}: TutorListProps) => {
     [error]
   );
 
-  // Memoize header content
   const headerContent = useMemo(
     () => (
       <div className="flex justify-between mb-4 flex-wrap items-center">
