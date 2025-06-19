@@ -276,7 +276,7 @@ const AdminTutorAnalyticGraph = ({
               selectedRange={selectedTeam}
               onRangeChange={setSelectedTeam}
               width="250px"
-              bg={dashboard ? "bg-[black]" : undefined}
+              bg={"bg-[black]"}
               disabled={isLoadingData}
               options={[
                 {label: "All Department", value: "all"},
