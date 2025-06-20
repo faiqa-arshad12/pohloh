@@ -1,21 +1,23 @@
-"use client";
+import {useState, useEffect, useCallback} from "react";
 
-import {useState, useEffect} from "react";
-import {MoreHorizontal, Trash2, Ellipsis} from "lucide-react";
+import {MoreHorizontal, Trash2, GraduationCap, Ellipsis} from "lucide-react";
+import React from "react";
 import {Button} from "../ui/button";
 import Table from "../ui/table";
+
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {Icon} from "@iconify/react/dist/iconify.js";
+import {exportToPDF} from "@/utils/exportToPDF";
 import {fetchCards} from "./analytic.service";
 import {useUserHook} from "@/hooks/useUser";
-import {useRole} from "../ui/Context/UserContext";
 import TableLoader from "../shared/table-loader";
 import {NoData} from "../shared/NoData";
+import Loader from "../shared/loader";
+
 
 interface UnverifiedCard {
   id: string;
   category_id: {
-    id: string;
     name: string;
   };
   card_owner_id: {
@@ -28,12 +30,12 @@ interface UnverifiedCard {
 
 const AdminUnverifiedCard = () => {
   const {userData} = useUserHook();
-  const {roleAccess} = useRole();
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [filteredUnverifiedCards, setFilteredUnverifiedCards] = useState<
     UnverifiedCard[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   useEffect(() => {
     const getUnverifiedCards = async () => {
@@ -47,25 +49,10 @@ const AdminUnverifiedCard = () => {
           );
           if (cards) {
             console.log(cards, "card");
-
-            // First filter for unverified cards
             const unverifiedCards = cards.filter(
               (card: any) => card.is_verified === false
             );
-
-            // Then apply role-based filtering
-            let roleFilteredCards = unverifiedCards;
-
-            if (roleAccess === "admin") {
-              // Admin can only see cards where category_id matches their team_id
-              roleFilteredCards = unverifiedCards.filter(
-                (card: any) =>
-                  card.category_id && card.category_id.id === userData?.team_id
-              );
-            }
-            // If roleAccess === "owner", show all unverified cards (no additional filtering needed)
-
-            setFilteredUnverifiedCards(roleFilteredCards);
+            setFilteredUnverifiedCards(unverifiedCards);
           }
         }
       } catch (error) {
@@ -75,12 +62,103 @@ const AdminUnverifiedCard = () => {
       }
     };
     getUnverifiedCards();
-  }, [userData, roleAccess]);
+  }, [userData]);
+
+  const exportUnverifiedCardsToPDF = useCallback(() => {
+    if (filteredUnverifiedCards.length === 0 || isExportingPDF) return;
+
+    setIsExportingPDF(true);
+    try {
+      const dataForPdf = filteredUnverifiedCards.map((card) => {
+        const ownerName = `${card.card_owner_id.first_name} ${card.card_owner_id.last_name}`;
+        const formattedDate = new Date(card.created_at).toLocaleDateString(
+          "en-US",
+          {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          }
+        );
+
+        return {
+          title: card.title,
+          category: card.category_id.name,
+          date: formattedDate,
+          owner: ownerName,
+        };
+      });
+
+      exportToPDF({
+        title: "Unverified Cards List",
+        filename: "unverified-cards-list",
+        data: dataForPdf,
+        type: "table",
+        columns: ["title", "category", "date", "owner"],
+        headers: {
+          title: "Card Name",
+          category: "Category",
+          date: "Date",
+          owner: "Owner",
+        },
+      });
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      alert("Failed to export PDF.");
+    } finally {
+      setIsExportingPDF(false);
+    }
+  }, [filteredUnverifiedCards, isExportingPDF]);
+
+  const exportSingleCardToPDF = useCallback(
+    (card: UnverifiedCard) => {
+      if (isExportingPDF) return;
+
+      setIsExportingPDF(true);
+      try {
+        const ownerName = `${card.card_owner_id.first_name} ${card.card_owner_id.last_name}`;
+        const formattedDate = new Date(card.created_at).toLocaleDateString(
+          "en-US",
+          {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          }
+        );
+
+        const filteredCardData = {
+          title: card.title,
+          category: card.category_id.name,
+          date: formattedDate,
+          owner: ownerName,
+        };
+
+        exportToPDF({
+          title: "Unverified Card Details",
+          filename: `unverified-card-${card.title
+            .replace(/\s+/g, "-")
+            .toLowerCase()}`,
+          data: filteredCardData,
+          type: "details",
+          headers: {
+            title: "Card Name",
+            category: "Category",
+            date: "Date",
+            owner: "Owner",
+          },
+        });
+      } catch (error) {
+        console.error("Error exporting PDF:", error);
+        alert("Failed to export PDF.");
+      } finally {
+        setIsExportingPDF(false);
+      }
+    },
+    [isExportingPDF]
+  );
 
   const handleDeletePath = (id: string) => {
     alert("deleted" + id);
   };
-
   const unverfiedCardColumns = [
     {Header: "Card Name", accessor: "title"},
     {Header: "Category", accessor: "category_id.name"},
@@ -88,7 +166,6 @@ const AdminUnverifiedCard = () => {
     {Header: "Owner", accessor: "ownerName"},
     {Header: "Action", accessor: "action"},
   ];
-
   // Custom cell renderer for tutors
   const renderRowActionsPath = (row: UnverifiedCard) => {
     return (
@@ -106,9 +183,18 @@ const AdminUnverifiedCard = () => {
             sideOffset={4}
             className="min-w-[200px] bg-[#222222] border border-[#333] rounded-md shadow-lg py-2 p-2 z-50"
           >
-            <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
-              <Icon icon="iconamoon:edit-light" width="24" height="24" />
-              <span>Edit</span>
+            {/* <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
+              <GraduationCap className="h-4 w-4" />
+              <span>Ressign Learning Path</span>
+            </DropdownMenu.Item> */}
+
+            <DropdownMenu.Item
+              onSelect={() => exportSingleCardToPDF(row)}
+              disabled={isExportingPDF}
+              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer"
+            >
+              <Icon icon="bi:filetype-pdf" width="24" height="24" />
+              <span>Export as PDF</span>
             </DropdownMenu.Item>
             <DropdownMenu.Item
               onSelect={() => handleDeletePath(row.id)}
@@ -163,23 +249,30 @@ const AdminUnverifiedCard = () => {
         return null;
     }
   };
-
   return (
     <div className="bg-[#191919] rounded-[30px] p-10 mb-8 relative">
       <div className="flex justify-between mb-4 items-center">
-        <div className="flex items-center gap-4">
-          <h3 className="font-urbanist font-medium text-[24px] leading-[21.9px] tracking-[0]">
-            Unverified Cards Insights
-          </h3>
-        </div>
-        <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
-          <Icon
-            icon="bi:filetype-pdf"
-            width="24"
-            height="24"
-            color="white"
-            className="cursor-pointer"
-          />
+        <h3 className="font-urbanist font-medium text-[24px] leading-[21.9px] tracking-[0]">
+          Unverified Cards Insights
+        </h3>
+        <Button
+          onClick={exportUnverifiedCardsToPDF}
+          disabled={
+            isLoading || filteredUnverifiedCards.length === 0 || isExportingPDF
+          }
+          className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border  px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer"
+        >
+          {isExportingPDF ? (
+            <Loader/>
+          ) : (
+            <Icon
+              icon="bi:filetype-pdf"
+              width="24"
+              height="24"
+              color="white"
+              className="cursor-pointer"
+            />
+          )}
         </Button>
       </div>
       <div className="mt-4 overflow-x-auto">

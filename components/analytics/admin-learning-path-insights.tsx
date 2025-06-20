@@ -1,17 +1,19 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {useEffect, useState, useCallback} from "react";
 import {Trash2, GraduationCap, Ellipsis} from "lucide-react";
 import {Button} from "../ui/button";
 import Table from "../ui/table";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {Icon} from "@iconify/react/dist/iconify.js";
 import {apiUrl} from "@/utils/constant";
+import {exportToPDF} from "@/utils/exportToPDF";
 import {Avatar} from "../shared/avatar";
 import {useUserHook} from "@/hooks/useUser";
 import {useRole} from "../ui/Context/UserContext";
 import TableLoader from "../shared/table-loader";
 import {NoData} from "../shared/NoData";
+import Loader from "../shared/loader";
 
 interface LearningPathInsight {
   id: string;
@@ -43,6 +45,7 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
     LearningPathInsight[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   useEffect(() => {
     fetchLearningPaths();
@@ -83,6 +86,94 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
       setIsLoading(false);
     }
   };
+
+  const exportLearningPathsToPDF = useCallback(() => {
+    if (filteredLearningPaths.length === 0 || isExportingPDF) return;
+    setIsExportingPDF(true);
+
+    try {
+      const dataForPdf = filteredLearningPaths.map((path) => ({
+        name: path.name,
+        learning_path_name: path.learning_path_name,
+        overall_completion: path.overall_completion,
+        completed_at: new Date(path.completed_at).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        }),
+      }));
+
+      exportToPDF({
+        title: "Learning Path Insights",
+        filename: "learning-path-insights",
+        data: dataForPdf,
+        type: "table",
+        columns: [
+          "name",
+          "learning_path_name",
+          "overall_completion",
+          "completed_at",
+        ],
+        headers: {
+          name: "Name",
+          learning_path_name: "Learning Path",
+          overall_completion: "Overall Score",
+          completed_at: "Completed At",
+        },
+      });
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      alert("Failed to export PDF.");
+    } finally {
+      setIsExportingPDF(false);
+    }
+  }, [filteredLearningPaths, isExportingPDF]);
+
+  const exportSingleLearningPathToPDF = useCallback(
+    (path: LearningPathInsight) => {
+      if (isExportingPDF) return;
+      setIsExportingPDF(true);
+
+      try {
+        const filteredPathData = {
+          name: path.name,
+          learning_path_name: path.learning_path_name,
+          overall_completion: path.overall_completion,
+          questions_completed: `${path.questions_completed}/${path.total_questions}`,
+          completed_at: new Date(path.completed_at).toLocaleDateString(
+            "en-US",
+            {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            }
+          ),
+        };
+
+        exportToPDF({
+          title: "Learning Path Details",
+          filename: `learning-path-${path.learning_path_name
+            .replace(/\s+/g, "-")
+            .toLowerCase()}`,
+          data: filteredPathData,
+          type: "details",
+          headers: {
+            name: "Name",
+            learning_path_name: "Learning Path",
+            overall_completion: "Overall Score",
+            questions_completed: "Questions",
+            completed_at: "Completed At",
+          },
+        });
+      } catch (error) {
+        console.error("Error exporting PDF:", error);
+        alert("Failed to export PDF.");
+      } finally {
+        setIsExportingPDF(false);
+      }
+    },
+    [isExportingPDF]
+  );
 
   const handleDeletePath = (id: string) => {
     alert("deleted" + id);
@@ -130,6 +221,14 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
             sideOffset={4}
             className="min-w-[200px] bg-[#222222] border border-[#333] rounded-md shadow-lg py-2 p-2 z-50"
           >
+            <DropdownMenu.Item
+              onSelect={() => exportSingleLearningPathToPDF(row)}
+              disabled={isExportingPDF}
+              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer"
+            >
+              <Icon icon="bi:filetype-pdf" width="24" height="24" />
+              <span>Export as PDF</span>
+            </DropdownMenu.Item>
             <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
               <GraduationCap className="h-4 w-4" />
               <span>Reassign Learning Path</span>
@@ -163,14 +262,24 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
             Learning Path Insights
           </h3>
         </div>
-        <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
-          <Icon
-            icon="bi:filetype-pdf"
-            width="24"
-            height="24"
-            color="white"
-            className="cursor-pointer"
-          />
+        <Button
+          onClick={exportLearningPathsToPDF}
+          disabled={
+            isLoading || filteredLearningPaths.length === 0 || isExportingPDF
+          }
+          className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer"
+        >
+          {isExportingPDF ? (
+            <Loader/>
+          ) : (
+            <Icon
+              icon="bi:filetype-pdf"
+              width="24"
+              height="24"
+              color="white"
+              className="cursor-pointer"
+            />
+          )}
         </Button>
       </div>
       <div className="mt-4 overflow-x-auto">

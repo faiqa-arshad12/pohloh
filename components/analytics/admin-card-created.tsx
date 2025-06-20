@@ -1,121 +1,128 @@
-"use client";
+"use client"
 
-import {Trophy} from "lucide-react";
-import {useState, useEffect} from "react";
-import {Button} from "../ui/button";
-import Graph from "./graph";
-import {Icon} from "@iconify/react/dist/iconify.js";
-import TopPerformance from "./top-performance";
-import {DateRangeDropdown} from "../shared/custom-date-picker";
-import {useUserHook} from "@/hooks/useUser";
-import {
-  fetchTeams,
-  fetchCards,
-  fetchLeaningPathPerformance,
-} from "./analytic.service";
-import {useRole} from "../ui/Context/UserContext";
+import { Trophy } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Button } from "../ui/button"
+import Graph from "./graph"
+import { Icon } from "@iconify/react/dist/iconify.js"
+import TopPerformance from "./top-performance"
+import { DateRangeDropdown } from "../shared/custom-date-picker"
+import { useUserHook } from "@/hooks/useUser"
+import { fetchTeams, fetchCards, fetchLeaningPathPerformance } from "./analytic.service"
+import { useRole } from "../ui/Context/UserContext"
+import { exportToPDF, createCardsAnalyticsPDFConfig } from "../../utils/graphPdfExport"
 
 const AdminCardCreated = () => {
-  const {userData} = useUserHook();
-  const [teams, setTeams] = useState([]);
-  const [selectedTeam, setSelectedTeam] = useState("all");
-  const [isLoadingData, setIsLoadingData] = useState(false);
-  const [cardData, setCardData] = useState([]);
-  const {roleAccess} = useRole();
-  const [learningPathPerformance, setLearningPathPerformance] =
-    useState<any>(null);
-  const [isLoadingPerformance, setIsLoadingPerformance] = useState(false);
+  const { userData } = useUserHook()
+  const [teams, setTeams] = useState([])
+  const [selectedTeam, setSelectedTeam] = useState("all")
+  const [isLoadingData, setIsLoadingData] = useState(false)
+  const [isExportingPDF, setIsExportingPDF] = useState(false)
+  const [cardData, setCardData] = useState([])
+  const { roleAccess } = useRole()
+  const [learningPathPerformance, setLearningPathPerformance] = useState<any>(null)
+  const [isLoadingPerformance, setIsLoadingPerformance] = useState(false)
 
   useEffect(() => {
     if (userData && roleAccess === "owner") {
       const fetchteams = async () => {
-        const response = await fetchTeams((userData.org_id as string) || "");
-        setTeams(response);
-      };
-      fetchteams();
+        const response = await fetchTeams((userData.org_id as string) || "")
+        setTeams(response)
+      }
+      fetchteams()
     }
-  }, [userData]);
+  }, [userData])
 
   useEffect(() => {
     const getCards = async () => {
       try {
-        setIsLoadingData(true);
+        setIsLoadingData(true)
         if (userData?.organizations.id && userData?.id && userData?.role) {
-          const cards = await fetchCards(
-            userData.organizations.id,
-            userData.role,
-            userData.id
-          );
+          const cards = await fetchCards(userData.organizations.id, userData.role, userData.id)
           if (cards) {
-            setCardData(cards);
+            setCardData(cards)
           }
         }
       } catch (error) {
-        console.error("Error fetching cards:", error);
+        console.error("Error fetching cards:", error)
       } finally {
-        setIsLoadingData(false);
+        setIsLoadingData(false)
       }
-    };
-    getCards();
-  }, [userData]);
+    }
+    getCards()
+  }, [userData])
 
   useEffect(() => {
     const getPerformance = async () => {
       if (userData?.id) {
-        setIsLoadingPerformance(true);
+        setIsLoadingPerformance(true)
         try {
-          const result = await fetchLeaningPathPerformance(userData.id);
-          setLearningPathPerformance(result?.path || null);
+          const result = await fetchLeaningPathPerformance(userData.id)
+          setLearningPathPerformance(result?.path || null)
         } catch (error) {
-          setLearningPathPerformance(null);
+          setLearningPathPerformance(null)
         } finally {
-          setIsLoadingPerformance(false);
+          setIsLoadingPerformance(false)
         }
       }
-    };
-    getPerformance();
-  }, [userData]);
+    }
+    getPerformance()
+  }, [userData])
 
   // Process card data for graph
   const processCardData = () => {
-    const last6Weeks = Array.from({length: 6}, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - i * 7);
-      return date;
-    }).reverse();
+    const last6Weeks = Array.from({ length: 6 }, (_, i) => {
+      const date = new Date()
+      date.setDate(date.getDate() - i * 7)
+      return date
+    }).reverse()
 
     const weeklyData = last6Weeks.map((weekStart, index) => {
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekEnd.getDate() + 6);
+      const weekEnd = new Date(weekStart)
+      weekEnd.setDate(weekEnd.getDate() + 6)
 
       const filteredCards = cardData.filter((card: any) => {
-        const cardDate = new Date(card.created_at);
-        const isInWeek = cardDate >= weekStart && cardDate <= weekEnd;
+        const cardDate = new Date(card.created_at)
+        const isInWeek = cardDate >= weekStart && cardDate <= weekEnd
 
-        let matchesDepartment = false;
+        let matchesDepartment = false
 
         if (roleAccess === "owner") {
           // Owner can see all cards or filter by selected department
-          matchesDepartment =
-            selectedTeam === "all" ||
-            (card.category_id && card.category_id.id === selectedTeam);
+          matchesDepartment = selectedTeam === "all" || (card.category_id && card.category_id.id === selectedTeam)
         } else if (roleAccess === "admin") {
           // Admin can only see cards where category_id matches their team_id
-          matchesDepartment =
-            card.category_id && card.category_id.id === userData?.team_id;
+          matchesDepartment = card.category_id && card.category_id.id === userData?.team_id
         }
 
-        return isInWeek && matchesDepartment;
-      });
+        return isInWeek && matchesDepartment
+      })
 
       return {
         name: `Week ${index + 1}`,
         value: filteredCards.length,
-      };
-    });
+        dateRange: `${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`,
+      }
+    })
 
-    return weeklyData;
-  };
+    return weeklyData
+  }
+
+  const handleExportToPDF = async () => {
+    setIsExportingPDF(true)
+
+    try {
+      const chartData = processCardData()
+      const config = createCardsAnalyticsPDFConfig(chartData, selectedTeam, teams, roleAccess || "")
+
+      await exportToPDF(config)
+    } catch (error) {
+      console.error("Error exporting PDF:", error)
+      alert("Failed to export PDF. Please try again.")
+    } finally {
+      setIsExportingPDF(false)
+    }
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-ful mb-8">
@@ -124,13 +131,16 @@ const AdminCardCreated = () => {
         <div className="flex justify-between mb-4 flex-wrap">
           <h3 className="text-[24px] p-4 font-semibold">Cards Created</h3>
           <div className="flex gap-2 items-center">
-            <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-[8px] border flex items-center justify-center gap-[10px] cursor-pointer">
-              <Icon
-                icon="bi:filetype-pdf"
-                width="24"
-                height="24"
-                className="cursor-pointer"
-              />
+            <Button
+              className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-[8px] border flex items-center justify-center gap-[10px] cursor-pointer disabled:opacity-50"
+              onClick={handleExportToPDF}
+              disabled={isExportingPDF || isLoadingData}
+            >
+              {isExportingPDF ? (
+                <Icon icon="eos-icons:loading" width="24" height="24" className="animate-spin" />
+              ) : (
+                <Icon icon="bi:filetype-pdf" width="24" height="24" className="cursor-pointer" />
+              )}
             </Button>
             {/* Only show department filter for owners */}
             {roleAccess === "owner" && (
@@ -141,7 +151,7 @@ const AdminCardCreated = () => {
                 disabled={isLoadingData}
                 bg="bg-[black]"
                 options={[
-                  {label: "All Department", value: "all"},
+                  { label: "All Department", value: "all" },
                   ...teams.map((team: any) => ({
                     label: team.name,
                     value: team.id,
@@ -154,13 +164,7 @@ const AdminCardCreated = () => {
         </div>
 
         <Graph
-          departmentId={
-            roleAccess === "owner"
-              ? selectedTeam !== "all"
-                ? selectedTeam
-                : ""
-              : userData?.team_id || ""
-          }
+          departmentId={roleAccess === "owner" ? (selectedTeam !== "all" ? selectedTeam : "") : userData?.team_id || ""}
           data={processCardData()}
         />
       </div>
@@ -173,20 +177,20 @@ const AdminCardCreated = () => {
             isLoadingPerformance
               ? "Loading..."
               : learningPathPerformance?.top?.title
-              ? learningPathPerformance.top.title
-              : learningPathPerformance && !learningPathPerformance.top
-              ? "No data available"
-              : "-"
+                ? learningPathPerformance.top.title
+                : learningPathPerformance && !learningPathPerformance.top
+                  ? "No data available"
+                  : "-"
           }
           percentage={
             isLoadingPerformance
               ? "--"
               : learningPathPerformance?.top?.averageScore !== undefined &&
-                learningPathPerformance?.top?.averageScore !== null
-              ? `${learningPathPerformance.top.averageScore}%`
-              : learningPathPerformance && !learningPathPerformance.top
-              ? "--"
-              : "-"
+                  learningPathPerformance?.top?.averageScore !== null
+                ? `${learningPathPerformance.top.averageScore}%`
+                : learningPathPerformance && !learningPathPerformance.top
+                  ? "--"
+                  : "-"
           }
           icon={Trophy}
         />
@@ -196,28 +200,26 @@ const AdminCardCreated = () => {
             isLoadingPerformance
               ? "Loading..."
               : learningPathPerformance?.worst?.title
-              ? learningPathPerformance.worst.title
-              : learningPathPerformance && !learningPathPerformance.worst
-              ? "No data available"
-              : "-"
+                ? learningPathPerformance.worst.title
+                : learningPathPerformance && !learningPathPerformance.worst
+                  ? "No data available"
+                  : "-"
           }
           percentage={
             isLoadingPerformance
               ? "--"
               : learningPathPerformance?.worst?.averageScore !== undefined &&
-                learningPathPerformance?.worst?.averageScore !== null
-              ? `${learningPathPerformance.worst.averageScore}%`
-              : learningPathPerformance && !learningPathPerformance.worst
-              ? "--"
-              : "-"
+                  learningPathPerformance?.worst?.averageScore !== null
+                ? `${learningPathPerformance.worst.averageScore}%`
+                : learningPathPerformance && !learningPathPerformance.worst
+                  ? "--"
+                  : "-"
           }
-          customIcon={
-            <img src="/triangle-alert.png" alt="Alert" className="" />
-          }
+          customIcon={<img src="/triangle-alert.png" alt="Alert" className="" />}
         />
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default AdminCardCreated;
+export default AdminCardCreated

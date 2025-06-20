@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from "react";
+import React, {useState, useEffect, useCallback} from "react";
 import {Button} from "../ui/button";
 import Image from "next/image";
 import Table from "../ui/table";
@@ -9,6 +9,8 @@ import {getDropdownOptions} from "@/utils/constant";
 import {fetchTeams, fetchLeaderBoard} from "./analytic.service";
 import {useUserHook} from "@/hooks/useUser";
 import TableLoader from "../shared/table-loader";
+import {exportToPDF} from "@/utils/exportToPDF";
+import Loader from "../shared/loader";
 
 interface AdminLeaderBoardProps {
   departmentId: string | null;
@@ -23,6 +25,9 @@ const AdminLeaderBoard = () => {
     rankIcon: string;
     avatarUrl: string;
     departmentId?: string;
+    total: number;
+    verified: number;
+    percentage: number;
   }
 
   const {userData} = useUserHook();
@@ -31,8 +36,9 @@ const AdminLeaderBoard = () => {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [teams, setTeams] = useState([]);
+  const [teams, setTeams] = useState<{id: string; name: string}[]>([]);
   const [selectedTeam, setSelectedTeam] = useState("all");
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [filteredLeaderboardData, setFilteredLeaderboardData] = useState<
     LeaderboardEntry[]
   >([]);
@@ -122,6 +128,41 @@ const AdminLeaderBoard = () => {
     }, 500);
   };
 
+  const exportLeaderboardToPDF = useCallback(() => {
+    if (filteredLeaderboardData.length === 0 || isExportingPDF) return;
+
+    setIsExportingPDF(true);
+    try {
+      const dataForPdf = filteredLeaderboardData.map((entry, index) => ({
+        rank: index + 1,
+        name: entry.name,
+        total: entry.total,
+        verified: entry.verified,
+        percentage: entry.completion,
+      }));
+
+      exportToPDF({
+        title: "Leaderboard",
+        filename: "leaderboard-list",
+        data: dataForPdf,
+        type: "table",
+        columns: ["rank", "name", "total", "verified", "percentage"],
+        headers: {
+          rank: "Rank",
+          name: "Name",
+          total: "Created Card",
+          verified: "Verified",
+          percentage: "Completion Rate",
+        },
+      });
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      alert("Failed to export PDF.");
+    } finally {
+      setIsExportingPDF(false);
+    }
+  }, [filteredLeaderboardData, isExportingPDF]);
+
   useEffect(() => {
     const fetchLeaderboard = async () => {
       if (!userData?.user_id) return;
@@ -192,14 +233,26 @@ const AdminLeaderBoard = () => {
               })),
             ]}
           />
-          <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
-            <Icon
-              icon="bi:filetype-pdf"
-              width="24"
-              height="24"
-              color="white"
-              className="cursor-pointer"
-            />
+          <Button
+            onClick={exportLeaderboardToPDF}
+            disabled={
+              isLoadingData ||
+              filteredLeaderboardData.length === 0 ||
+              isExportingPDF
+            }
+            className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer"
+          >
+            {isExportingPDF ? (
+             <Loader/>
+            ) : (
+              <Icon
+                icon="bi:filetype-pdf"
+                width="24"
+                height="24"
+                color="white"
+                className="cursor-pointer"
+              />
+            )}
           </Button>
         </div>
       </div>
@@ -265,8 +318,7 @@ const AdminLeaderBoard = () => {
                       {row.completion}
                     </div>
                   );
-                //@ts-expect-error: column error
-                return row[column];
+                return row[column as keyof LeaderboardEntry];
               }}
               tableClassName="w-full text-sm"
               headerClassName="bg-[#F9DB6F] text-black text-left font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0]"

@@ -1,63 +1,42 @@
-"use client";
-import {useEffect, useState} from "react";
-import {Button} from "../ui/button";
-import {Icon} from "@iconify/react/dist/iconify.js";
-import {useRole} from "../ui/Context/UserContext";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  ResponsiveContainer,
-  Tooltip,
-  Cell,
-  ReferenceDot,
-} from "recharts";
-import {fetchTutorScore, fetchTeams} from "./analytic.service";
-import {useUserHook} from "@/hooks/useUser";
-import {DateRangeDropdown} from "../shared/custom-date-picker";
-import {Skeleton} from "../ui/skeleton";
-import Loader from "../shared/loader";
+"use client"
+import { useEffect, useState, useRef } from "react"
+import { Button } from "../ui/button"
+import { Icon } from "@iconify/react/dist/iconify.js"
+import { useRole } from "../ui/Context/UserContext"
+import { BarChart, Bar, XAxis, ResponsiveContainer, Tooltip, Cell, ReferenceDot } from "recharts"
+import { fetchTutorScore, fetchTeams } from "./analytic.service"
+import { useUserHook } from "@/hooks/useUser"
+import { DateRangeDropdown } from "../shared/custom-date-picker"
+import Loader from "../shared/loader"
+import { exportToPDF, createTutorAnalyticsPDFConfig } from "../../utils/graphPdfExport"
 
 const generateChartData = (monthlyData: any[]) => {
   // Get current month index (0-11)
-  const currentMonth = new Date().getMonth();
+  const currentMonth = new Date().getMonth()
 
   // Create array of last 12 months instead of 6
-  const last12Months = Array.from({length: 12}, (_, i) => {
-    const monthIndex = (currentMonth - i + 12) % 12;
-    const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    return monthNames[monthIndex];
-  }).reverse();
+  const last12Months = Array.from({ length: 12 }, (_, i) => {
+    const monthIndex = (currentMonth - i + 12) % 12
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    return monthNames[monthIndex]
+  }).reverse()
 
   // Find the maximum value to determine which bar should be yellow
-  const maxValue = Math.max(...monthlyData.map((item) => item.average), 0);
+  const maxValue = Math.max(...monthlyData.map((item) => item.average), 0)
 
   // Map the data to include only last 12 months
   const chartData = last12Months.map((month) => {
     // Find matching data by comparing short month name with API month format
     const monthData = monthlyData.find((item) => {
-      const apiMonth = item.month.split(" ")[0]; // Extract "Jul" from "Jul 2024"
-      return apiMonth === month;
+      const apiMonth = item.month.split(" ")[0] // Extract "Jul" from "Jul 2024"
+      return apiMonth === month
     }) || {
       month,
       average: 0,
       count: 0,
-    };
+    }
 
-    const isHighestValue = monthData.average === maxValue && maxValue > 0;
+    const isHighestValue = monthData.average === maxValue && maxValue > 0
 
     return {
       month: monthData.month.split(" ")[0] || month, // Use short month name for display
@@ -66,190 +45,193 @@ const generateChartData = (monthlyData: any[]) => {
       count: monthData.count,
       isHighlighted: isHighestValue, // Only highlight the highest value
       hasData: monthData.count > 0,
-    };
-  });
+    }
+  })
 
-  return chartData;
-};
+  return chartData
+}
 
-const CustomTooltip = ({active, payload, label}: any) => {
+const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
-    const data = payload[0].payload;
+    const data = payload[0].payload
     // Show tooltip for bars with actual data
     if (data.hasData) {
       return (
         <div className="bg-gray-700 text-white px-3 py-2 rounded-lg text-sm font-medium shadow-lg border-0">
           <div>{`${label}: ${data.actualValue}%`}</div>
         </div>
-      );
+      )
     }
   }
-  return null;
-};
+  return null
+}
 
 const AdminTutorAnalyticGraph = ({
   id,
   dashboard,
 }: {
-  id?: string | null;
-  dashboard?: boolean;
+  id?: string | null
+  dashboard?: boolean
 }) => {
-  const [selectedRange, setSelectedRange] = useState("Last 30 days");
-  const [showCustomFilterModal, setShowCustomFilterModal] = useState(false);
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [isLoadingData, setIsLoadingData] = useState(false);
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [teams, setTeams] = useState<any[]>([]);
-  const [selectedTeam, setSelectedTeam] = useState("all");
-  const {roleAccess} = useRole();
-  const {userData} = useUserHook();
+  const [selectedRange, setSelectedRange] = useState("Last 30 days")
+  const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
+  const [isLoadingData, setIsLoadingData] = useState(false)
+  const [isExportingPDF, setIsExportingPDF] = useState(false)
+  const [chartData, setChartData] = useState<any[]>([])
+  const [teams, setTeams] = useState<any[]>([])
+  const [selectedTeam, setSelectedTeam] = useState("all")
+  const { roleAccess } = useRole()
+  const { userData } = useUserHook()
+  const chartRef = useRef<HTMLDivElement>(null)
 
   // Fetch teams for owner
   useEffect(() => {
     if (userData && roleAccess === "owner") {
       const fetchteams = async () => {
-        const response = await fetchTeams((userData.org_id as string) || "");
-        setTeams(response || []);
-      };
-      fetchteams();
+        const response = await fetchTeams((userData.org_id as string) || "")
+        setTeams(response || [])
+      }
+      fetchteams()
     }
-  }, [userData, roleAccess]);
+  }, [userData, roleAccess])
 
   // Initialize default date range (Last 30 days)
   useEffect(() => {
-    const today = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(today.getDate() - 30);
-    setStartDate(thirtyDaysAgo);
-    setEndDate(today);
-  }, []);
+    const today = new Date()
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(today.getDate() - 30)
+    setStartDate(thirtyDaysAgo)
+    setEndDate(today)
+  }, [])
 
   // Fetch initial data and when selectedTeam changes
   useEffect(() => {
     const fetchData = async () => {
       if (userData?.organizations?.id) {
-        setIsLoadingData(true);
+        setIsLoadingData(true)
         try {
-          let category = undefined;
+          let category = undefined
           if (roleAccess === "owner") {
-            category = selectedTeam !== "all" ? selectedTeam : undefined;
+            category = selectedTeam !== "all" ? selectedTeam : undefined
           } else if (roleAccess === "admin") {
-            category = userData?.team_id;
+            category = userData?.team_id
           }
-          const response = await fetchTutorScore(
-            id ? id : userData.id,
-            category
-          );
+          const response = await fetchTutorScore(id ? id : userData.id, category)
 
           if (response && response.score && response.score.monthly) {
-            const generatedData = generateChartData(response.score.monthly);
-            setChartData(generatedData);
+            const generatedData = generateChartData(response.score.monthly)
+            setChartData(generatedData)
           } else {
-            setChartData(generateChartData([]));
+            setChartData(generateChartData([]))
           }
         } catch (error) {
-          setChartData(generateChartData([]));
+          setChartData(generateChartData([]))
         } finally {
-          setIsLoadingData(false);
+          setIsLoadingData(false)
         }
       } else {
-        setChartData(generateChartData([]));
+        setChartData(generateChartData([]))
       }
-    };
-
-    fetchData();
-  }, [userData, selectedTeam, roleAccess]);
-
-  const handleRangeChange = async (range: string) => {
-    setSelectedRange(range);
-
-    if (range === "Custom") {
-      setShowCustomFilterModal(true);
-      return;
     }
 
-    setIsLoadingData(true);
+    fetchData()
+  }, [userData, selectedTeam, roleAccess])
 
-    const today = new Date();
-    let start: Date;
-    const end: Date = today;
+  const handleRangeChange = async (range: string) => {
+    setSelectedRange(range)
+
+    if (range === "Custom") {
+      setShowCustomFilterModal(true)
+      return
+    }
+
+    setIsLoadingData(true)
+
+    const today = new Date()
+    let start: Date
+    const end: Date = today
 
     switch (range) {
       case "weekly":
-        start = new Date();
-        start.setDate(today.getDate() - 7);
-        break;
+        start = new Date()
+        start.setDate(today.getDate() - 7)
+        break
       case "monthly":
-        start = new Date();
-        start.setDate(today.getDate() - 30);
-        break;
+        start = new Date()
+        start.setDate(today.getDate() - 30)
+        break
       case "yearly":
-        start = new Date();
-        start.setFullYear(today.getFullYear() - 1);
-        break;
+        start = new Date()
+        start.setFullYear(today.getFullYear() - 1)
+        break
       default:
-        start = new Date();
-        start.setDate(today.getDate() - 30);
-        break;
+        start = new Date()
+        start.setDate(today.getDate() - 30)
+        break
     }
 
-    setStartDate(start);
-    setEndDate(end);
+    setStartDate(start)
+    setEndDate(end)
 
     // Fetch data for the selected range
     if (id) {
       try {
-        const response = await fetchTutorScore(id);
+        const response = await fetchTutorScore(id)
         if (response && response.score && response.score.monthly) {
-          setChartData(generateChartData(response.score.monthly));
+          setChartData(generateChartData(response.score.monthly))
         }
       } catch (error) {
-        console.error("Error fetching tutor score:", error);
+        console.error("Error fetching tutor score:", error)
       } finally {
-        setIsLoadingData(false);
+        setIsLoadingData(false)
       }
     }
-  };
+  }
 
-  const handleApplyCustomFilter = async (
-    newStartDate: Date,
-    newEndDate: Date
-  ) => {
-    setIsLoadingData(true);
-    setStartDate(newStartDate);
-    setEndDate(newEndDate);
-    setSelectedRange(
-      `${newStartDate.toLocaleDateString()} - ${newEndDate.toLocaleDateString()}`
-    );
+  const handleApplyCustomFilter = async (newStartDate: Date, newEndDate: Date) => {
+    setIsLoadingData(true)
+    setStartDate(newStartDate)
+    setEndDate(newEndDate)
+    setSelectedRange(`${newStartDate.toLocaleDateString()} - ${newEndDate.toLocaleDateString()}`)
 
     // Fetch data for the custom date range
     if (id) {
       try {
-        const response = await fetchTutorScore(id);
+        const response = await fetchTutorScore(id)
         if (response && response.score && response.score.monthly) {
-          setChartData(generateChartData(response.score.monthly));
+          setChartData(generateChartData(response.score.monthly))
         }
       } catch (error) {
-        console.error("Error fetching tutor score:", error);
+        console.error("Error fetching tutor score:", error)
       } finally {
-        setIsLoadingData(false);
+        setIsLoadingData(false)
       }
     }
-  };
+  }
+
+  const handleExportToPDF = async () => {
+    setIsExportingPDF(true)
+
+    try {
+      const config = createTutorAnalyticsPDFConfig(chartData, selectedTeam, teams,"", roleAccess || "")
+
+      await exportToPDF(config)
+    } catch (error) {
+      console.error("Error exporting PDF:", error)
+      alert("Failed to export PDF. Please try again.")
+    } finally {
+      setIsExportingPDF(false)
+    }
+  }
 
   return (
-    <div className="bg-[#191919] rounded-[30px] p-6 col-span-3">
+    <div className="bg-[#191919] rounded-[30px] p-6 col-span-3" ref={chartRef}>
       {/* SVG Pattern Definitions */}
       <svg width="0" height="0">
         <defs>
-          <pattern
-            id="diagonalHatch"
-            patternUnits="userSpaceOnUse"
-            width="6"
-            height="6"
-            patternTransform="rotate(45)"
-          >
+          <pattern id="diagonalHatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
             <rect width="6" height="6" fill="#2a2a2a" />
             <rect width="2" height="6" fill="#404040" />
           </pattern>
@@ -260,14 +242,16 @@ const AdminTutorAnalyticGraph = ({
         <h3 className="text-[24px] font-medium text-white">Tutor Analytics</h3>
         <div className="flex items-center gap-2">
           {roleAccess !== "user" && !id && !dashboard && (
-            <Button className="w-[52px] h-[50px] bg-[#F9DB6F] hover:bg-[#F9DB6F] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
-              <Icon
-                icon="bi:filetype-pdf"
-                width="24"
-                height="24"
-                color="black"
-                className="cursor-pointer"
-              />
+            <Button
+              className="w-[52px] h-[50px] bg-[#F9DB6F] hover:bg-[#F9DB6F] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer disabled:opacity-50"
+              onClick={handleExportToPDF}
+              disabled={isExportingPDF || isLoadingData}
+            >
+              {isExportingPDF ? (
+                <Icon icon="eos-icons:loading" width="24" height="24" color="black" className="animate-spin" />
+              ) : (
+                <Icon icon="bi:filetype-pdf" width="24" height="24" color="black" className="cursor-pointer" />
+              )}
             </Button>
           )}
           {/* Department filter for owners */}
@@ -279,7 +263,7 @@ const AdminTutorAnalyticGraph = ({
               bg={"bg-[black]"}
               disabled={isLoadingData}
               options={[
-                {label: "All Department", value: "all"},
+                { label: "All Department", value: "all" },
                 ...teams.map((team: any) => ({
                   label: team.name,
                   value: team.id,
@@ -315,33 +299,26 @@ const AdminTutorAnalyticGraph = ({
                 dataKey="month"
                 axisLine={false}
                 tickLine={false}
-                tick={{fill: "#888", fontSize: 14, fontWeight: 400}}
+                tick={{ fill: "#888", fontSize: 14, fontWeight: 400 }}
                 dy={10}
                 tickFormatter={(label) => label.split(" ")[0]}
               />
               <Tooltip
                 content={<CustomTooltip />}
-                cursor={{fill: "transparent"}}
-                position={{x: undefined, y: undefined}}
-                allowEscapeViewBox={{x: false, y: true}}
+                cursor={{ fill: "transparent" }}
+                position={{ x: undefined, y: undefined }}
+                allowEscapeViewBox={{ x: false, y: true }}
                 offset={-20}
-                coordinate={{x: undefined, y: undefined}}
+                coordinate={{ x: undefined, y: undefined }}
                 isAnimationActive={false}
               />
-              <Bar
-                dataKey="value"
-                radius={[12, 12, 12, 12]}
-                stroke="none"
-                style={{cursor: "pointer"}}
-              >
+              <Bar dataKey="value" radius={[12, 12, 12, 12]} stroke="none" style={{ cursor: "pointer" }}>
                 {chartData.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={
-                      entry.isHighlighted ? "#F9DB6F" : "url(#diagonalHatch)"
-                    }
+                    fill={entry.isHighlighted ? "#F9DB6F" : "url(#diagonalHatch)"}
                     stroke="none"
-                    style={{cursor: "pointer"}}
+                    style={{ cursor: "pointer" }}
                   />
                 ))}
               </Bar>
@@ -360,9 +337,7 @@ const AdminTutorAnalyticGraph = ({
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            No data available
-          </div>
+          <div className="flex items-center justify-center h-full text-gray-500">No data available</div>
         )}
       </div>
 
@@ -378,7 +353,7 @@ const AdminTutorAnalyticGraph = ({
         }
       `}</style>
     </div>
-  );
-};
+  )
+}
 
-export default AdminTutorAnalyticGraph;
+export default AdminTutorAnalyticGraph
