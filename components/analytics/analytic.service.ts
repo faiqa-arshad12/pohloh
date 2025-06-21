@@ -216,3 +216,20 @@ export const fetchLeaningPathPerformance = async (userId: string) => {
   }
 };
 
+export const fetchLeaningPathInsightsByDept = async (userId: string) => {
+  try {
+    const response = await fetch(`${apiUrl}/learning-paths/departments-insights/${userId}`, {
+      method: "GET",
+      headers: {"Content-Type": "application/json"},
+
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch user");
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Error fetching cards:", error);
+  }
+};
+

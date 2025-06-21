@@ -8,8 +8,13 @@ import MetricCard from "@/components/matric-card";
 import {Flame} from "lucide-react";
 import {useRole} from "@/components/ui/Context/UserContext";
 import AdminTutorAnalyticGraph from "./tutor-analytic-graph";
-import {fetchTutorStats, fetchUserStats} from "./analytic.service";
+import {
+  fetchLeaningPathInsightsByDept,
+  fetchTutorStats,
+  fetchUserStats,
+} from "./analytic.service";
 import {useUserHook} from "@/hooks/useUser";
+import InsightsSkeleton from "./insights-skeleton";
 
 export default function TutorAnalytics({
   id,
@@ -26,6 +31,8 @@ export default function TutorAnalytics({
   const [data, setData] = useState<any>();
   const {userData} = useUserHook();
   const [stats, setStats] = useState<any>(null);
+  const [insights, setInsights] = useState<any>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -63,6 +70,23 @@ export default function TutorAnalytics({
 
     if (id || userData) fetchStats();
   }, [id, userData, startDate, endDate, team]);
+
+  useEffect(() => {
+    const fetchInsights = async () => {
+      const userId = roleAccess === "user" ? userData.id : id;
+      if (userId) {
+        const response = await fetchLeaningPathInsightsByDept(userId);
+        if (response?.path) {
+          setInsights(response.path);
+          const firstCategory = Object.keys(response.path)[0];
+          if (firstCategory) {
+            setSelectedCategory(firstCategory);
+          }
+        }
+      }
+    };
+    if (id || userData) fetchInsights();
+  }, [id, userData, roleAccess]);
 
   return (
     <div className="">
@@ -123,11 +147,27 @@ export default function TutorAnalytics({
           <CompletedLearningPaths id={id} />
         </div>
 
-        <div className="w-full">
+        <div className="w-full h-full">
           <div className="bg-[#1c1c1c] rounded-2xl p-6 shadow-lg">
-            <CategoriesScore />
-
-            <StrengthWeekness />
+            {!insights ? (
+              <InsightsSkeleton />
+            ) : (
+              <>
+                <CategoriesScore
+                  insights={insights}
+                  selectedCategory={selectedCategory}
+                  setSelectedCategory={setSelectedCategory}
+                />
+                {selectedCategory && (
+                  <StrengthWeekness
+                    strengths={insights[selectedCategory]?.strengths || []}
+                    opportunities={
+                      insights[selectedCategory]?.opportunities || []
+                    }
+                  />
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
