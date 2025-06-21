@@ -24,7 +24,7 @@ const TopPerformance = ({
     router.push("/analytics/learning-path-performance");
   };
   return (
-    <div className="bg-[#191919] p-6 rounded-[12px] text-white shadow-md w-full">
+    <div className="bg-[#191919] p-6 rounded-[30px] text-white shadow-md w-full">
       <div className="flex flex-col">
         <div className="mb-4 flex justify-between items-center">
           <h4 className="font-urbanist font-bold text-[16px] leading-[140%] tracking-[0.01em] text-white">

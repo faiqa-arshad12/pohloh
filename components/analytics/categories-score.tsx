@@ -60,7 +60,7 @@ const CategoriesScore = ({
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 h-full">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <h2 className="font-urbanist font-medium text-[32px] leading-[100%] tracking-[0%]">
           Insights
         </h2>

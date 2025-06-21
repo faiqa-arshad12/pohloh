@@ -142,13 +142,13 @@ export default function TutorAnalytics({
         <AdminTutorAnalyticGraph id={id} />
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="w-full max-w-2xl">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8 h-auto">
+        <div className="w-full">
           <CompletedLearningPaths id={id} />
         </div>
 
-        <div className="w-full h-full">
-          <div className="bg-[#1c1c1c] rounded-2xl p-6 shadow-lg">
+        <div className="w-full h-full lg:col-span-2">
+          <div className="bg-[#1c1c1c] rounded-2xl p-6 shadow-lg h-full rounded-[30px]">
             {!insights ? (
               <InsightsSkeleton />
             ) : (
