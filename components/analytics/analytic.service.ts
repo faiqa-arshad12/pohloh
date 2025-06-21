@@ -201,11 +201,13 @@ export const fetchLeaderBoard = async (
 };
 export const fetchLeaningPathPerformance = async (userId: string) => {
   try {
-    const response = await fetch(`${apiUrl}/learning-paths/performance/${userId}`, {
-      method: "GET",
-      headers: {"Content-Type": "application/json"},
-
-    });
+    const response = await fetch(
+      `${apiUrl}/learning-paths/performance/${userId}`,
+      {
+        method: "GET",
+        headers: {"Content-Type": "application/json"},
+      }
+    );
 
     if (!response.ok) throw new Error("Failed to fetch user");
 
@@ -218,11 +220,13 @@ export const fetchLeaningPathPerformance = async (userId: string) => {
 
 export const fetchLeaningPathInsightsByDept = async (userId: string) => {
   try {
-    const response = await fetch(`${apiUrl}/learning-paths/departments-insights/${userId}`, {
-      method: "GET",
-      headers: {"Content-Type": "application/json"},
-
-    });
+    const response = await fetch(
+      `${apiUrl}/learning-paths/departments-insights/${userId}`,
+      {
+        method: "GET",
+        headers: {"Content-Type": "application/json"},
+      }
+    );
 
     if (!response.ok) throw new Error("Failed to fetch user");
 
@@ -232,4 +236,41 @@ export const fetchLeaningPathInsightsByDept = async (userId: string) => {
     console.error("Error fetching cards:", error);
   }
 };
+export const reAssignUserLearningPath = async (pathId: string, data: any) => {
+  try {
+    const response = await fetch(`${apiUrl}/learning-paths/users/${pathId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...data,
+      }),
+    });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to reassign learning path");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error reassigning learning path:", error);
+    throw error;
+  }
+};
+export const handleDeleteCard = async (id: string) => {
+  const response = await fetch(`${apiUrl}/cards/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Failed to Delete Knowledge Card");
+  }
+
+  return await response.json();
+};

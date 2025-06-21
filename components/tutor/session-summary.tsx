@@ -64,7 +64,8 @@ export default function SessionSummary({
               session_feedback: data?.session_summary?.session_feedback || "",
               completed_at: new Date().toISOString(),
             },
-            completed:true
+            completed: true,
+            updated_at: new Date().toISOString(),
             // question_breakdown: data?.question_breakdown || {
             //   correct_answers: correctAnswers,
             //   incorrect_answers: incorrectAnswers,

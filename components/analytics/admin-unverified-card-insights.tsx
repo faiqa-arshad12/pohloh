@@ -8,12 +8,14 @@ import Table from "../ui/table";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {Icon} from "@iconify/react/dist/iconify.js";
 import {exportToPDF} from "@/utils/exportToPDF";
-import {fetchCards} from "./analytic.service";
+import {fetchCards, handleDeleteCard} from "./analytic.service";
 import {useUserHook} from "@/hooks/useUser";
 import TableLoader from "../shared/table-loader";
 import {NoData} from "../shared/NoData";
 import Loader from "../shared/loader";
-
+import {useRouter} from "next/navigation";
+import DeleteConfirmationModal from "../tutor/delete-modal";
+import {ShowToast} from "../shared/show-toast";
 
 interface UnverifiedCard {
   id: string;
@@ -36,6 +38,11 @@ const AdminUnverifiedCard = () => {
   >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [isCardDeleteLoading, setIsCardDeleteLoading] = useState(false);
+
+  const router = useRouter();
 
   useEffect(() => {
     const getUnverifiedCards = async () => {
@@ -63,6 +70,10 @@ const AdminUnverifiedCard = () => {
     };
     getUnverifiedCards();
   }, [userData]);
+  const deletCard = async (id: string) => {
+    setSelectedCardId(id);
+    setIsOpen(true);
+  };
 
   const exportUnverifiedCardsToPDF = useCallback(() => {
     if (filteredUnverifiedCards.length === 0 || isExportingPDF) return;
@@ -156,6 +167,25 @@ const AdminUnverifiedCard = () => {
     [isExportingPDF]
   );
 
+  const confirmDelete = async (id: string) => {
+    if (!id) return;
+    setIsCardDeleteLoading(true);
+    try {
+      await handleDeleteCard(id);
+      setFilteredUnverifiedCards((prev) =>
+        prev.filter((card) => card.id !== id)
+      );
+      ShowToast("Card deleted successfully", "success");
+    } catch (error) {
+      console.error("Error deleting card:", error);
+      ShowToast("Failed to delete card", "error");
+    } finally {
+      setIsCardDeleteLoading(false);
+      setIsOpen(false);
+      setSelectedCardId(null);
+    }
+  };
+
   const handleDeletePath = (id: string) => {
     alert("deleted" + id);
   };
@@ -189,15 +219,20 @@ const AdminUnverifiedCard = () => {
             </DropdownMenu.Item> */}
 
             <DropdownMenu.Item
-              onSelect={() => exportSingleCardToPDF(row)}
-              disabled={isExportingPDF}
+              // onSelect={() => exportSingleCardToPDF(row)}
+              // disabled={isExportingPDF}
+              onClick={() => {
+                router.push(
+                  `knowledge-base/create-knowledge-base?cardId=${row.id}`
+                );
+              }}
               className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer"
             >
-              <Icon icon="bi:filetype-pdf" width="24" height="24" />
-              <span>Export as PDF</span>
+              <Icon icon="iconamoon:edit-light" width="24" height="24" />
+              <span>Edit</span>
             </DropdownMenu.Item>
             <DropdownMenu.Item
-              onSelect={() => handleDeletePath(row.id)}
+              onSelect={() => deletCard(row.id)}
               className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer"
             >
               <Trash2 className="h-4 w-4" />
@@ -263,7 +298,7 @@ const AdminUnverifiedCard = () => {
           className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border  px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer"
         >
           {isExportingPDF ? (
-            <Loader/>
+            <Loader />
           ) : (
             <Icon
               icon="bi:filetype-pdf"
@@ -293,6 +328,14 @@ const AdminUnverifiedCard = () => {
           />
         )}
       </div>
+      <DeleteConfirmationModal
+        onConfirm={confirmDelete}
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        title="Knowledge Card"
+        isLoading={isCardDeleteLoading}
+        id={selectedCardId}
+      />
     </div>
   );
 };

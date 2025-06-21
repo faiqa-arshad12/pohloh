@@ -14,6 +14,9 @@ import {useRole} from "../ui/Context/UserContext";
 import TableLoader from "../shared/table-loader";
 import {NoData} from "../shared/NoData";
 import Loader from "../shared/loader";
+import {reAssignUserLearningPath} from "./analytic.service";
+import {ShowToast} from "../shared/show-toast";
+import DeleteConfirmationModal from "../tutor/delete-modal";
 
 interface LearningPathInsight {
   id: string;
@@ -46,6 +49,12 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
   >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [reassigningPathId, setReassigningPathId] = useState<string | null>(
+    null
+  );
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchLearningPaths();
@@ -55,9 +64,7 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
     try {
       setIsLoading(true);
       const response = await fetch(
-        `${apiUrl}/users/learning-paths-insights/${
-          userData?.organizations.id || ""
-        }`
+        `${apiUrl}/users/learning-paths-insights/${userData?.id || ""}`
       );
 
       if (!response.ok) {
@@ -84,6 +91,28 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
       console.error("Error fetching learning paths:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+  const reAssignLearningPath = async (id: string) => {
+    setReassigningPathId(id);
+    try {
+      const data = {
+        completed: false,
+        session_summary: null,
+        strengths: null,
+        opportunities: null,
+        score: null,
+        questions_answered: [],
+        question_completed: 0,
+      };
+      await reAssignUserLearningPath(id, data);
+      ShowToast("Learning path has been reassigned successfully", "success");
+      fetchLearningPaths();
+    } catch (error) {
+      console.error("Error reassigning learning path:", error);
+      ShowToast("Failed to reassign learning path", "error");
+    } finally {
+      setReassigningPathId(null);
     }
   };
 
@@ -176,10 +205,10 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
   );
 
   const handleDeletePath = (id: string) => {
-    alert("deleted" + id);
+    setItemToDelete(id);
+    setDeleteModalOpen(true);
   };
 
-  // Custom cell renderer for learning paths
   const renderPathCell = (column: string, row: LearningPathInsight) => {
     switch (column) {
       case "name":
@@ -204,8 +233,34 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
     }
   };
 
-  // Custom cell renderer for tutors
+  const confirmDelete = async (pathId: string) => {
+    try {
+      setIsDeleting(true);
+
+      if (itemToDelete !== null) {
+        const response = await fetch(
+          `${apiUrl}/learning-paths/user-path/${pathId}`,
+          {
+            method: "delete",
+            headers: {"Content-Type": "application/json"},
+          }
+        );
+        ShowToast(`Successfully deleted!`);
+        fetchLearningPaths();
+
+        if (!response.ok) throw new Error("Failed to delete learning path");
+      }
+    } catch (err) {
+      console.error(`Error deleting learningpath :`, err);
+      ShowToast(`Error occured while deleting learning path: ${err}`, "error");
+    } finally {
+      setIsDeleting(false);
+      setItemToDelete(null);
+      setDeleteModalOpen(false);
+    }
+  };
   const renderRowActionsPath = (row: LearningPathInsight) => {
+    const isReassigning = reassigningPathId === row.learning_path_id;
     return (
       <div className="flex justify-start">
         <DropdownMenu.Root>
@@ -222,16 +277,22 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
             className="min-w-[200px] bg-[#222222] border border-[#333] rounded-md shadow-lg py-2 p-2 z-50"
           >
             <DropdownMenu.Item
-              onSelect={() => exportSingleLearningPathToPDF(row)}
-              disabled={isExportingPDF}
               className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer"
+              disabled={isReassigning}
+              onClick={() => {
+                if (!isReassigning) {
+                  reAssignLearningPath(row.id);
+                }
+              }}
             >
-              <Icon icon="bi:filetype-pdf" width="24" height="24" />
-              <span>Export as PDF</span>
-            </DropdownMenu.Item>
-            <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer">
-              <GraduationCap className="h-4 w-4" />
-              <span>Reassign Learning Path</span>
+              {isReassigning ? (
+                <Loader />
+              ) : (
+                <GraduationCap className="h-4 w-4" />
+              )}
+              <span>
+                {isReassigning ? "Reassigning..." : "Reassign Learning Path"}
+              </span>
             </DropdownMenu.Item>
             <DropdownMenu.Item
               onSelect={() => handleDeletePath(row.id)}
@@ -270,7 +331,7 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
           className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer"
         >
           {isExportingPDF ? (
-            <Loader/>
+            <Loader />
           ) : (
             <Icon
               icon="bi:filetype-pdf"
@@ -301,6 +362,14 @@ const AdminLearnignPath = ({orgId}: AdminLearnignPathProps) => {
           />
         )}
       </div>
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        id={itemToDelete}
+        title="Tutor Learning Path"
+        isLoading={isDeleting}
+      />
     </div>
   );
 };
