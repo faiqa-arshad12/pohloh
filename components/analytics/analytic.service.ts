@@ -367,3 +367,19 @@ export const fetchAllCards = async (orgId: string, userId: string) => {
     throw error;
   }
 };
+export const getMonthlyKnowledgeCardStats = async (userId: string) => {
+  try {
+    const response = await fetch(`${apiUrl}/cards/monthly-stats/${userId}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      // credentials: "include",
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch user cards");
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching user cards:", error);
+    throw error;
+  }
+};

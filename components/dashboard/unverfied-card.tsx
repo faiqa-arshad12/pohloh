@@ -203,7 +203,7 @@ export function UnverifiedCards({cards, isAnalytic}: UnverifiedCardProps) {
                     </span>
                   </div>
                 </div>
-                {!isAnalytic && (
+                {!isAnalytic ? (
                   <div className="flex items-center justify-center text-center flex-shrink-0">
                     <Button
                       variant="outline"
@@ -218,6 +218,26 @@ export function UnverifiedCards({cards, isAnalytic}: UnverifiedCardProps) {
                         "Verify"
                       )}
                     </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className="inline-flex h-[44px] items-center gap-2 bg-[#FFFFFF0A] rounded-full py-2 px-4">
+                      <div className="relative h-8 w-8 overflow-hidden rounded-full">
+                        <img
+                          src={
+                            card.card_owner_id.profile_picture ||
+                            "/placeholder-profile.svg"
+                          }
+                          alt={card.card_owner_id.first_name}
+                          width={30}
+                          height={30}
+                          className="object-cover"
+                        />
+                      </div>
+                      <span className="font-urbanist font-normal text-xl leading-[100%] tracking-normal text-white">
+                        {`${card.card_owner_id.first_name} ${card.card_owner_id.last_name}`}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
