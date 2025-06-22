@@ -537,3 +537,17 @@ export interface DateRangeOption {
   value: string;
   description?: string;
 }
+
+export interface Search {
+  id: string;
+  item: string;
+  org_id: string;
+  user_id: string;
+  created_at: string;
+}
+
+export interface SearchAnalytics {
+  item: string;
+  search_count: number;
+  latest_search: string;
+}

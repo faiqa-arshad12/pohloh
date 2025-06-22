@@ -274,3 +274,80 @@ export const handleDeleteCard = async (id: string) => {
 
   return await response.json();
 };
+export const fetchALLSearches = async (orgId: string) => {
+  const response = await fetch(`${apiUrl}/searches/organization/${orgId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Failed to Find  search items");
+  }
+
+  return await response.json();
+};
+export const fetchALLSearchesByUser = async (
+  orgId: string,
+  userId: string,
+  startDate?: string,
+  endDate?: string
+) => {
+  const response = await fetch(
+    `${apiUrl}/searches/organization/${orgId}/user/${userId}?startData=${startDate}&endDate=${endDate}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Failed to Find  search items");
+  }
+
+  return await response.json();
+};
+
+export const fetchALLTrendingSearchesByUser = async (
+  orgId: string,
+  userId: string,
+  startDate?: string,
+  endDate?: string
+) => {
+  const response = await fetch(
+    `${apiUrl}/searches/organization/${orgId}/user/${userId}/trending?startData=${startDate}&endDate=${endDate}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Failed to Find  search items");
+  }
+
+  return await response.json();
+};
+export const fetchUserData = async (id: string) => {
+  try {
+    const response = await fetch(`${apiUrl}/users/${id}`, {
+      method: "GET",
+      headers: {"Content-Type": "application/json"},
+      // credentials: "include",
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch user");
+    const data = await response.json();
+    return data.user;
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+  }
+};
