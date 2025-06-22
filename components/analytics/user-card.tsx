@@ -358,6 +358,7 @@ export const UserCard = () => {
                 selectedRange={selectedRange}
                 onRangeChange={handleRangeChange}
                 width="200px"
+                bg="bg-[black]"
                 disabled={isLoadingData}
                 options={getDropdownOptions()}
               />

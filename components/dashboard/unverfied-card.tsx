@@ -37,9 +37,10 @@ const filters = ["Monthly", "Weekly", "Yearly"];
 
 interface UnverifiedCardProps {
   cards: UnverifiedCard[];
+  isAnalytic?: boolean;
 }
 
-export function UnverifiedCards({cards}: UnverifiedCardProps) {
+export function UnverifiedCards({cards, isAnalytic}: UnverifiedCardProps) {
   const [selectedFilter, setSelectedFilter] = useState("Monthly");
   const [filteredCards, setFilteredCards] = useState<UnverifiedCard[]>([]);
   const [hasScrollbar, setHasScrollbar] = useState(false);
@@ -202,17 +203,23 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center justify-center text-center flex-shrink-0">
-                  <Button
-                    variant="outline"
-                    className="w-full border-white text-white hover:bg-[#333435] hover:text-white bg-[#333435] !h-[27.58] !cursor-pointer px-9"
-                    onClick={() => {
-                      handleVerifyCard(card.id, card.verificationperiod);
-                    }}
-                  >
-                    {isVerifying && cardId === card.id ? <Loader /> : "Verify"}
-                  </Button>
-                </div>
+                {!isAnalytic && (
+                  <div className="flex items-center justify-center text-center flex-shrink-0">
+                    <Button
+                      variant="outline"
+                      className="w-full border-white text-white hover:bg-[#333435] hover:text-white bg-[#333435] !h-[27.58] !cursor-pointer px-9"
+                      onClick={() => {
+                        handleVerifyCard(card.id, card.verificationperiod);
+                      }}
+                    >
+                      {isVerifying && cardId === card.id ? (
+                        <Loader />
+                      ) : (
+                        "Verify"
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Description */}

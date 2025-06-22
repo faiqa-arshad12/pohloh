@@ -1,15 +1,15 @@
-import React, {useState} from "react";
+import React from "react";
 import {UnverifiedCards} from "../dashboard/unverfied-card";
-
 import {useRole} from "../ui/Context/UserContext";
-
 import MetricCard from "../matric-card";
 import AdminCard from "./admin-card";
 import {UserCard} from "./user-card";
 import CardCreatedOverview from "./card-created-overview";
+import {useUnverifiedCards} from "@/hooks/use-unverified-cards";
 
 export default function Card() {
   const {roleAccess} = useRole();
+  const {cards, isLoading} = useUnverifiedCards();
 
   return (
     <div className="">
@@ -23,7 +23,6 @@ export default function Card() {
             </div>
           }
         />
-
         <MetricCard
           value="160"
           label="Trust Score"
@@ -54,14 +53,11 @@ export default function Card() {
       </div>
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
         <CardCreatedOverview />
-
         <div className="w-full lg:w-1/3">
-          <UnverifiedCards cards={[]} />
+          <UnverifiedCards cards={cards} isAnalytic />
         </div>
       </div>
-
       {(roleAccess === "admin" || roleAccess === "owner") && <AdminCard />}
-
       {roleAccess === "user" && <UserCard />}
     </div>
   );

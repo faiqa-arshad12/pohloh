@@ -3,13 +3,13 @@ import Table from "../ui/table";
 import {Button} from "../ui/button";
 import {Icon} from "@iconify/react/dist/iconify.js";
 import {fetchALLSearches} from "./analytic.service";
-import {useUser} from "@clerk/nextjs";
 import {SearchAnalytics} from "@/types/types";
 import TableLoader from "../shared/table-loader";
 import {useRouter} from "next/navigation";
+import {useUserHook} from "@/hooks/useUser";
+import {exportToPDF} from "@/utils/exportToPDF";
 
 const AdminCard = () => {
-  const {user} = useUser();
   const [searchData, setSearchData] = useState<SearchAnalytics[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,6 +19,7 @@ const AdminCard = () => {
     {Header: "Search Terms", accessor: "item"},
     {Header: "Search Frequency", accessor: "search_count"},
   ];
+  const {userData} = useUserHook();
 
   useEffect(() => {
     const fetchSearchData = async () => {
@@ -27,8 +28,6 @@ const AdminCard = () => {
         setError(null);
 
         // Get user details to get org_id
-        const userDetails = await fetch(`/api/user-details?userId=${user?.id}`);
-        const userData = await userDetails.json();
 
         if (userData.org_id) {
           const response = await fetchALLSearches(userData.org_id);
@@ -48,10 +47,10 @@ const AdminCard = () => {
       }
     };
 
-    if (user?.id) {
+    if (userData) {
       fetchSearchData();
     }
-  }, [user?.id]);
+  }, [userData]);
 
   const processedData = searchData.map((item: SearchAnalytics) => ({
     item: item.item,
@@ -66,7 +65,25 @@ const AdminCard = () => {
           <h3 className="font-urbanist font-medium text-[24px] leading-[100%] tracking-[0%]">
             Unanswered Searches
           </h3>
-          <Button className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
+          <Button
+            className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer"
+            onClick={() => {
+              if (searchData.length > 0) {
+                exportToPDF({
+                  title: "Unanswered Searches",
+                  filename: "unanswered-searches",
+                  data: processedData,
+                  type: "table",
+                  columns: ["item", "search_count"],
+                  headers: {
+                    item: "Search Terms",
+                    search_count: "Search Frequency",
+                  },
+                });
+              }
+            }}
+            disabled={searchData.length === 0}
+          >
             <Icon
               icon="bi:filetype-pdf"
               width="24"
