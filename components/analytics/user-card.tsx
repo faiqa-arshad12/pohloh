@@ -6,6 +6,7 @@ import {policies} from "@/utils/analytic-data";
 import {
   fetchALLTrendingSearchesByUser,
   fetchUserData,
+  fetchAllCards,
 } from "./analytic.service";
 import {useUserHook} from "@/hooks/useUser";
 import {useSearchParams} from "next/navigation";
@@ -28,11 +29,33 @@ interface TrendingSearchItem {
   latest_search: string;
 }
 
+interface Card {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  card_status: string;
+  category_id: {
+    name: string;
+    icon: string;
+  };
+  folder_id: {
+    name: string;
+  };
+  card_owner_id: {
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+}
+
 export const UserCard = () => {
   const {userData} = useUserHook();
   const searchParams = useSearchParams();
   const userId = searchParams?.get("id") || userData?.id;
   const [trendingData, setTrendingData] = useState<TrendingSearchItem[]>([]);
+  const [cardsData, setCardsData] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRange, setSelectedRange] = useState("Last 30 days");
@@ -50,10 +73,10 @@ export const UserCard = () => {
 
   const CARDS_PER_PAGE = 3;
   const ITEMS_PER_PAGE = 4;
-  const totalPages = Math.ceil(policies.length / CARDS_PER_PAGE);
+  const totalPages = Math.ceil(cardsData.length / CARDS_PER_PAGE);
   const totalTrendingPages = Math.ceil(trendingData.length / ITEMS_PER_PAGE);
 
-  const visiblePolicies = policies.slice(
+  const visibleCards = cardsData.slice(
     currentPage * CARDS_PER_PAGE,
     (currentPage + 1) * CARDS_PER_PAGE
   );
@@ -87,6 +110,32 @@ export const UserCard = () => {
     setStartDate(thirtyDaysAgo);
     setEndDate(today);
   }, []);
+
+  useEffect(() => {
+    const fetchCardsData = async () => {
+      if (!userId || !userData?.org_id) return;
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetchAllCards(userData.org_id, userId);
+
+        if (response.success && response.cards) {
+          setCardsData(response.cards);
+        } else {
+          setError("Failed to fetch cards data");
+        }
+      } catch (err) {
+        console.error("Error fetching cards data:", err);
+        setError("Failed to load cards data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCardsData();
+  }, [userId, userData?.org_id]);
 
   useEffect(() => {
     const fetchTrendingData = async () => {
@@ -255,36 +304,44 @@ export const UserCard = () => {
             <div className="flex gap-2">
               <button
                 className={`w-[20px] h-[20px] flex items-center justify-center rounded-full cursor-pointer ${
-                  currentPage > 0
+                  currentPage > 0 && cardsData.length > 0
                     ? "text-[#F9DB6F] border-2 border-[#F9DB6F]"
                     : "bg-[#1e1e1e] text-gray-400 cursor-not-allowed"
                 }`}
                 onClick={goToPrevious}
-                disabled={currentPage === 0}
+                disabled={currentPage === 0 || cardsData.length === 0}
               >
                 <ChevronLeft size={18} />
               </button>
               <button
                 className={`w-[20px] h-[20px] cursor-pointer flex items-center justify-center rounded-full ${
-                  currentPage < totalPages - 1
+                  currentPage < totalPages - 1 && cardsData.length > 0
                     ? "text-[#F9DB6F] border-2 border-[#F9DB6F]"
                     : "bg-[#1e1e1e] text-gray-400 cursor-not-allowed"
                 }`}
                 onClick={goToNext}
-                disabled={currentPage === totalPages - 1}
+                disabled={
+                  currentPage === totalPages - 1 || cardsData.length === 0
+                }
               >
                 <ChevronRight size={18} />
               </button>
             </div>
           </div>
           <div className="space-y-4">
-            {visiblePolicies.map((policy, index) => (
-              <PolicyCard
-                key={index}
-                title={policy.title}
-                description={policy.description}
-              />
-            ))}
+            {visibleCards.length > 0 ? (
+              visibleCards.map((card, index) => (
+                <CardCard
+                  key={card.id}
+                  title={card.title}
+                  content={card.content}
+                />
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-400">
+                No recent cards found
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -315,8 +372,7 @@ export const UserCard = () => {
           </div>
           {loading ? (
             <div className="flex flex-row justify-center items-center">
-
-            <Loader />
+              <Loader />
             </div>
           ) : (
             <div className="space-y-4 flex flex-col lg:flex-row gap-4 w-full">
@@ -442,17 +498,22 @@ export const UserCard = () => {
   );
 };
 
-const PolicyCard = ({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) => {
+const CardCard = ({title, content}: {title: string; content: string}) => {
+  // Function to strip HTML tags for display
+  const stripHtml = (html: string) => {
+    return html.replace(/<[^>]*>/g, "");
+  };
+
+  const cleanContent = stripHtml(content);
+
   return (
     <div className="bg-[#232323] rounded-lg p-4 cursor-pointer transition-colors hover:bg-[#2a2a2a]">
       <h3 className="text-white font-medium mb-2">{title}</h3>
-      <p className="text-gray-400 text-sm">{description}</p>
+      <p className="text-gray-400 text-sm line-clamp-2">
+        {cleanContent.length > 100
+          ? `${cleanContent.substring(0, 100)}...`
+          : cleanContent}
+      </p>
     </div>
   );
 };
