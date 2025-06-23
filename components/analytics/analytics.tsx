@@ -57,21 +57,6 @@ function AnalyticsContent() {
     setEndDate(today);
   }, []);
 
-  // useEffect(() => {
-  //   if (tutorId) {
-  //     const fetchStats = async () => {
-  //       const stats = await fetchTutorStats(
-  //         tutorId,
-  //         startDate ? startDate.toISOString() : undefined,
-  //         endDate ? endDate.toISOString() : undefined,
-  //         selectedTeam !== "all" ? selectedTeam : undefined
-  //       );
-  //       setStats(stats.stats);
-  //     };
-  //     if (tutorId) fetchStats();
-  //   }
-  // }, [tutorId, selectedTeam, startDate, endDate, userData, id, searchParams]);
-
   const handleRangeChange = async (range: string) => {
     const selectedOption = getDropdownOptions().find(
       (option) => option.value === range

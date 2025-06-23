@@ -12,9 +12,6 @@ import TableLoader from "../shared/table-loader";
 import {exportToPDF} from "@/utils/exportToPDF";
 import Loader from "../shared/loader";
 
-interface AdminLeaderBoardProps {
-  departmentId: string | null;
-}
 
 const AdminLeaderBoard = () => {
   interface LeaderboardEntry {

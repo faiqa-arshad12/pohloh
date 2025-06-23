@@ -1,11 +1,5 @@
 import React, {useState} from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import {ChevronLeft, ChevronRight} from "lucide-react";
 import {cn} from "@/lib/utils";
 import {renderIcon} from "@/lib/renderIcon";
@@ -27,7 +21,6 @@ const CategoriesScore = ({
   selectedCategory: string | null;
   setSelectedCategory: (category: string) => void;
 }) => {
-  const [interval, setInterval] = useState("monthly");
 
   const categories = insights
     ? Object.keys(insights).map((key) => ({

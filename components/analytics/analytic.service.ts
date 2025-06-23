@@ -372,7 +372,6 @@ export const getMonthlyKnowledgeCardStats = async (userId: string) => {
     const response = await fetch(`${apiUrl}/cards/monthly-stats/${userId}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
-      // credentials: "include",
     });
 
     if (!response.ok) throw new Error("Failed to fetch user cards");

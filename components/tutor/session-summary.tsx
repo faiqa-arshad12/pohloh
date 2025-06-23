@@ -4,7 +4,6 @@ import Leavefeedback from "./session-summary/leave-feedback";
 import {Loader2} from "lucide-react";
 import {apiUrl, apiUrl_AI_Tutor} from "@/utils/constant";
 import {SessionSummaryData, SessionSummaryProps} from "@/types/tutor-types";
-import {useUserHook} from "@/hooks/useUser";
 
 export default function SessionSummary({
   sessionData,
@@ -27,7 +26,7 @@ export default function SessionSummary({
         setError(null);
 
         const response = await fetch(
-          `${apiUrl_AI_Tutor}/tutor-evaluation/evaluate-answers`,
+          `https://c42d-182-180-99-121.ngrok-free.app/evaluate-answers`,
           {
             method: "POST",
             headers: {
@@ -53,6 +52,9 @@ export default function SessionSummary({
 
           const sessionSummaryObject = {
             score: data?.session_summary?.percentage_score || 0,
+            strengths: data?.performance_analysis.strengths,
+            opportunities: data?.performance_analysis.weaknesses,
+
             session_summary: {
               total_questions: totalQuestions,
               correct_answers: correctAnswers,
@@ -66,6 +68,7 @@ export default function SessionSummary({
             },
             completed: true,
             updated_at: new Date().toISOString(),
+
             // question_breakdown: data?.question_breakdown || {
             //   correct_answers: correctAnswers,
             //   incorrect_answers: incorrectAnswers,

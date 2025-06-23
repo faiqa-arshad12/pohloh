@@ -22,20 +22,33 @@ interface TutorListProps {
 }
 
 const TagList = React.memo(({items}: {items?: string[]}) => {
-  const tagElements = useMemo(
-    () =>
-      items?.map((item, i) => (
-        <span
-          key={`${item}-${i}`}
-          className="bg-[#F9DB6F66] text-[15.93px] px-3 rounded-full h-[38px] items-center text-center flex"
-        >
-          {item}
-        </span>
-      )) || [],
-    [items]
-  );
+  const tagElements = useMemo(() => {
+    if (!items || items.length === 0) return [];
 
-  return <div className="flex gap-1">{tagElements}</div>;
+    return (
+      <div className="py-2">
+        <div
+          className={`flex flex-wrap gap-1 max-w-[200px] sm:max-w-[250px] md:max-w-[300px] lg:max-w-[200px] ${
+            items.length > 2
+              ? "max-h-[40px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200"
+              : ""
+          }`}
+        >
+          {items.map((item, i) => (
+            <span
+              key={`${item}-${i}`}
+              className="bg-[#F9DB6F66] text-[13px] sm:text-[14px] md:text-[15.93px] px-2 sm:px-3 rounded-full h-[32px] sm:h-[36px] md:h-[38px] items-center text-center flex truncate min-w-0"
+              title={item}
+            >
+              <span className="truncate">{item}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }, [items]);
+
+  return tagElements;
 });
 
 TagList.displayName = "TagList";
@@ -126,7 +139,6 @@ const TutorList = ({orgId}: TutorListProps) => {
   );
 
   const exportSingleTutorToPDF = useCallback((tutor: Tutor) => {
-    // Create a filtered object with only the fields we want to export
     const filteredTutorData = {
       name: tutor.name,
       email: tutor.email,
@@ -274,16 +286,18 @@ const TutorList = ({orgId}: TutorListProps) => {
         ) : filteredTutors.length === 0 ? (
           <NoData />
         ) : (
-          <Table
-            columns={tableColumns}
-            data={filteredTutors}
-            renderCell={renderTutorCell}
-            renderActions={renderRowActionsTutor}
-            tableClassName="w-full text-sm"
-            headerClassName="bg-[#F9DB6F] text-black text-left font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0]"
-            bodyClassName="divide-y divide-gray-700 w-[171px] h-[68px]"
-            cellClassName="py-2 px-4 border-t border-[#E0EAF5] relative w-[171px] h-[68px] overflow-visible font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0]"
-          />
+          <div className="min-w-[800px]">
+            <Table
+              columns={tableColumns}
+              data={filteredTutors}
+              renderCell={renderTutorCell}
+              renderActions={renderRowActionsTutor}
+              tableClassName="w-full text-sm table-fixed"
+              headerClassName="bg-[#F9DB6F] text-black text-left font-urbanist font-medium text-[13px] sm:text-[14px] md:text-[15.93px] leading-[21.9px] tracking-[0]"
+              bodyClassName="divide-y divide-gray-700"
+              cellClassName="py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 border-t border-[#E0EAF5] relative overflow-hidden font-urbanist font-medium text-[13px] sm:text-[14px] md:text-[15.93px] leading-[21.9px] tracking-[0] align-top"
+            />
+          </div>
         )}
       </div>
     </div>

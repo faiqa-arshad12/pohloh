@@ -1,8 +1,6 @@
 import React, {useState, useEffect} from "react";
-import {ChevronLeft, ChevronRight, CircleAlert} from "lucide-react";
+import {ChevronLeft, ChevronRight} from "lucide-react";
 
-import {useRole} from "../ui/Context/UserContext";
-import {policies} from "@/utils/analytic-data";
 import {
   fetchALLTrendingSearchesByUser,
   fetchUserData,
@@ -14,14 +12,6 @@ import {DateRangeDropdown} from "../shared/custom-date-picker";
 import {CustomDateFilterModal} from "../shared/date-filter";
 import {getDropdownOptions} from "@/utils/constant";
 import Loader from "../shared/loader";
-
-interface SearchItem {
-  id: string;
-  item: string;
-  org_id: string;
-  user_id: string;
-  created_at: string;
-}
 
 interface TrendingSearchItem {
   item: string;
@@ -139,7 +129,7 @@ export const UserCard = () => {
 
   useEffect(() => {
     const fetchTrendingData = async () => {
-      if (!userId || !userData?.org_id) return;
+      if (!userId && !userData?.org_id) return;
 
       try {
         setLoading(true);
@@ -172,7 +162,7 @@ export const UserCard = () => {
   }, [userId, userData?.org_id, startDate, endDate]);
   useEffect(() => {
     const fetchUserInfo = async () => {
-      if (!userId || !userData?.org_id) return;
+      if (!userId && !userData?.org_id) return;
 
       try {
         const response = await fetchUserData(userId);

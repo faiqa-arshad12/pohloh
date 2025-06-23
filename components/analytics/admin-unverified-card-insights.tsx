@@ -1,6 +1,6 @@
 import {useState, useEffect, useCallback} from "react";
 
-import {MoreHorizontal, Trash2, GraduationCap, Ellipsis} from "lucide-react";
+import {MoreHorizontal, Trash2, Ellipsis} from "lucide-react";
 import React from "react";
 import {Button} from "../ui/button";
 import Table from "../ui/table";

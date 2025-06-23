@@ -11,11 +11,10 @@ import {
 } from "recharts";
 
 interface GraphProps {
-  departmentId: string | null;
   data: {name: string; value: number}[];
 }
 
-const Graph = ({departmentId, data}: GraphProps) => {
+const Graph = ({ data}: GraphProps) => {
   return (
     <div>
       <div className="rounded-xl p-4 h-[220px]">

@@ -1,11 +1,24 @@
-export const generateChartData = (monthlyData: any[], valueKey: string = 'count') => {
+export const generateChartData = (
+  monthlyData: any[],
+  valueKey: string = "count"
+) => {
   const currentMonth = new Date().getMonth();
   const monthNames = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ];
 
-  const last12Months = Array.from({ length: 12 }, (_, i) => {
+  const last12Months = Array.from({length: 12}, (_, i) => {
     const monthIndex = (currentMonth - i + 12) % 12;
     return monthNames[monthIndex];
   }).reverse();
@@ -16,8 +29,8 @@ export const generateChartData = (monthlyData: any[], valueKey: string = 'count'
     const monthData = monthlyData.find((item) => {
       const apiMonth = item.month.split(" ")[0];
       return apiMonth === month;
-    }) || { month, [valueKey]: 0, count: 0 };
-    
+    }) || {month, [valueKey]: 0, count: 0};
+
     const isHighestValue = monthData[valueKey] === maxValue && maxValue > 0;
 
     return {

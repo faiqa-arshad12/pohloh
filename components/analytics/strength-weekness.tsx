@@ -14,7 +14,6 @@ const StrengthWeekness = ({
   const [opportunitiesIndex, setOpportunitiesIndex] = useState(0);
   const itemsPerPage = 3;
 
-  // Strengths Pagination
   const isFirstStrength = strengthsIndex === 0;
   const isLastStrength = strengthsIndex + itemsPerPage >= strengths.length;
   const goToPreviousStrengths = () => {

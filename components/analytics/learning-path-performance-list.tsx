@@ -60,15 +60,32 @@ export default function LearningPathsPerformanceList() {
   const columns = [
     {Header: "Learning Paths", accessor: "title"},
     {Header: "Overall Score", accessor: "averageScore"},
+    {Header: "Status Label", accessor: "statusLabel"},
   ];
 
+  // Add statusLabel to data for rendering
+  const dataWithStatus = useMemo(
+    () =>
+      filteredData.map((row) => ({
+        ...row,
+        statusLabel: row.averageScore >= 50 ? "High" : "Low",
+      })),
+    [filteredData]
+  );
+
   // Render cell
-  const renderCell = (column: string, row: LearningPathPerformanceData) => {
+  const renderCell = (
+    column: string,
+    row: LearningPathPerformanceData & {statusLabel: string}
+  ) => {
     if (column === "averageScore") {
       return `${row.averageScore}%`;
     }
     if (column === "title") {
       return row.title;
+    }
+    if (column === "statusLabel") {
+      return row.statusLabel;
     }
     return "-";
   };
@@ -92,7 +109,7 @@ export default function LearningPathsPerformanceList() {
       <div className="overflow-hidden">
         {loading ? (
           <TableLoader />
-        ) : filteredData.length === 0 ? (
+        ) : dataWithStatus.length === 0 ? (
           <div className="text-center py-10">
             <p className="text-gray-400">
               {searchQuery
@@ -103,7 +120,7 @@ export default function LearningPathsPerformanceList() {
         ) : (
           <Table
             columns={columns}
-            data={filteredData}
+            data={dataWithStatus}
             filterValue={searchQuery}
             renderCell={renderCell}
             tableClassName="w-full border-collapse"
