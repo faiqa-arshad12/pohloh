@@ -172,19 +172,32 @@ export const SchedulePlan: React.FC<SchedulePlanProps> = ({userId}) => {
                     className="relative flex items-center justify-center h-12 w-12 mx-auto group cursor-pointer"
                   >
                     <div
+                      // className={`
+                      //   flex items-center justify-center h-10 w-10 rounded-full text-sm font-medium bg-[black]
+                      //   ${
+                      //     goalStatus?.is_quiz_day
+                      //       ? goalStatus.goal_achieved
+                      //         ? "bg-green-500 text-white"
+                      //         : "bg-red-500 text-white"
+                      //       : isCurrentMonth && isInRange
+                      //       ? "text-white hover:bg-[black] bg-[black]"
+                      //       : "text-gray-600"
+                      //   }
+                        // ${!isCurrentMonth ? "text-gray-600 bg-[black]" : ""}
+                      // `}
                       className={`
-                        flex items-center justify-center h-10 w-10 rounded-full text-sm font-medium
+                        flex items-center justify-center text-[16px] font-urbanist h-10 w-10 rounded-full text-sm font-medium
                         ${
                           goalStatus?.is_quiz_day
                             ? goalStatus.goal_achieved
-                              ? "bg-green-500 text-white"
-                              : "bg-red-500 text-white"
+                              ? "bg-[#50DDA5] text-black"
+                              : "bg-[#EA2D30] text-white"
                             : isCurrentMonth && isInRange
                             ? "text-white hover:bg-[black] bg-[black]"
                             : "text-gray-600"
                         }
-                        ${!isCurrentMonth ? "text-gray-600" : ""}
-                        transition-colors duration-200
+                        ${!isCurrentMonth ? "text-white bg-[black]" : ""}
+
                       `}
                     >
                       {format(day, "d")}
