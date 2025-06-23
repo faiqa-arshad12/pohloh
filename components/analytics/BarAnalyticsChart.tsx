@@ -54,8 +54,8 @@ const ReusableBarChart: React.FC<ReusableBarChartProps> = ({
 }) => {
   return (
     <div
-      className={`bg-[#191919] rounded-[30px] p-6 pb-2 col-span-3 w-full justify-between ${
-        isCard ? "lg:w-2/3" : ""
+      className={`bg-[#191919] rounded-[30px] w-full justify-between ${
+        isCard ? "lg:w-2/3 p-4 pt-8" : ""
       }`}
     >
       {/* SVG Pattern Definitions */}

@@ -3,7 +3,6 @@ import {AnnouncementCard} from "@/components/dashboard/announcments";
 import {SavedCards} from "@/components/dashboard/saved-card";
 import {UnverifiedCards} from "@/components/dashboard/unverfied-card";
 import React, {useEffect, useState} from "react";
-import Image from "next/image";
 import {Calendar, dateFnsLocalizer, Event} from "react-big-calendar";
 import {format, parse, startOfWeek, getDay} from "date-fns";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -68,7 +67,6 @@ const events: Event[] = [
 
 const Page = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("Monthly");
-  const [interval, setInterval] = useState<Interval>("monthly");
   const [selectedMonth, setSelectedMonth] = useState<string>(
     new Date().toISOString()
   );
@@ -109,24 +107,6 @@ const Page = () => {
         if (!cardsRes.ok) throw new Error("Failed to fetch cards");
         const {cards} = await cardsRes.json();
         setCards(cards);
-        // if (userRole === "owner") {
-        //   setCards(cards || []);
-        // } else if (userRole === "user") {
-        //   const filteredCards = (cards || []).filter((card: any) => {
-        //     return card.card_owner_id?.id === userData.user.id;
-        //   });
-
-        //   setCards(filteredCards);
-        // } else {
-        //   const filteredCards = (cards || []).filter((card: any) => {
-        //     return (
-        //       card.card_owner_id?.id === userData.user.id ||
-        //       card.category_id.id == userData.user.team_id
-        //     );
-        //   });
-
-        //   setCards(filteredCards);
-        // }
       } catch (err) {
         console.error("Error fetching cards:", err);
         toast.error("Failed to load cards");
@@ -402,7 +382,7 @@ const Page = () => {
             />
           </div>
         </div> */}
-        <div className="lg:col-span-2 bg-[#191919] rounded-2xl p-6 h-full">
+        <div className="lg:col-span-2 bg-[#191919] rounded-[30px] h-full pt-4">
           <AdminTutorAnalyticGraph dashboard />
         </div>
         <div className="h-full w-full bg-[#191919] p-6 rounded-2xl">

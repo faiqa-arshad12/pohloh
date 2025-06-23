@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import {UnverifiedCards} from "../dashboard/unverfied-card";
 import {useRole} from "../ui/Context/UserContext";
 import MetricCard from "../matric-card";
@@ -6,16 +6,30 @@ import AdminCard from "./admin-card";
 import {UserCard} from "./user-card";
 import CardCreatedOverview from "./card-created-overview";
 import {useUnverifiedCards} from "@/hooks/use-unverified-cards";
+import {getKnowledgeCardStats} from "./analytic.service";
+import {useUserHook} from "@/hooks/useUser";
 
 export default function Card() {
   const {roleAccess} = useRole();
   const {cards, isLoading} = useUnverifiedCards();
+  const [stats, setStats] = useState<any>(null);
+  const {userData} = useUserHook();
+
+  useEffect(() => {
+    const getStats = async () => {
+      if (userData?.id) {
+        const res = await getKnowledgeCardStats(userData.id);
+        setStats(res.data);
+      }
+    };
+    getStats();
+  }, [userData]);
 
   return (
     <div className="">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8 ">
         <MetricCard
-          value="08"
+          value={stats?.total_cards_created || "0"}
           label="Cards Created"
           icon={
             <div className="p-2 rounded-full  flex items-center justify-center">
@@ -24,7 +38,7 @@ export default function Card() {
           }
         />
         <MetricCard
-          value="160"
+          value={`${(stats?.verified_percentage || 0).toFixed(2)}%`}
           label="Trust Score"
           icon={
             <div className=" p-2 rounded-full flex items-center justify-center">
@@ -33,7 +47,7 @@ export default function Card() {
           }
         />
         <MetricCard
-          value="3/11"
+          value={stats?.rank || "N/A"}
           label="Team Rank"
           icon={
             <div className=" p-2 rounded-full  flex items-center justify-center">
@@ -42,7 +56,7 @@ export default function Card() {
           }
         />
         <MetricCard
-          value="82%"
+          value={stats?.goal != null ? `${stats.goal}%` : "N/A"}
           label="Card Goal Achieved"
           icon={
             <div className=" p-2 rounded-full">
