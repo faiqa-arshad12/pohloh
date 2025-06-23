@@ -50,6 +50,14 @@ export default function SessionSummary({
           const totalQuestions = data?.session_summary?.total_questions || 0;
           const incorrectAnswers = totalQuestions - correctAnswers;
 
+          const todayLocal = new Date();
+          const localDateString =
+            todayLocal.getFullYear() +
+            "-" +
+            String(todayLocal.getMonth() + 1).padStart(2, "0") +
+            "-" +
+            String(todayLocal.getDate()).padStart(2, "0");
+
           const sessionSummaryObject = {
             score: data?.session_summary?.percentage_score || 0,
             strengths: data?.performance_analysis.strengths,
@@ -67,7 +75,7 @@ export default function SessionSummary({
               completed_at: new Date().toISOString(),
             },
             completed: true,
-            updated_at: new Date().toISOString(),
+            updated_at: localDateString,
 
             // question_breakdown: data?.question_breakdown || {
             //   correct_answers: correctAnswers,

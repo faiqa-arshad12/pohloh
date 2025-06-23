@@ -1,4 +1,4 @@
-import { apiUrl } from "@/utils/constant";
+import {apiUrl} from "@/utils/constant";
 
 export const fetchTeams = async (orgId: string) => {
   try {
@@ -64,7 +64,7 @@ export const fetchCards = async (orgId: string, role: string, id: string) => {
   try {
     const cardsRes = await fetch(`${apiUrl}/cards/organizations/${orgId}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
         role: role,
         userId: id,
@@ -73,7 +73,7 @@ export const fetchCards = async (orgId: string, role: string, id: string) => {
 
     if (!cardsRes.ok) throw new Error("Failed to fetch cards");
 
-    const { cards } = await cardsRes.json();
+    const {cards} = await cardsRes.json();
     return cards;
   } catch (error) {
     console.error("Error fetching cards:", error);
@@ -91,7 +91,7 @@ export const fetchTutorScore = async (
 
     const response = await fetch(api, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type": "application/json"},
     });
 
     if (!response.ok) throw new Error("Failed to fetch cards");
@@ -106,7 +106,7 @@ export const fetchUserStats = async (userId: string) => {
   try {
     const response = await fetch(`${apiUrl}/users/stats/${userId}`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type": "application/json"},
     });
 
     if (!response.ok) throw new Error("Failed to fetch user");
@@ -129,7 +129,7 @@ export const getUserCompletedCards = async (
       `${apiUrl}/learning-paths/completed-path/${userId}`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
           orgId,
           team,
@@ -157,7 +157,7 @@ export const fetchTutorStats = async (
   try {
     const response = await fetch(`${apiUrl}/users/tutor-stats/${userId}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
         category,
         startDate,
@@ -183,7 +183,7 @@ export const fetchLeaderBoard = async (
   try {
     const response = await fetch(`${apiUrl}/users/leaderboard/${userId}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
         category,
         startDate,
@@ -205,7 +205,7 @@ export const fetchLeaningPathPerformance = async (userId: string) => {
       `${apiUrl}/learning-paths/performance/${userId}`,
       {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: {"Content-Type": "application/json"},
       }
     );
 
@@ -224,7 +224,7 @@ export const fetchLeaningPathInsightsByDept = async (userId: string) => {
       `${apiUrl}/learning-paths/departments-insights/${userId}`,
       {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: {"Content-Type": "application/json"},
       }
     );
 
@@ -340,7 +340,7 @@ export const fetchUserData = async (id: string) => {
   try {
     const response = await fetch(`${apiUrl}/users/${id}`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type": "application/json"},
       // credentials: "include",
     });
 
@@ -353,11 +353,14 @@ export const fetchUserData = async (id: string) => {
 };
 export const fetchAllCards = async (orgId: string, userId: string) => {
   try {
-    const response = await fetch(`${apiUrl}/cards/organizations/${orgId}/user/${userId}/last30days`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-      // credentials: "include",
-    });
+    const response = await fetch(
+      `${apiUrl}/cards/organizations/${orgId}/user/${userId}/last30days`,
+      {
+        method: "GET",
+        headers: {"Content-Type": "application/json"},
+        // credentials: "include",
+      }
+    );
 
     if (!response.ok) throw new Error("Failed to fetch user cards");
     const data = await response.json();
@@ -371,7 +374,7 @@ export const getMonthlyKnowledgeCardStats = async (userId: string) => {
   try {
     const response = await fetch(`${apiUrl}/cards/monthly-stats/${userId}`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type": "application/json"},
     });
 
     if (!response.ok) throw new Error("Failed to fetch user cards");
@@ -386,7 +389,7 @@ export const getKnowledgeCardStats = async (userId: string) => {
   try {
     const response = await fetch(`${apiUrl}/cards/stats/${userId}`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type": "application/json"},
       // credentials: "include",
     });
 
@@ -395,6 +398,24 @@ export const getKnowledgeCardStats = async (userId: string) => {
     return data;
   } catch (error) {
     console.error("Error fetching user cards:", error);
+    throw error;
+  }
+};
+export const fetchUserGoalStatus = async (
+  userId: string,
+  from: string,
+  to: string
+) => {
+  try {
+    const url = `${apiUrl}/users/user-goals/${userId}?to=${to}&from=${from}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {"Content-Type": "application/json"},
+    });
+    if (!response.ok) throw new Error("Failed to fetch user goal status");
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching user goal status:", error);
     throw error;
   }
 };
