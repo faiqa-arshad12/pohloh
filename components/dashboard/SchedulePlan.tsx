@@ -53,7 +53,7 @@ const getRange = (type: RangeType, refDate: Date): [Date, Date] => {
 };
 
 export const SchedulePlan: React.FC<SchedulePlanProps> = ({userId}) => {
-  const [rangeType, setRangeType] = useState<RangeType>("Weekly");
+  const [rangeType, setRangeType] = useState<RangeType>("Monthly");
   const [refDate, setRefDate] = useState<Date>(new Date());
   const [dateRange, setDateRange] = useState<[Date, Date]>(
     getRange("Weekly", new Date())
