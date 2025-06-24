@@ -161,18 +161,19 @@ export default function ViewAnnouncementModal({
                   {stripHtml(announcement.description)}
                 </span>
                 <span className="block mt-10 mb-10 flex justify-center">
-  <a
-    href={`/knowledge-base?cardId=${announcement?.card_id?.id}`}
-    className="text-[#F9DB6F] hover:text-[#F9DB6F]/80 cursor-pointer underline"
-    onClick={(e) => {
-      e.preventDefault();
-      router.push(`/knowledge-base?cardId=${announcement?.card_id?.id}`);
-    }}
-  >
-    {announcement?.card_id?.title}
-  </a>
-</span>
-
+                  <a
+                    href={`/knowledge-base?cardId=${announcement?.card_id?.id}`}
+                    className="text-[#F9DB6F] hover:text-[#F9DB6F]/80 cursor-pointer underline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      router.push(
+                        `/knowledge-base?cardId=${announcement?.card_id?.id}`
+                      );
+                    }}
+                  >
+                    {announcement?.card_id?.title}
+                  </a>
+                </span>
                 <span className="block my-2">
                   <p>Best Regards,</p>
                   <p className="mt-2">{announcement?.org_id.name}</p>

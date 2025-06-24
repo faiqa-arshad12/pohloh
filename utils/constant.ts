@@ -1,4 +1,4 @@
-import {Department, Role} from "@/types/types";
+import {DateRangeOption, Department, Role} from "@/types/types";
 export const DEPARTMENTS: Department[] = [
   "Customer",
   "Sales",
@@ -82,7 +82,6 @@ export const feedback_topics = [
 export const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 export const apiUrl_AI = `${process.env.NEXT_PUBLIC_AI_API_URL}/api`;
 export const apiUrl_AI_Tutor = `${process.env.NEXT_PUBLIC_AI_API_URL}`;
-
 
 // Available options
 export const fontSizes = [
@@ -233,23 +232,77 @@ export const getCategoryIcon = (categoryName: string) => {
 
 export const planFeatures = [
   {
-    tier: 'Standard',
-    description: 'Best for small teams starting out',
+    tier: "Standard",
+    description: "Best for small teams starting out",
     features: [
-      'Full access to Knowledge Base + Card Creation',
-      'Access to Tutor + Learning Paths',
-      'Detailed user and organization analytics',
-      'Limited monthly AI usage *',
+      "Full access to Knowledge Base + Card Creation",
+      "Access to Tutor + Learning Paths",
+      "Detailed user and organization analytics",
+      "Limited monthly AI usage *",
     ],
   },
   {
-    tier: 'Premium',
-    description: 'Best for scaling orgs & large teams',
+    tier: "Premium",
+    description: "Best for scaling orgs & large teams",
     features: [
-      'Full access to Knowledge Base + Card Creation',
-      'Access to Tutor + Learning Paths',
-      'Detailed user and organization analytics',
-      'Unlimited monthly AI usage',
+      "Full access to Knowledge Base + Card Creation",
+      "Access to Tutor + Learning Paths",
+      "Detailed user and organization analytics",
+      "Unlimited monthly AI usage",
     ],
   },
 ];
+export const navItems = [
+  {name: "Dashboard", href: "/dashboard", icon: "/dashboard.svg"},
+  {name: "Knowledge Base", href: "/knowledge-base", icon: "/k-base.svg"},
+  {name: "Tutor", href: "/tutor", icon: "/tutor.svg"},
+  {name: "Settings", href: "/settings", icon: "/settings.svg"},
+  {name: "Analytics", href: "/analytics", icon: "/analytics.svg"},
+];
+
+export const defaultOptions: DateRangeOption[] = [
+  {
+    label: "Last 7 days",
+    value: "weekly",
+  },
+  {
+    label: "Last 30 days",
+    value: "montlhy",
+  },
+
+  {
+    label: "Last Year",
+    value: "yearly",
+  },
+  {
+    label: "Custom",
+    value: "custom",
+  },
+];
+export const getDropdownOptions = () => {
+  const baseOptions = [
+    {
+      label: "Last 7 days",
+      value: "weekly",
+      description: "Past week data",
+    },
+    {
+      label: "Last 30 days",
+      value: "monthly",
+      description: "Past month data",
+    },
+    {
+      label: "Last Year",
+      value: "yearllly",
+      description: "Past month data",
+    },
+  ];
+
+  baseOptions.push({
+    label: "Custom",
+    value: "Custom",
+    description: "Select specific dates",
+  });
+
+  return baseOptions;
+};

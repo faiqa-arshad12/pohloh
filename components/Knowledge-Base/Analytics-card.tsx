@@ -21,7 +21,6 @@ import {useUser} from "@clerk/nextjs";
 import {Skeleton} from "@/components/ui/skeleton";
 import {useRouter} from "next/navigation";
 import {ShowToast} from "../shared/show-toast";
-import {stripHtml} from "@/lib/stripeHtml";
 import {renderIcon} from "@/lib/renderIcon";
 import DeleteConfirmationModal from "../shared/delete-modal";
 import {apiUrl, CardStatus, getCategoryIcon} from "@/utils/constant";
@@ -806,14 +805,15 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                   {expandedSubcategories[subcategory.id] &&
                     subcategory.knowledge_card &&
                     subcategory.knowledge_card.length > 0 && (
-                      <div className="mx-5 mt-2 space-y-3 max-h-[450px] overflow-auto flex flex-col items-center">
+                    <div className="mx-5 mt-2 space-y-3 max-h-[450px] overflow-auto flex flex-col items-center gap-2 pr-1">
+
                         {" "}
                         {subcategory.knowledge_card.map((item) => (
                           <div
                             key={item.id}
                             className="w-full max-w-[250px] flex items-center justify-center gap-2"
                           >
-                            <div className="flex-1">
+                            <div className="flex-1 overflow-hidden">
                               <SubcategoryItem
                                 label={item.title}
                                 active={activeItem?.id === item.id}
@@ -857,9 +857,17 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
               {/* Header */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <h2 className="font-urbanist font-semibold text-[40px] leading-[20px] align-middle mr-3">
-                    {activeItem.title}
-                  </h2>
+                  <div className="relative group">
+                    <h2 className="font-urbanist font-semibold text-[40px] leading-normal align-middle mr-3 break-all overflow-hidden">
+                      {activeItem.title.length > 30
+                        ? `${activeItem.title.substring(0, 30)}...`
+                        : activeItem.title}
+                    </h2>
+                    <div className="absolute z-10 hidden group-hover:block bg-[#191919] text-white text-sm rounded px-2 py-1 top-full mt-1 left-0 whitespace-nowrap">
+                      {activeItem.title}
+                    </div>
+                  </div>
+
                   <div className="ml-2 flex items-center cursor-pointer gap-4">
                     {/* {card === "true" && (
                       <Button
@@ -1001,11 +1009,13 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                     )}
                   </div>
                   <div className="flex items-center justify-center w-full">
-                    <div className="flex items-center justify-center bg-[#FFFFFF14] rounded-full px-4 py-2 gap-3">
+                    <div className="flex items-center justify-center bg-[#FFFFFF14] rounded-full p-2 gap-3">
                       <Image
                         src={
                           activeItem?.card_owner_id?.profile_picture ||
                           "/pic1.png" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
                           "/placeholder.svg" ||
                           "/placeholder.svg" ||
                           "/placeholder.svg"
@@ -1016,13 +1026,13 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                         height={60}
                       />
                       <div className="flex flex-col text-[20px]">
-                        <span className="font-urbanist font-medium leading-[100%]">
+                        <span className="font-urbanist font-medium text-[20px] mr-2">
                           {`${activeItem?.card_owner_id?.first_name} ${activeItem.card_owner_id?.last_name}`}
                         </span>
                         {canEdit && (
                           <>
                             <span
-                              className="text-xs text-[#F9DB6F] underline cursor-pointer"
+                              className="text-[20px] text-[#F9DB6F] underline cursor-pointer"
                               onClick={() => setIsModalOpen(true)}
                             >
                               Reassign
@@ -1042,7 +1052,7 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                 </div>
               </div>
 
-              <h3 className="font-urbanist font-semibold text-[28px] leading-[20px] align-middle text-[#828282] mb-4 mt-3">
+              <h3 className="font-urbanist font-semibold text-[28px] leading-[20px] align-middle text-[#828282] mb-8 mt-2">
                 {activeSubcategory?.name}
               </h3>
 

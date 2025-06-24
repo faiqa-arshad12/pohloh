@@ -37,7 +37,7 @@ export default function Account() {
   const {roleAccess} = useRole();
   const {user, isLoaded} = useUser();
   const searchParams = useSearchParams();
-  const page = searchParams.get("page");
+  const page = searchParams?.get("page");
   const [activeTab, setActiveTab] = useState("user");
   const [selectedDepartments, setSelectedDepartments] = useState(["Customer"]);
   const [organizationName, setOrganizationName] = useState("");

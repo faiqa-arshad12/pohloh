@@ -4,6 +4,7 @@ import {useState, useEffect} from "react";
 import type React from "react";
 import Loader from "../shared/loader";
 import {ArrowLeft, ArrowRight} from "lucide-react";
+import { NoData } from "../shared/NoData";
 
 interface TableProps<T> {
   columns: {Header: string; accessor: string}[];
@@ -30,6 +31,12 @@ const getNestedValue = (obj: any, path: string) => {
   return path.split(".").reduce((prev, curr) => {
     return prev ? prev[curr] : null;
   }, obj);
+};
+
+// Helper function to truncate text
+const truncateText = (text: string, maxLength: number = 30) => {
+  if (!text) return "-";
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
 
 const Table = <T,>({
@@ -62,7 +69,7 @@ const Table = <T,>({
 
   // Filter data
   const filteredData = data
-    .filter((row) => {
+    ?.filter((row) => {
       if (
         (loggedInUserId && (row as any).user_id === loggedInUserId) ||
         (row as any).role === "owner"
@@ -145,7 +152,9 @@ const Table = <T,>({
                 </th>
               ))}
               {renderActions && (
-                <th className={`cursor-pointer ${cellClassName} font-medium`}>Actions</th>
+                <th className={`cursor-pointer ${cellClassName} font-medium`}>
+                  Actions
+                </th>
               )}
             </tr>
           </thead>
@@ -164,7 +173,7 @@ const Table = <T,>({
                   colSpan={columns.length + (renderActions ? 1 : 0)}
                   className="text-center text-gray-500 py-4"
                 >
-                  No data found.
+               <NoData/>
                 </td>
               </tr>
             ) : (
@@ -174,7 +183,10 @@ const Table = <T,>({
                     <td key={colIndex} className={cellClassName}>
                       {renderCell
                         ? renderCell(column.accessor, row)
-                        : getNestedValue(row, column.accessor) || "-"}
+                        : truncateText(
+                            getNestedValue(row, column.accessor)?.toString() ||
+                              "-"
+                          )}
                     </td>
                   ))}
                   {renderActions && (
@@ -188,7 +200,7 @@ const Table = <T,>({
       </div>
 
       {/* Pagination Controls */}
-      {totalPages > 0 && totalItems > 5 && (
+      {totalPages > 0 && (
         <div className="flex justify-end items-center mt-4 gap-5">
           <div className="text-[18px] font-normal text-[#FFFFFF]">
             Rows per page: {itemsPerPage} &nbsp;&nbsp;{" "}

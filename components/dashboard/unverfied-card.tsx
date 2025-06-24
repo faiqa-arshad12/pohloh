@@ -37,9 +37,10 @@ const filters = ["Monthly", "Weekly", "Yearly"];
 
 interface UnverifiedCardProps {
   cards: UnverifiedCard[];
+  isAnalytic?: boolean;
 }
 
-export function UnverifiedCards({cards}: UnverifiedCardProps) {
+export function UnverifiedCards({cards, isAnalytic}: UnverifiedCardProps) {
   const [selectedFilter, setSelectedFilter] = useState("Monthly");
   const [filteredCards, setFilteredCards] = useState<UnverifiedCard[]>([]);
   const [hasScrollbar, setHasScrollbar] = useState(false);
@@ -182,27 +183,28 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
           filteredCards.map((card) => (
             <div
               key={card.id}
-              className="flex items-center justify-between bg-[#2a2a2a] px-4 py-4 rounded-lg"
+              className="flex flex-col bg-[#2a2a2a] px-4 py-4 rounded-lg"
               style={{minHeight: "100px"}}
             >
-              <div className="flex flex-col gap-2 w-full">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-[#F9DB6F] p-2 rounded-full">
-                      <Info size={16} className="text-black" />
-                    </div>
-                    <div className="flex flex-col">
-                      <h3 className="text-[20px] font-semibold line-clamp-1">
-                        {card.title?.slice(0, 50) +
-                          (card.title?.length > 50 ? "..." : "")}
-                      </h3>
-
-                      <span className="text-[11px] text-white">
-                        {card?.category_id?.name}
-                      </span>
-                    </div>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="bg-[#F9DB6F] p-2 rounded-full flex-shrink-0">
+                    <Info size={16} className="text-black" />
                   </div>
-                  <div className="flex items-center justify-center text-center ">
+                  <div className="flex flex-col flex-grow overflow-hidden">
+                    <p className="text-[20px] font-semibold overflow-hidden whitespace-nowrap text-ellipsis">
+                      {/* {card.title?.slice(0, 50) +
+                        (card.title?.length > 50 ? "..." : "")} */}
+                      {card.title}
+                    </p>
+
+                    <span className="text-[11px] text-white">
+                      {card?.category_id?.name}
+                    </span>
+                  </div>
+                </div>
+                {!isAnalytic ? (
+                  <div className="flex items-center justify-center text-center flex-shrink-0">
                     <Button
                       variant="outline"
                       className="w-full border-white text-white hover:bg-[#333435] hover:text-white bg-[#333435] !h-[27.58] !cursor-pointer px-9"
@@ -217,13 +219,33 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
                       )}
                     </Button>
                   </div>
-                </div>
-
-                {/* Description */}
-                <p className="text-[14px] text-[#6F767E] line-clamp-1">
-                  {stripHtml(card.content)}
-                </p>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className="inline-flex h-[44px] items-center gap-2 bg-[#FFFFFF0A] rounded-full py-2 px-4">
+                      <div className="relative h-8 w-8 overflow-hidden rounded-full">
+                        <img
+                          src={
+                            card.card_owner_id.profile_picture ||
+                            "/placeholder-profile.svg"
+                          }
+                          alt={card.card_owner_id.first_name}
+                          width={30}
+                          height={30}
+                          className="object-cover"
+                        />
+                      </div>
+                      <span className="font-urbanist font-normal text-xl leading-[100%] tracking-normal text-white">
+                        {`${card.card_owner_id.first_name} ${card.card_owner_id.last_name}`}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Description */}
+              <p className="text-[14px] text-[#6F767E] line-clamp-1 mt-2">
+                {stripHtml(card.content)}
+              </p>
             </div>
           ))
         ) : (

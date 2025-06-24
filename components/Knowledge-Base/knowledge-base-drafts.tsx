@@ -1,7 +1,7 @@
 "use client";
 
 import {useState, useEffect, useCallback} from "react";
-import {MoreHorizontal, FilterIcon as  Trash2} from "lucide-react";
+import {MoreHorizontal, FilterIcon as Trash2} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +25,7 @@ import {
   TimePeriod,
   filterByTimePeriod,
 } from "@/components/shared/TimeFilter";
+import { NoData } from "../shared/NoData";
 
 type Card = {
   id: string;
@@ -287,7 +288,7 @@ export function KnowledgeBaseDraft({
             <div className="text-center py-8 text-gray-400">
               {filters.searchTerm
                 ? "No matching cards found"
-                : "No data found."}
+                : <NoData/>}
             </div>
           ) : (
             <Table
@@ -345,7 +346,11 @@ export function KnowledgeBaseDraft({
                         }}
                         disabled={isProcessing}
                       >
-                        <Trash2 className="h-4 w-4 hover:bg-[#F9DB6F33] hover:text-[#F9DB6F]" />
+                        <Icon
+                          icon="fluent:delete-48-regular"
+                          width="24"
+                          height="24"
+                        />{" "}
                         <span>Delete</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>

@@ -1,12 +1,13 @@
 "use client";
 
 import {useState, useRef, useEffect} from "react";
-import {Maximize2, X, Paperclip, Mic, Send} from "lucide-react";
+import {X, Send, Plus, Loader2} from "lucide-react";
 import {Input} from "../ui/input";
 import {Button} from "../ui/button";
 import Image from "next/image";
 import {useUserHook} from "@/hooks/useUser";
 import {apiUrl_AI} from "@/utils/constant";
+import {useRouter} from "next/navigation";
 
 type Message = {
   id: number;
@@ -15,9 +16,26 @@ type Message = {
   avatar: string;
 };
 
+type SourceDocument = {
+  id: string;
+  title: string;
+  organization_id: string;
+  category: string;
+  relevance_score: number;
+};
+
+type UserDocumentCount = {
+  user_specific: number;
+  public: number;
+  total: number;
+};
+
 type AIResponse = {
   question: string;
   answer: string;
+  source_documents: SourceDocument[];
+  user_document_count: UserDocumentCount;
+  knowledge_base_used: boolean;
   timestamp: string;
   success: boolean;
 };
@@ -28,6 +46,7 @@ type AIChatProps = {
 
 export default function AIChat({onClose}: AIChatProps) {
   const {userData} = useUserHook();
+  const router = useRouter();
   const userAvatar = userData?.profile_picture || "/placeholder.svg";
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -75,15 +94,35 @@ export default function AIChat({onClose}: AIChatProps) {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({user_query: input}),
+          body: JSON.stringify({
+            user_query: input,
+            user_id: "ad2c8be5-b36a-44a2-8942-25f268ddc479",
+            limit: 30,
+          }),
         });
 
         const data: AIResponse = await response.json();
+        console.log(data, "data");
 
         if (data.success) {
+          // Format the answer with source documents
+          let formattedAnswer = data.answer;
+          if (data.source_documents && data.source_documents.length > 0) {
+            formattedAnswer += "\n\nSources:";
+            data.source_documents.forEach((doc, index) => {
+              formattedAnswer += `\n${
+                index + 1
+              }. <a href="/knowledge-base?cardId=${
+                doc.id
+              }" target="_blank" rel="noopener noreferrer" class="text-yellow-400 hover:underline">${
+                doc.title
+              }</a> (Relevance: ${(doc.relevance_score * 100).toFixed(1)}%)`;
+            });
+          }
+
           const aiMessage: Message = {
             id: messages.length + 2,
-            content: data.answer,
+            content: formattedAnswer,
             sender: "pohloh",
             avatar: "/file.png",
           };
@@ -149,19 +188,12 @@ export default function AIChat({onClose}: AIChatProps) {
             </div>
             <span className="font-medium text-white">Pohloh</span>
           </div>
-          <div className="flex items-center">
-            {/* <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-400 hover:bg-transparent hover:text-white"
-              onClick={handleMaximize}
-            >
-              <Maximize2 size={16} />
-            </Button> */}
+          <div className="flex items-center space-x-2">
+            {/*  */}
             <Button
               variant="ghost"
               size="sm"
-              className="text-gray-400 hover:bg-transparent hover:text-white ml-2"
+              className="text-gray-400 hover:bg-transparent hover:text-white"
               onClick={handleClose}
             >
               <X size={16} />
@@ -195,9 +227,8 @@ export default function AIChat({onClose}: AIChatProps) {
                       ? "bg-[#F9DB6F] text-black"
                       : "bg-[#222324] text-white"
                   }`}
-                >
-                  <p className="text-sm break-words">{message.content}</p>
-                </div>
+                  dangerouslySetInnerHTML={{__html: message.content}}
+                />
                 {message.sender === "user" && (
                   <div className="w-8 h-8 rounded-full bg-white flex-shrink-0 ml-2 relative overflow-hidden">
                     <Image
@@ -228,30 +259,18 @@ export default function AIChat({onClose}: AIChatProps) {
                 disabled={isLoading}
               />
               <div className="flex w-full justify-end mt-2">
-                {/* <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-10 h-10 p-2 border border-[#F9DB6F] text-white hover:bg-transparent"
-                  disabled={isLoading}
-                >
-                  <Paperclip size={20} />
-                </Button> */}
                 <div className="flex items-center space-x-2">
-                  {/* <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-10 h-10 p-2 border border-[#F9DB6F] text-white hover:bg-transparent"
-                    disabled={isLoading}
-                  >
-                    <Mic size={20} />
-                  </Button> */}
                   <Button
                     size="sm"
                     className="w-10 h-10 p-2 bg-[#F9DB6F] text-black hover:bg-[#F9DB6F]/90"
                     onClick={handleSend}
                     disabled={isLoading}
                   >
-                    <Send size={20} />
+                    {isLoading ? (
+                      <Loader2 size={20} className="animate-spin" />
+                    ) : (
+                      <Send size={20} />
+                    )}
                   </Button>
                 </div>
               </div>

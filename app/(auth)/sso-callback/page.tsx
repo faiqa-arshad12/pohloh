@@ -1,25 +1,27 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useClerk } from "@clerk/nextjs";
+import {useEffect, Suspense} from "react";
+import {useRouter, useSearchParams} from "next/navigation";
+import {useClerk} from "@clerk/nextjs";
 
 function SSOCallbackContent() {
-  const { handleRedirectCallback, setActive } = useClerk();
+  const {handleRedirectCallback, setActive} = useClerk();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const finalizeSSO = async () => {
       try {
-        const params = Object.fromEntries(searchParams.entries());
+        if (searchParams) {
+          const params = Object.fromEntries(searchParams?.entries());
 
-        // safely cast the result
-        const { createdSessionId } = (await handleRedirectCallback(params)) as {
-          createdSessionId: string;
-        };
-        await setActive({ session: createdSessionId });
-        router.replace("/dashboard");
+          // safely cast the result
+          const {createdSessionId} = (await handleRedirectCallback(params)) as {
+            createdSessionId: string;
+          };
+          await setActive({session: createdSessionId});
+          router.replace("/dashboard");
+        }
       } catch (error) {
         console.error(error);
         router.replace("/login");

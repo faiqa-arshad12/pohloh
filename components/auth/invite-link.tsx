@@ -37,7 +37,7 @@ export function SignupForm() {
   const {user} = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("__clerk_ticket");
+  const token = searchParams?.get("__clerk_ticket");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -201,7 +201,7 @@ export function SignupForm() {
           </form>
         </Form>
 
-       
+
       </div>
     </div>
   );
