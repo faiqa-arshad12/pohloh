@@ -2,7 +2,7 @@ import React, {useState, useEffect} from "react";
 import {Button} from "../ui/button";
 import Leavefeedback from "./session-summary/leave-feedback";
 import {Loader2} from "lucide-react";
-import {apiUrl, apiUrl_AI_Tutor} from "@/utils/constant";
+import {apiUrl, apiUrl_AI, apiUrl_AI_Tutor} from "@/utils/constant";
 import {SessionSummaryData, SessionSummaryProps} from "@/types/tutor-types";
 
 export default function SessionSummary({
@@ -25,16 +25,13 @@ export default function SessionSummary({
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch(
-          `https://c42d-182-180-99-121.ngrok-free.app/evaluate-answers`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(sessionData),
-          }
-        );
+        const response = await fetch(`${apiUrl_AI_Tutor}/evaluate-answers`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(sessionData),
+        });
 
         if (!response.ok) {
           throw new Error("Failed to fetch session summary");
