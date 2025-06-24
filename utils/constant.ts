@@ -293,7 +293,7 @@ export const getDropdownOptions = () => {
     },
     {
       label: "Last Year",
-      value: "yearllly",
+      value: "yearly",
       description: "Past month data",
     },
   ];
