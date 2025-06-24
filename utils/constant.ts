@@ -306,3 +306,5 @@ export const getDropdownOptions = () => {
 
   return baseOptions;
 };
+
+export const frontend_url= `${process.env.NEXT_PUBLIC_SITE_URL}`

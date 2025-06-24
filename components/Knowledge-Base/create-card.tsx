@@ -39,6 +39,7 @@ import {
   CardStatus,
   determinePeriodType,
   formatPeriodDisplay,
+  frontend_url,
   visibilityLabels,
   visibilityOptions,
 } from "@/utils/constant";
@@ -47,6 +48,9 @@ import {cn} from "@/lib/utils";
 import ChooseTeamModal from "./ChooseTeamModal";
 import ChooseUserModal from "./ChooseUserModal";
 import SelectUserModal from "./ChooseSelectedUsers";
+import {createNotification} from "@/services/notification.service";
+import {fetchUserData} from "../analytics/analytic.service";
+import {useUserHook} from "@/hooks/useUser";
 
 const TipTapEditor = dynamic(() => import("./editor"), {
   ssr: false,
@@ -190,6 +194,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
 
   const selectedCategory = form.watch("category_id");
   const verificationPeriod = form.watch("verificationperiod");
+  const {userData} = useUserHook();
   const verificationPeriodType = form.watch("verificationPeriodType");
 
   const setLoading = (key: keyof typeof loadingStates, value: boolean) => {
@@ -524,6 +529,20 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           errorData.message ||
             `Failed to ${isEditMode ? "update" : "create"} card`
         );
+      }
+
+      // Notification logic for team
+      if (values.team_to_announce_id && values.team_to_announce_id !== "none") {
+        await createNotification({
+          user_id: userData.id,
+          org_id: org_id,
+          message: `A knowledge card ${values.title} was ${
+            isEditMode ? "updated" : "created"
+          } for your team`,
+          subtext: values.content?.slice(0, 100),
+          link: `${frontend_url}/knowledge-base`,
+          notifying_team_ids: [values.team_to_announce_id],
+        });
       }
 
       ShowToast(
@@ -1087,11 +1106,13 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                             <FormControl>
                               <SelectTrigger className="w-full h-[44px] bg-[#2C2D2E]   border border-white/10 rounded-[6px] px-4 py-3 justify-between mt-2">
                                 <SelectValue placeholder="Select verification period">
-                                  {field.value
-                                    ? formatPeriodDisplay(field.value)
-                                    :
-                                     <span className="text-[#FFFFFF52]">
-                                    Select period</span>}
+                                  {field.value ? (
+                                    formatPeriodDisplay(field.value)
+                                  ) : (
+                                    <span className="text-[#FFFFFF52]">
+                                      Select period
+                                    </span>
+                                  )}
                                 </SelectValue>
                               </SelectTrigger>
                             </FormControl>
@@ -1154,11 +1175,15 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                           >
                             <FormControl>
                               <SelectTrigger className="w-full h-[44px] bg-[#2C2D2E]   border border-white/10 rounded-[6px] px-4 py-3 justify-between mt-2">
-                                {loadingStates.teams
-                                  ? "Loading teams..."
-                                  : field.value
-                                  ? getTeamName(field.value)
-                                  :  <span className="text-[#FFFFFF52]">Select Team</span>}
+                                {loadingStates.teams ? (
+                                  "Loading teams..."
+                                ) : field.value ? (
+                                  getTeamName(field.value)
+                                ) : (
+                                  <span className="text-[#FFFFFF52]">
+                                    Select Team
+                                  </span>
+                                )}
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-[#2C2D2E] border-none text-white">

@@ -2,6 +2,7 @@
 import {auth, clerkClient} from "@clerk/nextjs/server";
 import {supabase} from "@/supabase/client";
 import {createClerkClient} from "@clerk/backend";
+import { frontend_url } from "@/utils/constant";
 
 // export async function inviteUser(email: string, role: string, org_id: string) {
 //     try {
@@ -70,7 +71,7 @@ export async function inviteUser(email: string, role: string, user_id: string) {
         const invitation = await client.invitations.createInvitation({
           emailAddress: email,
           // redirectUrl:''
-          redirectUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/signup-link`,
+          redirectUrl: `${frontend_url}/signup-link`,
 
           publicMetadata: {
             role,

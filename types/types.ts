@@ -1,4 +1,4 @@
-import { UserStatus } from "./enum";
+import {UserStatus} from "./enum";
 
 export type Department =
   | "Customer"
@@ -58,12 +58,12 @@ export type User = {
   num_of_questions: number;
   num_of_days: any;
   status?:
-  | "pending"
-  | "organization_details"
-  | "setup_profile"
-  | "plan_selected"
-  | "approved"
-  | "complete";
+    | "pending"
+    | "organization_details"
+    | "setup_profile"
+    | "plan_selected"
+    | "approved"
+    | "complete";
 };
 
 export interface Team {
@@ -265,7 +265,7 @@ export interface LearningPathDetails {
   title: string;
   org_id: string;
   status: string;
-  category: string | { name: string };
+  category: string | {name: string};
   questions: Question[];
   created_at: string;
   path_owner: string;
@@ -433,7 +433,7 @@ export type ReportGenerationResponse = {
     relevance_threshold: number;
   };
   report_url?: string;
-}
+};
 
 export interface SessionState {
   currentQuestionIndex: number;
@@ -531,7 +531,6 @@ export interface EnrolledPathsApiResponse {
   paths: EnrolledPath[];
 }
 
-
 export interface DateRangeOption {
   label: string;
   value: string;
@@ -550,4 +549,17 @@ export interface SearchAnalytics {
   item: string;
   search_count: number;
   latest_search: string;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  message: string;
+  subtext?: string;
+  read: boolean;
+  org_id?: string;
+  team_id?: string;
+  created_at: string;
+  link?: string;
+  notifying_team_ids?: string[];
 }
