@@ -57,7 +57,7 @@ export default function Card() {
           loading={loading}
         />
         <MetricCard
-          value={stats?.rank || "N/A"}
+          value={stats?.rank?.user_rank_in_team || "N/A"}
           label="Team Rank"
           icon={
             <div className=" p-2 rounded-full  flex items-center justify-center">
@@ -67,7 +67,11 @@ export default function Card() {
           loading={loading}
         />
         <MetricCard
-          value={stats?.goal != null ? `${stats.goal}%` : "N/A"}
+          value={
+            stats?.goal != null
+              ? `${stats.goal.goal_achievement_percentage}%`
+              : "N/A"
+          }
           label="Card Goal Achieved"
           icon={
             <div className=" p-2 rounded-full">

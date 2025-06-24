@@ -131,7 +131,7 @@ export default function TutorAnalytics({
             stats.teamRank.rank !== 0 &&
             stats?.teamRank?.teamSize
               ? `${stats.teamRank.rank} / ${stats.teamRank.teamSize}`
-              : "---"
+              : "0"
           }
           label="Team Rank"
           icon={
