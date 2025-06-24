@@ -12,7 +12,17 @@ import {cn} from "@/lib/utils";
 import {useRouter} from "next/navigation";
 import {useRole} from "../ui/Context/UserContext";
 
-export function CompletedLearningPaths({id}: {id?: string | null}) {
+export function CompletedLearningPaths({
+  id,
+  startDate: propStartDate,
+  endDate: propEndDate,
+  team: propTeam,
+}: {
+  id?: string | null;
+  startDate?: Date;
+  endDate?: Date;
+  team?: string;
+}) {
   const [selectedRange, setSelectedRange] = useState("Last 30 days");
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -39,12 +49,23 @@ export function CompletedLearningPaths({id}: {id?: string | null}) {
 
   // Initialize default date range (Last 30 days)
   useEffect(() => {
-    const today = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(today.getDate() - 30);
-    setStartDate(thirtyDaysAgo);
-    setEndDate(today);
-  }, []);
+    if (propStartDate && propEndDate) {
+      setStartDate(propStartDate);
+      setEndDate(propEndDate);
+    } else {
+      const today = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      setStartDate(thirtyDaysAgo);
+      setEndDate(today);
+    }
+  }, [propStartDate, propEndDate]);
+
+  useEffect(() => {
+    if (propTeam) {
+      setSelectedTeam(propTeam);
+    }
+  }, [propTeam]);
 
   const handleRangeChange = async (range: string) => {
     setSelectedRange(range);
@@ -110,15 +131,16 @@ export function CompletedLearningPaths({id}: {id?: string | null}) {
         setIsLoadingData(true);
 
         // Format dates for API
-        const startDateStr = startDate?.toISOString();
-        const endDateStr = endDate?.toISOString();
+        const startDateStr = (propStartDate || startDate)?.toISOString();
+        const endDateStr = (propEndDate || endDate)?.toISOString();
 
         // Fetch completed cards
         const response = await getUserCompletedCards(
           roleAccess === "user" ? userData.id : id,
           userData.org_id,
-          selectedTeam !== "all" ? selectedTeam : undefined,
-          // undefined, // query parameter - can be added later for search
+          (propTeam || selectedTeam) !== "all"
+            ? propTeam || selectedTeam
+            : undefined,
           startDateStr,
           endDateStr
         );
@@ -165,7 +187,15 @@ export function CompletedLearningPaths({id}: {id?: string | null}) {
     };
 
     fetchCompletedPaths();
-  }, [userData, selectedTeam, startDate, endDate]);
+  }, [
+    userData,
+    selectedTeam,
+    startDate,
+    endDate,
+    propStartDate,
+    propEndDate,
+    propTeam,
+  ]);
 
   const filteredLearningPaths = learningPaths.filter((path) => {
     if (selectedTeam === "all") return true;

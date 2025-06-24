@@ -69,8 +69,8 @@ export const SchedulePlan: React.FC<SchedulePlanProps> = ({userId}) => {
     const fetchData = async () => {
       if (!userId) return;
       setLoading(true);
-      const from = format(dateRange[0], "yyyy-MM-dd");
-      const to = format(dateRange[1], "yyyy-MM-dd");
+      const from =(format(dateRange[0], "yyyy-MM-dd"));
+      const to = (format(dateRange[1], "yyyy-MM-dd"));
       try {
         const res = await fetchUserGoalStatus(userId, from, to);
         setGoalData(res.data || []);

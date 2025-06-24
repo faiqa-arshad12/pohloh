@@ -72,10 +72,11 @@ export default function SessionSummary({
               performance_level:
                 data?.session_summary?.performance_level || "Unknown",
               session_feedback: data?.session_summary?.session_feedback || "",
-              completed_at: new Date().toISOString(),
+              completed_at: localDateString,
+              // completed_at: new Date().toISOString(),
             },
             completed: true,
-            updated_at: localDateString,
+            updated_at: new Date().toISOString(),
 
             // question_breakdown: data?.question_breakdown || {
             //   correct_answers: correctAnswers,

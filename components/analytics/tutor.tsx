@@ -31,12 +31,14 @@ export default function TutorAnalytics({
   const [data, setData] = useState<any>();
   const {userData} = useUserHook();
   const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [insights, setInsights] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
       const fetchData = async () => {
+        setLoading(true);
         try {
           const response = await fetchUserStats(
             roleAccess === "user" ? userData.id : id
@@ -51,6 +53,7 @@ export default function TutorAnalytics({
         } catch (error) {
           console.error("Error fetching tutor score:", error);
         } finally {
+          setLoading(false);
         }
       };
       if (id) fetchData();
@@ -99,6 +102,7 @@ export default function TutorAnalytics({
               <img src="/check-icon.png" alt="check" />
             </div>
           }
+          loading={loading}
         />
 
         <MetricCard
@@ -109,15 +113,17 @@ export default function TutorAnalytics({
               <img src="/total_question.png" alt="questions" />
             </div>
           }
+          loading={loading}
         />
         <MetricCard
-          value="---"
+          value={`${stats?.dailyGoalAchievedPercentage || 0}%`}
           label="Daily Goal Achieved"
           icon={
             <div className="bg-[#6B91D933] p-2 rounded-full">
               <Flame className="text-[#EFBE0F] w-10 h-10" />
             </div>
           }
+          loading={loading}
         />
         <MetricCard
           value={
@@ -133,6 +139,7 @@ export default function TutorAnalytics({
               <img src="/rank.png" alt="rank" />
             </div>
           }
+          loading={loading}
         />
       </div>
 

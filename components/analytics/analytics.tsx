@@ -143,7 +143,7 @@ function AnalyticsContent() {
             )}
 
             <div className="flex gap-4 mt-2">
-              {activeTab === "tutor" && roleAccess !== "user" && (
+              {activeTab === "tutor"  && (
                 <>
                   <DateRangeDropdown
                     selectedRange={selectedRange}

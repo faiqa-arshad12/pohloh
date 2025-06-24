@@ -15,14 +15,22 @@ export default function Card() {
   const [stats, setStats] = useState<any>(null);
   const {userData} = useUserHook();
 
+  useEffect(() => {}, [userData]);
+  const [loading, setLoading] = useState<boolean>(true);
+
   useEffect(() => {
     const getStats = async () => {
-      if (userData?.id) {
+      try {
+        setLoading(true);
         const res = await getKnowledgeCardStats(userData.id);
         setStats(res.data);
+      } catch (error) {
+        console.error("Error fetching tutor score:", error);
+      } finally {
+        setLoading(false);
       }
     };
-    getStats();
+    if (userData) getStats();
   }, [userData]);
 
   return (
@@ -36,6 +44,7 @@ export default function Card() {
               <img src="/copy-icon.png" alt="copy" />
             </div>
           }
+          loading={loading}
         />
         <MetricCard
           value={`${(stats?.verified_percentage || 0).toFixed(2)}%`}
@@ -45,6 +54,7 @@ export default function Card() {
               <img src="/card-icon.png" alt="copy" />
             </div>
           }
+          loading={loading}
         />
         <MetricCard
           value={stats?.rank || "N/A"}
@@ -54,6 +64,7 @@ export default function Card() {
               <img src="/card-rank.png" alt="copy" />
             </div>
           }
+          loading={loading}
         />
         <MetricCard
           value={stats?.goal != null ? `${stats.goal}%` : "N/A"}
@@ -63,6 +74,7 @@ export default function Card() {
               <img src="/card-score.png" alt="copy" />
             </div>
           }
+          loading={loading}
         />
       </div>
       <div className="flex flex-col lg:flex-row gap-4 mb-6">

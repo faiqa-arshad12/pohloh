@@ -88,7 +88,7 @@ const AdminAanalytic = ({
             loading={loading}
           />
           <MetricCard
-            value="---"
+            value={`${stats?.dailyGoalAchievedPercentage || 0}%`}
             label="Daily Goal Achieved"
             icon={
               <div className="bg-[#6B91D933] p-2 rounded-full">
@@ -97,17 +97,16 @@ const AdminAanalytic = ({
             }
             loading={loading}
           />
-            <MetricCard
-              value={`${stats?.verifiedPercentage||0}%`}
-              label="Org Trust Score"
-              icon={
-                <div className="">
-                  <img src="/rank.png" alt="rank" />
-                </div>
-              }
-              loading={loading}
-            />
-
+          <MetricCard
+            value={`${stats?.verifiedPercentage || 0}%`}
+            label="Org Trust Score"
+            icon={
+              <div className="">
+                <img src="/rank.png" alt="rank" />
+              </div>
+            }
+            loading={loading}
+          />
         </div>
         {/* Tutor Score Section */}
         <div className="flex flex-col md:grid md:grid-cols-4 gap-4 mb-8 h-full">
