@@ -42,7 +42,7 @@ export default function TutorScoreCard() {
             </div>
             <Skeleton className="w-1/3 h-6 mb-3" />
             <Skeleton className="w-1/2 h-4 mb-8" />
-            <Skeleton className="w-full h-6" />
+            <Skeleton className="w-full h-12" />
           </>
         ) : (
           <>
@@ -51,10 +51,7 @@ export default function TutorScoreCard() {
             </h2>
             <div className="flex justify-center mb-8">
               <img
-                src={
-                  userData?.organizations.org_picture ||
-                  "/placeholder-profile.svg"
-                }
+                src={userData?.organizations.org_picture || "/org.png"}
                 className="w-[120px] h-[120px] rounded-full"
                 alt="profile"
               />

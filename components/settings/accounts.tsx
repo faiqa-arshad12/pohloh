@@ -356,7 +356,6 @@ export default function Account() {
         }
 
         const result = await response.json();
-        console.log(result, "ssk");
         setUsers(result.data);
       } catch (err) {
         console.error("Error fetching user:", err);
@@ -412,10 +411,8 @@ export default function Account() {
   }, [user?.id, isLoaded]);
 
   return (
-
-
     <div className="min-h-screen  text-white py-5 ">
-      { !isLoaded || userDataLoading ? (
+      {!isLoaded || userDataLoading ? (
         <div className="flex flex-row justify-center items-center min-h-screen">
           <Loader size={50} />
         </div>

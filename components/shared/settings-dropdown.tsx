@@ -54,7 +54,7 @@ export function TopBarIcons({userData}: TopBarProps) {
           className="rounded-full w-14 h-14 overflow-hidden border-1 border-zinc-700 relative"
         >
           <Image
-            src={userData?.profile_picture || "/placeholder-profile.svg"}
+            src={userData?.profile_picture || "/placeholder-user.png"}
             alt="Avatar"
             fill
             sizes="(max-width: 768px) 100vw, 50vw"

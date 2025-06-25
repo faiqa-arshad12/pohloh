@@ -27,7 +27,6 @@ const NotificationsPage = () => {
     setError(null);
     try {
       const data = await getNotifications(userData.id);
-      console.log(data, "data");
       setNotifications(data);
     } catch (err) {
       console.error("Error fetching all notifications:", err);
