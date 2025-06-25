@@ -21,6 +21,7 @@ import {useUserHook} from "@/hooks/useUser";
 import {apiUrl} from "@/utils/constant";
 import {zodResolver} from "@hookform/resolvers/zod";
 import * as z from "zod";
+import {createNotification} from "@/services/notification.service";
 
 type FeedbackFormValues = {
   comments: string;
@@ -105,6 +106,42 @@ export default function FeedbackForm({
       }
 
       console.log("Feedback submitted successfully!");
+      try {
+        const pathResponse = await fetch(
+          `${apiUrl}/learning-paths/${learningPathId}`,
+          {
+            method: "GET",
+            headers: {"Content-Type": "application/json"},
+            // credentials: "include",
+          }
+        );
+
+        if (!pathResponse.ok) {
+          throw new Error("Failed to fetch learning path data");
+        }
+
+        const pathData = await pathResponse.json();
+        const {learningPath} = pathData.path;
+        if (
+          learningPath &&
+          learningPath.path_owner &&
+          learningPath.path_owner.id
+        ) {
+          await createNotification({
+            user_id: learningPath.path_owner.id,
+            org_id: userData.org_id,
+            message: `You have new feedback on your learning path: ${learningPath.title} by ${userData.first_name}`,
+            subtext: data.comments,
+            // link: `/tutor/explore-learning-paths`,
+            // link: null,
+          });
+        }
+      } catch (notificationError) {
+        console.error(
+          "Failed to send feedback notification:",
+          notificationError
+        );
+      }
       onClose();
     } catch (error) {
       console.error("Error submitting feedback:", error);

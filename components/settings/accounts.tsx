@@ -14,7 +14,7 @@ import Table from "../ui/table";
 import {useClerk, useUser} from "@clerk/nextjs";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Billing from "./billing";
-import Apps from "./Apps";
+// import Apps from "./Apps";
 import EditLeadModal from "./Account/edit-lead";
 import Image from "next/image";
 import {InviteUserModal} from "./Account/Invite-User";
@@ -448,7 +448,7 @@ export default function Account() {
               </Button>
             )}
 
-            {roleAccess === "owner" && (
+            {/* {roleAccess === "owner" && (
               <Button
                 onClick={() => setStep(3)}
                 className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm  cursor-pointer ${
@@ -458,12 +458,11 @@ export default function Account() {
                 }`}
               >
                 <Icon icon="proicons:apps" width="24" height="24" />{" "}
-                {/* <Image src="/app.png" height={24}width={24} alt={"apps"} className=""/> */}
                 <span className="text-[20px] text-normal font-urbanist">
                   Apps
                 </span>
               </Button>
-            )}
+            )} */}
 
             <Button
               onClick={() => setStep(4)}
@@ -761,7 +760,7 @@ export default function Account() {
             </>
           )}
           {steps == 2 && <Billing />}
-          {steps == 3 && <Apps />}
+          {/* {steps == 3 && <Apps />} */}
           {steps === 4 && <Feedback />}
         </div>
       )}

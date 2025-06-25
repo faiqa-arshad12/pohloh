@@ -6,7 +6,11 @@ import {Send} from "lucide-react";
 import {Button} from "../ui/button";
 import {useUserHook} from "@/hooks/useUser";
 import {ShowToast} from "../shared/show-toast";
-import { apiUrl } from "@/utils/constant";
+import {apiUrl} from "@/utils/constant";
+import {
+  createNotification,
+  sendOwnerFeedback,
+} from "@/services/notification.service";
 
 const feedbackTopics = [
   {id: "general", label: "General feedback"},
@@ -14,7 +18,6 @@ const feedbackTopics = [
   {id: "feature", label: "New Feature Request"},
   {id: "other", label: "Other (specify in text)"},
 ];
-
 
 const Feedback: React.FC = () => {
   const [feedback, setFeedback] = useState("");
@@ -91,6 +94,14 @@ const Feedback: React.FC = () => {
       ShowToast("Thank you for your feedback!");
       setFeedback("");
       setSelectedTopics([]);
+      // Create notification for feedback submission
+      await sendOwnerFeedback({
+        user_id: userData.id,
+        org_id: userData.org_id,
+        message: `${userData.first_name} has sent a feedback!`,
+        subtext: feedback.trim(),
+        // link: undefined,
+      });
     } catch (error) {
       console.error("Error submitting feedback:", error);
       ShowToast("Failed to submit feedback. Please try again.", "success");
