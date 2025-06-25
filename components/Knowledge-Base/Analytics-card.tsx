@@ -656,17 +656,17 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
         {/* Selection controls - only show when in selection mode */}
         {card === "true" && (
           <div className="flex items-center gap-4">
-            <div className="bg-[#2C2D2E] px-4 py-2 rounded-lg flex items-center cursor-pointer">
-              <span className="text-[#F9DB6F] font-medium">
+            {/* <div className="bg-[#2C2D2E] h-[40px] rounded-lg flex items-center cursor-pointer"> */}
+              <Button className=" hover:bg-[#3A3B3C] text-[#F9DB6F] bg-[#2C2D2E] !h-[40px] rounded-lg flex items-center cursor-pointer">
                 {selectedCards.length} card
                 {selectedCards.length !== 1 ? "s" : ""} selected
-              </span>
-            </div>
+              </Button>
+            {/* </div> */}
 
             {selectedCards.length > 0 && (
               <Button
                 onClick={clearSelectedCards}
-                className="bg-[#2C2D2E] hover:bg-[#3A3B3C] text-white border-none flex items-center gap-2 cursor-pointer"
+                className="bg-[#2C2D2E] hover:bg-[#3A3B3C] text-white border-none flex items-center gap-2 cursor-pointer !h-[40px]"
               >
                 <X size={16} />
                 Clear selection
@@ -688,7 +688,7 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                     router.push(`/tutor/creating-learning-path`);
                   }
                 }}
-                className="bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black cursor-pointer"
+                className="bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black cursor-pointer !h-[40px]"
               >
                 Confirm Selection
               </Button>
