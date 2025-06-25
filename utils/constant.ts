@@ -45,7 +45,7 @@ export const user_roles = [
   "Financial Manager",
   // "Other",
 ];
-export const nameRegex = /^[A-Za-z]+$/;
+export const nameRegex = /^[A-Za-z\s]+$/;
 export const usernameRegex = /^[^\s]{1,50}$/;
 export const ONBOARDING_DATA_KEY = "onboarding_data";
 export const CURRENT_STEP_KEY = "onboarding_current_step";
@@ -307,4 +307,4 @@ export const getDropdownOptions = () => {
   return baseOptions;
 };
 
-export const frontend_url= `${process.env.NEXT_PUBLIC_SITE_URL}`
+export const frontend_url = `${process.env.NEXT_PUBLIC_SITE_URL}`;
