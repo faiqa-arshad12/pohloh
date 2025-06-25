@@ -414,7 +414,7 @@ export default function Account() {
 
   return (
     <div className="min-h-screen  text-white py-5 ">
-      {loading || !isLoaded || !userDetails || userDataLoading ? (
+      {loading || !isLoaded || userDataLoading ? (
         <div className="flex flex-row justify-center items-center min-h-screen">
           <Loader size={50} />
         </div>

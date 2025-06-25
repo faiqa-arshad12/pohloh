@@ -117,6 +117,11 @@ const NotificationsPage = () => {
                   <p className="text-white text-[20px] font-medium">
                     {notification.message}
                   </p>
+                  {notification.subtext && (
+                    <p className="text-[#F9DB6F] text-xs mt-1">
+                      {notification.subtext}
+                    </p>
+                  )}
                 </div>
                 <div className="flex-shrink-0 text-xs text-[#A2A2A2] ml-auto">
                   {formatDistanceToNow(new Date(notification.created_at), {
