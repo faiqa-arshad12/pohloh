@@ -712,7 +712,7 @@ export function EditUserModal({
                               </Avatar>
 
                               <span
-                                className="text-black text-[10.44px] font-normal max-w-[60px] truncate overflow-hidden whitespace-nowrap"
+                                className="text-black text-[10.44px] font-normal w-full truncate overflow-hidden whitespace-nowrap"
                                 title={member.first_name}
                               >
                                 {member.first_name}
@@ -748,7 +748,7 @@ export function EditUserModal({
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent
-                            className="w-90 p-0 bg-[#191919] border-none text-white"
+                            className="w-full p-0 bg-[#191919] border-none text-white"
                             style={{borderRadius: "30px"}}
                           >
                             <div className="p-4 border-b border-[#828282] px-2">
