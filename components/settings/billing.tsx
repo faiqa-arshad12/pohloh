@@ -764,13 +764,14 @@ export default function Billing() {
       </div>
 
       {/**Invoices */}
-      <div className="bg-[#191919] rounded-lg p-4 mb-8 relative flex flex-col justify-center">
-        <div className="flex justify-between mb-4 flex-wrap">
-          <h3 className="text-[24px] font-urbanist">Invoices</h3>
-        </div>
-        {invoiceLoading || userLoading ? (
-          <InvoicesSkeleton />
-        ) : (
+      {invoiceLoading || userLoading ? (
+        <InvoicesSkeleton />
+      ) : (
+        <div className="bg-[#191919] rounded-lg p-4 mb-8 relative flex flex-col justify-center">
+          <div className="flex justify-between mb-4 flex-wrap">
+            <h3 className="text-[24px] font-urbanist">Invoices</h3>
+          </div>
+
           <div className="mt-4 overflow-x-auto ">
             <Table
               columns={tutorColumns}
@@ -784,8 +785,8 @@ export default function Billing() {
               defaultItemsPerPage={5}
             />
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <Dialog open={openEdit} onOpenChange={handleOpenModal}>
         <DialogContent className="overflow-y-auto w-full max-w-[864px] h-auto bg-[#222222] text-white border-none bg-[#0E0F11]">
