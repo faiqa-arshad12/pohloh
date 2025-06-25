@@ -1,5 +1,6 @@
 "use client";
 
+import {useState} from "react";
 import {useForm} from "react-hook-form";
 import {Button} from "@/components/ui/button";
 import {Textarea} from "@/components/ui/textarea";
@@ -22,6 +23,7 @@ import {apiUrl} from "@/utils/constant";
 import {zodResolver} from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {createNotification} from "@/services/notification.service";
+import Loader from "@/components/shared/loader";
 
 type FeedbackFormValues = {
   comments: string;
@@ -73,6 +75,7 @@ export default function FeedbackForm({
   learningPathId,
 }: FeedbackModalProps) {
   const {userData} = useUserHook();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FeedbackFormValues>({
     defaultValues: {
@@ -84,6 +87,7 @@ export default function FeedbackForm({
   });
 
   const handleSubmit = async (data: FeedbackFormValues) => {
+    setIsSubmitting(true);
     try {
       const payload = {
         user_id: userData.id,
@@ -149,6 +153,8 @@ export default function FeedbackForm({
         type: "manual",
         message: "Failed to submit feedback. Please try again.",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -223,14 +229,17 @@ export default function FeedbackForm({
                 variant="outline"
                 onClick={onClose}
                 className="bg-[#333333] hover:bg-[#444444] hover:text-[white] text-white rounded-md py-2 h-[47px] w-[166px] cursor-pointer"
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 className="bg-[#f0d568] hover:bg-[#e0c558] text-black font-medium rounded-md py-2 h-[48px] w-[210px] cursor-pointer"
+                disabled={isSubmitting}
               >
-                Submit Request
+                {isSubmitting && <Loader />}
+                {isSubmitting ? "Submitting..." : "Submit Request"}
               </Button>
             </div>
           </form>
