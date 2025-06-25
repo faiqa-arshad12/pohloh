@@ -207,7 +207,7 @@ export function UnverifiedCards({cards, isAnalytic}: UnverifiedCardProps) {
                   <div className="flex items-center justify-center text-center flex-shrink-0">
                     <Button
                       variant="outline"
-                      className="w-full border-white text-white hover:bg-[#333435] hover:text-white bg-[#333435] !h-[27.58] !cursor-pointer px-9"
+                      className="max-w-[88px] border-white text-white hover:bg-[#333435] hover:text-white bg-[#333435] !h-[27.58px] !cursor-pointer px-9 rounded-[5.55px]"
                       onClick={() => {
                         handleVerifyCard(card.id, card.verificationperiod);
                       }}

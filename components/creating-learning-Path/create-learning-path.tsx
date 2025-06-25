@@ -1094,7 +1094,7 @@ export default function LearningPathPage() {
               </label>
               <Button
                 variant="outline"
-                className="border bg-[#FFFFFF14] border-[#f0d568] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#F9DB6F]/10 h-10 rounded-md cursor-pointer"
+                className="border bg-[#FFFFFF14] h-[44px] border-[#f0d568] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#F9DB6F]/10 h-10 rounded-md cursor-pointer"
                 onClick={() => {
                   // Pass the current path ID if editing
                   const url = pathId

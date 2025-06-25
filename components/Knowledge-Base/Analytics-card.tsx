@@ -26,6 +26,7 @@ import DeleteConfirmationModal from "../shared/delete-modal";
 import {apiUrl, CardStatus, getCategoryIcon} from "@/utils/constant";
 import {Icon} from "@iconify/react";
 import CreateAnnouncement from "../dashboard/modals/create-announcemnet";
+import DefaultAvatar from "../shared/DefaultAvatar";
 
 interface Team {
   id: string;
@@ -805,8 +806,7 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                   {expandedSubcategories[subcategory.id] &&
                     subcategory.knowledge_card &&
                     subcategory.knowledge_card.length > 0 && (
-                    <div className="mx-5 mt-2 space-y-3 max-h-[450px] overflow-auto flex flex-col items-center gap-2 pr-1">
-
+                      <div className="mx-5 mt-2 space-y-3 max-h-[450px] overflow-auto flex flex-col items-center gap-2 pr-1">
                         {" "}
                         {subcategory.knowledge_card.map((item) => (
                           <div
@@ -1010,21 +1010,17 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
                   </div>
                   <div className="flex items-center justify-center w-full">
                     <div className="flex items-center justify-center bg-[#FFFFFF14] rounded-full p-2 gap-3">
-                      <Image
-                        src={
-                          activeItem?.card_owner_id?.profile_picture ||
-                          "/pic1.png" ||
-                          "/placeholder.svg" ||
-                          "/placeholder.svg" ||
-                          "/placeholder.svg" ||
-                          "/placeholder.svg" ||
-                          "/placeholder.svg"
-                        }
-                        alt="User"
-                        className="rounded-full w-[60px] h-[60px]"
-                        width={60}
-                        height={60}
-                      />
+                      {activeItem?.card_owner_id?.profile_picture ? (
+                        <Image
+                          src={activeItem?.card_owner_id?.profile_picture}
+                          alt="User"
+                          className="rounded-full w-[60px] h-[60px]"
+                          width={60}
+                          height={60}
+                        />
+                      ) : (
+                        <DefaultAvatar className="rounded-full bg-[#FFFFFF0F] w-16 h-16" />
+                      )}
                       <div className="flex flex-col text-[20px]">
                         <span className="font-urbanist font-medium text-[20px] mr-2">
                           {`${activeItem?.card_owner_id?.first_name} ${activeItem.card_owner_id?.last_name}`}

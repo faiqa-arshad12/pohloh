@@ -915,11 +915,15 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                                     "border-red-500"
                                 )}
                               >
-                                {loadingStates.teams
-                                  ? "Loading categories..."
-                                  : field.value && teams.length > 0
-                                  ? getTeamName(field.value)
-                                  :  <span className="text-[#FFFFFF52]">Select the Category</span>}
+                                {loadingStates.teams ? (
+                                  "Loading categories..."
+                                ) : field.value && teams.length > 0 ? (
+                                  getTeamName(field.value)
+                                ) : (
+                                  <span className="text-[#FFFFFF52]">
+                                    Select the Category
+                                  </span>
+                                )}
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-[#2C2D2E] border-none text-white">
@@ -955,15 +959,19 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                           >
                             <FormControl>
                               <SelectTrigger className="w-full h-[44px] bg-[#2C2D2E]  border border-white/10 rounded-[6px] mt-2 justify-between">
-                                {loadingStates.subcategories
-                                  ? "Loading folders..."
-                                  : !selectedCategory
-                                  ? "Select a category first"
-                                  : field.value && subcategories.length > 0
-                                  ? subcategories.find(
-                                      (sub) => sub.id === field.value
-                                    )?.name || "Select folder"
-                                  : <span className="text-[#FFFFFF52]">Select folder</span>}
+                                {loadingStates.subcategories ? (
+                                  "Loading folders..."
+                                ) : !selectedCategory ? (
+                                  "Select a category first"
+                                ) : field.value && subcategories.length > 0 ? (
+                                  subcategories.find(
+                                    (sub) => sub.id === field.value
+                                  )?.name || "Select folder"
+                                ) : (
+                                  <span className="text-[#FFFFFF52]">
+                                    Select folder
+                                  </span>
+                                )}
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-[#2C2D2E] border-none text-white">
@@ -1087,11 +1095,13 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                             <FormControl>
                               <SelectTrigger className="w-full h-[44px] bg-[#2C2D2E]   border border-white/10 rounded-[6px] px-4 py-3 justify-between mt-2">
                                 <SelectValue placeholder="Select verification period">
-                                  {field.value
-                                    ? formatPeriodDisplay(field.value)
-                                    :
-                                     <span className="text-[#FFFFFF52]">
-                                    Select period</span>}
+                                  {field.value ? (
+                                    formatPeriodDisplay(field.value)
+                                  ) : (
+                                    <span className="text-[#FFFFFF52]">
+                                      Select period
+                                    </span>
+                                  )}
                                 </SelectValue>
                               </SelectTrigger>
                             </FormControl>
@@ -1154,11 +1164,15 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                           >
                             <FormControl>
                               <SelectTrigger className="w-full h-[44px] bg-[#2C2D2E]   border border-white/10 rounded-[6px] px-4 py-3 justify-between mt-2">
-                                {loadingStates.teams
-                                  ? "Loading teams..."
-                                  : field.value
-                                  ? getTeamName(field.value)
-                                  :  <span className="text-[#FFFFFF52]">Select Team</span>}
+                                {loadingStates.teams ? (
+                                  "Loading teams..."
+                                ) : field.value ? (
+                                  getTeamName(field.value)
+                                ) : (
+                                  <span className="text-[#FFFFFF52]">
+                                    Select Team
+                                  </span>
+                                )}
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-[#2C2D2E] border-none text-white">
@@ -1180,7 +1194,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                   <div className="pt-4 space-y-4 flex flex-col items-center">
                     <Button
                       type="submit"
-                      className="w-[232px] h-[48px] flex items-center justify-center gap-1 bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black font-medium rounded-[8px] border border-black/10 px-4 py-3 cursor-pointer"
+                      className="w-full max-w-[232px] h-[48px] flex items-center justify-center gap-1 bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black font-medium rounded-[8px] border border-black/10 px-4 py-3 cursor-pointer"
                       disabled={
                         isAnyLoading ||
                         isExtracting ||
@@ -1213,7 +1227,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                       type="button"
                       onClick={onSaveAsDraft}
                       variant="outline"
-                      className="w-[232px] h-[48px] flex items-center justify-center gap-1 bg-[#333435] text-white font-medium rounded-[8px] border border-white px-4 py-3 hover:bg-[#333435] hover:text-white opacity-100 cursor-pointer"
+                      className="w-full max-w-[232px]  h-[48px] flex items-center justify-center gap-1 bg-[#333435] text-white font-medium rounded-[8px] border border-white px-4 py-3 hover:bg-[#333435] hover:text-white opacity-100 cursor-pointer"
                       disabled={
                         isAnyLoading ||
                         isExtracting ||
