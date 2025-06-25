@@ -1,7 +1,7 @@
 "use client";
 
 import {useEffect, useState} from "react";
-import {Info, Loader} from "lucide-react";
+import {Loader} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {
   Select,
@@ -14,6 +14,7 @@ import {apiUrl, CardType} from "@/utils/constant";
 import {useRouter} from "next/navigation";
 import {stripHtml} from "@/lib/stripeHtml";
 import {ShowToast} from "../shared/show-toast";
+import {Icon} from "@iconify/react/dist/iconify.js";
 
 type UnverifiedCard = {
   id: string;
@@ -189,7 +190,13 @@ export function UnverifiedCards({cards, isAnalytic}: UnverifiedCardProps) {
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <div className="bg-[#F9DB6F] p-2 rounded-full flex-shrink-0">
-                    <Info size={16} className="text-black" />
+                    {/* <Info size={16} className="text-black" /> */}
+                    <Icon
+                      icon="hugeicons:information-square"
+                      width="16"
+                      height="16"
+                      color="#232D39"
+                    />{" "}
                   </div>
                   <div className="flex flex-col flex-grow overflow-hidden">
                     <p className="text-[20px] font-semibold overflow-hidden whitespace-nowrap text-ellipsis">
