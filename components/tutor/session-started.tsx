@@ -9,6 +9,7 @@ import type {EvaluationResponse, ReportGenerationResponse} from "@/types/types";
 import {useUserHook} from "@/hooks/useUser";
 import {apiUrl, apiUrl_AI_Tutor} from "@/utils/constant";
 import {QuestionState, SessionStartedProps} from "@/types/tutor-types";
+import Loader from "../shared/loader";
 
 export default function SessionStarted({
   questions,
@@ -392,7 +393,7 @@ export default function SessionStarted({
     return (
       <div className="h-[725px] w-full bg-[#191919] flex items-center justify-center text-white">
         <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
+          <Loader />
           <span className="font-urbanist font-medium text-[16px]">
             Loading questions...
           </span>
@@ -669,7 +670,7 @@ export default function SessionStarted({
 
               {index === currentQuestionIndex && isSubmitting && (
                 <div className="flex justify-center items-center py-4">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#F9DB6F]" />
+                  <Loader />
                 </div>
               )}
             </div>

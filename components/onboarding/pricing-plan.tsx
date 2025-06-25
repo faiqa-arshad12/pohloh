@@ -13,6 +13,7 @@ import {
 } from "@/lib/local-storage";
 import {ShowToast} from "../shared/show-toast";
 import {planFeatures} from "@/utils/constant";
+import Loader from "../shared/loader";
 
 type Price = {
   id: string;
@@ -242,7 +243,7 @@ export default function PricingPlan({
 
           {isLoading ? (
             <div className="w-[857px] h-[430px] flex items-center justify-center">
-              <Loader2 className="h-12 w-12 animate-spin text-yellow-500" />
+              <Loader/>
             </div>
           ) : (
             <>

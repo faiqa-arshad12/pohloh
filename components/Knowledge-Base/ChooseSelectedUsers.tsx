@@ -1,6 +1,6 @@
 "use client";
 
-import {Check, Loader2} from "lucide-react";
+import {Check} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {
   Dialog,
@@ -9,7 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {useEffect, useState} from "react";
-import { apiUrl } from "@/utils/constant";
+import {apiUrl} from "@/utils/constant";
+import Loader from "../shared/loader";
 
 interface ChooseTeamModalProps {
   isOpen: boolean;
@@ -106,7 +107,7 @@ export default function SelectUserModal({
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-[#FFD700]" />
+            <Loader />
             <p className="mt-4 text-gray-400">Loading users...</p>
           </div>
         ) : error ? (
@@ -144,7 +145,7 @@ export default function SelectUserModal({
                         {fullName}
                       </span>
                       <span className="text-xs text-gray-400">
-                        {user?.users_team?.name ||'N/A'}
+                        {user?.users_team?.name || "N/A"}
                       </span>
                     </div>
 
@@ -152,7 +153,9 @@ export default function SelectUserModal({
                       <Check className="text-[#FFD700] w-5 h-5" />
                     ) : (
                       <button
-                        onClick={() => {toggleUser(user.id)}}
+                        onClick={() => {
+                          toggleUser(user.id);
+                        }}
                         className="text-sm bg-[#F9DB6F] text-black font-medium font-urbanist py-1 px-3 rounded-md hover:opacity-80 opacity-100 cursor-pointer w-[125px]"
                         style={{borderRadius: "5.5px"}}
                       >
@@ -176,11 +179,7 @@ export default function SelectUserModal({
                 disabled={selectedUserIds.size === 0 || isLoading}
                 className="bg-[#f0d568] hover:bg-[#e0c558] text-black font-medium rounded-md py-2 h-[48px] w-[210px] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Submit"
-                )}
+                {isLoading ? <Loader /> : "Submit"}
               </Button>
             </div>
           </>

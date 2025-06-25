@@ -1,9 +1,9 @@
 import React, {useState, useEffect} from "react";
 import {Button} from "../ui/button";
 import Leavefeedback from "./session-summary/leave-feedback";
-import {Loader2} from "lucide-react";
-import {apiUrl, apiUrl_AI, apiUrl_AI_Tutor} from "@/utils/constant";
+import {apiUrl,  apiUrl_AI_Tutor} from "@/utils/constant";
 import {SessionSummaryData, SessionSummaryProps} from "@/types/tutor-types";
+import Loader from "../shared/loader";
 
 export default function SessionSummary({
   sessionData,
@@ -126,7 +126,7 @@ export default function SessionSummary({
     return (
       <div className="h-full flex items-center justify-center">
         <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin text-[#F9DB6F]" />
+          <Loader />
           <span className="text-white">Generating session summary...</span>
         </div>
       </div>

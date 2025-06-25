@@ -22,7 +22,7 @@ import {
 import type {Department} from "@/types/types";
 import {useUser} from "@clerk/nextjs";
 import {ShowToast} from "../shared/show-toast";
-import {Loader2} from "lucide-react";
+import Loader from "../shared/loader";
 
 // LocalStorage keys
 const ORG_DATA_KEY = "organization_setup_data";
@@ -384,7 +384,7 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
                 disabled={isloading}
               >
                 {isloading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader />
                 ) : (
                   <p>Save & Continue</p>
                 )}

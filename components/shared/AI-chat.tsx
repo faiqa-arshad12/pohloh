@@ -8,6 +8,7 @@ import Image from "next/image";
 import {useUserHook} from "@/hooks/useUser";
 import {apiUrl_AI} from "@/utils/constant";
 import {useRouter} from "next/navigation";
+import Loader from "./loader";
 
 type Message = {
   id: number;
@@ -267,7 +268,7 @@ export default function AIChat({onClose}: AIChatProps) {
                     disabled={isLoading}
                   >
                     {isLoading ? (
-                      <Loader2 size={20} className="animate-spin" />
+                      <Loader />
                     ) : (
                       <Send size={20} />
                     )}
