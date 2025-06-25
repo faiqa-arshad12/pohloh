@@ -106,7 +106,7 @@ export default function Welcome({
               disabled={
                 !selectedLearningPath || !hasQuestions || isPathCompleted
               }
-              className="py-2 px-12 bg-[#F9DB6F] opacity-100 hover:opacity-80 text-black rounded-md font-urbanist font-medium text-[14px] leading-[100%] flex items-center gap-2 h-[48px] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              className="py-2 px-12 bg-[#F9DB6F] opacity-100 hover:opacity-80 text-black rounded-md font-urbanist font-medium text-[14px] leading-[100%] flex items-center gap-2 h-[48px] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity w-full"
             >
               <PlayIcon className="h-4 w-4" />
               {!selectedLearningPath

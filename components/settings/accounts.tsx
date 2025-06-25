@@ -1,13 +1,10 @@
 "use client";
 import {useEffect, useState} from "react";
 import {
-  User as User_Icon,
   LogOut,
   Ellipsis,
   Trash2,
-  CreditCard,
   MessageSquareWarning,
-  LayoutGrid,
   Check,
 } from "lucide-react";
 import EditProfileModal from "./Account/edit-Profile";
@@ -319,7 +316,6 @@ export default function Account() {
         }
 
         const result = await response.json();
-        console.log(result, "resu");
         setUsers(result.data);
       } catch (err) {
         console.error("Error fetching user:", err);
@@ -407,7 +403,7 @@ export default function Account() {
 
   return (
     <div className="min-h-screen  text-white py-5 ">
-      {loading || !isLoaded ? (
+      {loading || !isLoaded ||!userDetails ||userDataLoading ? (
         <div className="flex flex-row justify-center items-center min-h-screen">
           <Loader size={50} />
         </div>
@@ -540,7 +536,7 @@ export default function Account() {
                     {/* Profile Card */}
                     <div className="bg-[#FFFFFF0A] rounded-xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-[#7963E4] overflow-hidden">
+                        <div className="w-14 h-14 rounded-full  overflow-hidden">
                           <img
                             src={userDetails?.profile_picture || profileImage}
                             alt="avatar"

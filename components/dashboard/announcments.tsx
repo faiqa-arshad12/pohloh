@@ -218,7 +218,7 @@ export function AnnouncementCard({userData}: AnnouncementCardProps) {
         <div className="flex items-center gap-2 flex-row justify-between">
           <Button
             variant="outline"
-            className="bg-[#333435] border-white text-[16px] text-white hover:bg-[#333435] hover:text-white cursor-pointer w-[175px] h-[42px] font-normal"
+            className="bg-[#333435] border-white text-[16px] text-white hover:bg-[#333435] hover:text-white cursor-pointer w-[full] !h-[42px] font-normal"
             onClick={() => setIsOpen(true)}
           >
             View Announcement

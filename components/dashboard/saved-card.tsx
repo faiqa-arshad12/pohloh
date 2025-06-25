@@ -150,7 +150,7 @@ export function SavedCards({cards}: SavedCardsProp) {
           <div className="flex items-center justify-between absolute bottom-8 left-4 right-4 border-t border-[#828282]">
             <Button
               variant="outline"
-              className="bg-[#333435] border-white text-[16px] mt-6 text-white hover:bg-[#333435] hover:text-white cursor-pointer w-[175px] h-[42px] font-normal"
+              className="bg-[#333435] border-white text-[16px] mt-6 text-white hover:bg-[#333435] hover:text-white cursor-pointer w-full max-w-[175px] !h-[42px] font-normal"
               onClick={() => {
                 router.push(
                   `knowledge-base/create-knowledge-base?cardId=${displayedCard.id}`
