@@ -398,7 +398,6 @@ export default function CreateCard({cardId}: {cardId?: string}) {
 
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, form, isEditMode, org_id, originalCardData]);
 
   useEffect(() => {
