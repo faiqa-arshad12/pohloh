@@ -17,6 +17,7 @@ import {apiUrl, users, planFeatures} from "@/utils/constant";
 import {getSubscriptionDetails} from "@/actions/subscription.action";
 import PaymentPage from "./payment";
 import {Skeleton} from "@/components/ui/skeleton";
+import {Icon} from "@iconify/react/dist/iconify.js";
 
 // Skeleton components for loading states
 const SubscriptionSkeleton = () => (
@@ -123,7 +124,8 @@ const tutorColumns = [
     accessor: "id",
     cell: (value: any) => (
       <span className="flex items-center gap-2">
-        <FileText className="w-4 h-4 text-[#F9E36C]" />
+        <Icon icon="ph:files-bold" width="24" height="24" color="white" />
+
         {`Inv ${value.substring(0, 8)}`}
       </span>
     ),
@@ -655,7 +657,7 @@ export default function Billing() {
                                 <img
                                   src="/billing-check.png"
                                   className="mr-2"
-                                  alt='billing'
+                                  alt="billing"
                                 />
 
                                 <span className="font-urbanist font-normal text-[14.13px] text-[#707070]">
@@ -665,12 +667,12 @@ export default function Billing() {
                             ))}
                         </div>
                       </div>
-                      <div className="flex flex-row justify-between">
+                      <div className="flex flex-row justify-between gap-7">
                         {" "}
                         {/* Button logic */}
                         {isCurrent && (
                           <button
-                            className={`rounded-[9.42px] h-[56.51px] px-[47.09px] py-[11.77px] font-urbanist font-[600] text-[18px] mt-5 flex items-center justify-center cursor-pointer transition-all duration-200
+                            className={`rounded-[9.42px] h-[56.51px] w-full font-urbanist font-[600] text-[18px] mt-5 flex items-center justify-center cursor-pointer transition-all duration-200
                              ${
                                isCurrent
                                  ? "bg-[#F9DB6F] text-black border-none"
@@ -704,7 +706,7 @@ export default function Billing() {
                           </button>
                         )}
                         <button
-                          className={`rounded-[9.42px] h-[56.51px] px-[47.09px] py-[11.77px] font-urbanist font-semibold text-[18px] mt-5 flex items-center justify-center cursor-pointer transition-all duration-200
+                          className={`rounded-[9.42px] h-[56.51px] w-full font-urbanist font-semibold text-[18px] mt-5 flex items-center justify-center cursor-pointer transition-all duration-200
                           ${
                             isCurrent
                               ? "bg-transparent border border-white text-white"

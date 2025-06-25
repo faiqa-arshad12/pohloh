@@ -1,7 +1,7 @@
 "use client";
 
 import {useEffect, useState} from "react";
-import {Info, Loader} from "lucide-react";
+import {Loader} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {
   Select,
@@ -14,6 +14,7 @@ import {apiUrl, CardType} from "@/utils/constant";
 import {useRouter} from "next/navigation";
 import {stripHtml} from "@/lib/stripeHtml";
 import {ShowToast} from "../shared/show-toast";
+import {Icon} from "@iconify/react/dist/iconify.js";
 
 type UnverifiedCard = {
   id: string;
@@ -37,9 +38,10 @@ const filters = ["Monthly", "Weekly", "Yearly"];
 
 interface UnverifiedCardProps {
   cards: UnverifiedCard[];
+  isAnalytic?: boolean;
 }
 
-export function UnverifiedCards({cards}: UnverifiedCardProps) {
+export function UnverifiedCards({cards, isAnalytic}: UnverifiedCardProps) {
   const [selectedFilter, setSelectedFilter] = useState("Monthly");
   const [filteredCards, setFilteredCards] = useState<UnverifiedCard[]>([]);
   const [hasScrollbar, setHasScrollbar] = useState(false);
@@ -188,7 +190,13 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <div className="bg-[#F9DB6F] p-2 rounded-full flex-shrink-0">
-                    <Info size={16} className="text-black" />
+                    {/* <Info size={16} className="text-black" /> */}
+                    <Icon
+                      icon="hugeicons:information-square"
+                      width="16"
+                      height="16"
+                      color="#232D39"
+                    />{" "}
                   </div>
                   <div className="flex flex-col flex-grow overflow-hidden">
                     <p className="text-[20px] font-semibold overflow-hidden whitespace-nowrap text-ellipsis">
@@ -202,17 +210,43 @@ export function UnverifiedCards({cards}: UnverifiedCardProps) {
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center justify-center text-center flex-shrink-0">
-                  <Button
-                    variant="outline"
-                    className="w-full border-white text-white hover:bg-[#333435] hover:text-white bg-[#333435] !h-[27.58] !cursor-pointer px-9"
-                    onClick={() => {
-                      handleVerifyCard(card.id, card.verificationperiod);
-                    }}
-                  >
-                    {isVerifying && cardId === card.id ? <Loader /> : "Verify"}
-                  </Button>
-                </div>
+                {!isAnalytic ? (
+                  <div className="flex items-center justify-center text-center flex-shrink-0">
+                    <Button
+                      variant="outline"
+                      className="max-w-[88px] border-white text-white hover:bg-[#333435] hover:text-white bg-[#333435] !h-[27.58px] !cursor-pointer px-9 rounded-[5.55px]"
+                      onClick={() => {
+                        handleVerifyCard(card.id, card.verificationperiod);
+                      }}
+                    >
+                      {isVerifying && cardId === card.id ? (
+                        <Loader />
+                      ) : (
+                        "Verify"
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className="inline-flex h-[44px] items-center gap-2 bg-[#FFFFFF0A] rounded-full py-2 px-4">
+                      <div className="relative h-8 w-8 overflow-hidden rounded-full">
+                        <img
+                          src={
+                            card.card_owner_id.profile_picture ||
+                            "/placeholder-profile.svg"
+                          }
+                          alt={card.card_owner_id.first_name}
+                          width={30}
+                          height={30}
+                          className="object-cover"
+                        />
+                      </div>
+                      <span className="font-urbanist font-normal text-xl leading-[100%] tracking-normal text-white">
+                        {`${card.card_owner_id.first_name} ${card.card_owner_id.last_name}`}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Description */}

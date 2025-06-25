@@ -12,7 +12,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { apiUrl } from "@/utils/constant";
+import {apiUrl} from "@/utils/constant";
+import DefaultAvatar from "../shared/DefaultAvatar";
 
 interface User {
   id: string;
@@ -33,7 +34,6 @@ interface ReassignUserModalProps {
   currentAssigneeId?: string;
 }
 
-
 export function ReassignUserModal({
   isOpen,
   onClose,
@@ -51,14 +51,11 @@ export function ReassignUserModal({
 
     setIsLoadingUsers(true);
     try {
-      const response = await fetch(
-        `${apiUrl}/users/organizations/${orgId}`,
-        {
-          method: "GET",
-          headers: {"Content-Type": "application/json"},
-          // // credentials: "include",
-        }
-      );
+      const response = await fetch(`${apiUrl}/users/organizations/${orgId}`, {
+        method: "GET",
+        headers: {"Content-Type": "application/json"},
+        // // credentials: "include",
+      });
 
       if (!response.ok) throw new Error("Failed to fetch user details");
 
@@ -156,13 +153,17 @@ export function ReassignUserModal({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-[#222] flex items-center justify-center">
-                      <Image
-                        src={user.profile_picture || "/pic1.png"}
-                        alt={`${user.first_name} ${user.last_name}`}
-                        className="w-full h-full object-cover"
-                        width={48}
-                        height={48}
-                      />
+                      {user?.profile_picture ? (
+                        <Image
+                          src={user.profile_picture || "/pic1.png"}
+                          alt={`${user.first_name} ${user.last_name}`}
+                          className="w-full h-full object-cover"
+                          width={48}
+                          height={48}
+                        />
+                      ) : (
+                        <DefaultAvatar className="rounded-full bg-[#FFFFFF0F] w-12 h-12" />
+                      )}
                     </div>
                     <div>
                       <div className="font-medium">{`${user.first_name} ${user.last_name}`}</div>
@@ -178,7 +179,7 @@ export function ReassignUserModal({
                   <Button
                     onClick={() => handleAssignUser(user.id)}
                     disabled={assigningUserId === user.id}
-                    className="bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black px-4 py-2 rounded-md text-sm font-medium min-w-[100px] cursor-pointer"
+                    className="bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black rounded-[8px] text-[14px] font-medium max-w-[100px] w-full cursor-pointer !h-[44px]"
                   >
                     {assigningUserId === user.id ? (
                       <div className="flex items-center justify-center">
@@ -186,7 +187,7 @@ export function ReassignUserModal({
                         <Loader />
                       </div>
                     ) : (
-                      "Assign"
+                      "Assign User"
                     )}
                   </Button>
                 </div>

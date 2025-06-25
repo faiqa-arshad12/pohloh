@@ -51,8 +51,8 @@ export default function SessionStarted({
       const initialStates: QuestionState[] = questions.map(
         (question, index) => {
           // Find if this question has been answered before
-          const previousAnswer = questionsAnswered.find(
-            (qa) => qa.question_id === question.id
+          const previousAnswer = questionsAnswered?.find(
+            (qa) => qa?.question_id === question?.id
           );
 
           const state = {

@@ -1,145 +1,243 @@
-import Image from "next/image";
-import React from "react";
+import React, {useEffect, useState} from "react";
+import {Button} from "../ui/button";
+import {
+  getUnreadNotifications,
+  markAsRead,
+  markAllAsRead,
+  getUnreadCount,
+} from "@/services/notification.service";
+import {formatDistanceToNow} from "date-fns";
+import {useUserHook} from "@/hooks/useUser";
+import {useRouter} from "next/navigation";
+import {cn} from "@/lib/utils";
+import {Notification} from "@/types/types";
+import Loader from "./loader";
 
-interface Notification {
-  id: number;
-  message: string;
-  subtext?: string;
-  time: string;
-}
+type NotificationsProps = {
+  setShowAllNotifications?: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsNotificationsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  isMobile?: boolean;
+  onUnreadCountChange?: (count: number) => void;
+  unreadCount?: number;
+};
 
-const mockNotifications: Notification[] = [
-  {
-    id: 1,
-    message: "Courtney M. has been added to your Team",
-    time: "5 min ago",
-  },
-  {
-    id: 2,
-    message: "A new card has been added to CX.",
-    time: "5 min ago",
-  },
-  {
-    id: 3,
-    message: "Reminder: You're overdue for your Tutor session",
-    subtext: "Visit the Tutor section to get started.",
-    time: "5 min ago",
-  },
-  {
-    id: 4,
-    message: "One of your cards has expired. Re-verify it as soon as possible.",
-    subtext: "Warranty Policy",
-    time: "5 min ago",
-  },
-  {
-    id: 5,
-    message: "One of your cards has expired. Re-verify it as soon as possible.",
-    subtext: "Warranty Policy",
-    time: "5 min ago",
-  },
-  {
-    id: 6,
-    message: "One of your cards has expired. Re-verify it as soon as possible.",
-    subtext: "Warranty Policy",
-    time: "5 min ago",
-  },
-  {
-    id: 7,
-    message: "A new learning path from Marketing has been assigned to you.",
-    subtext: "Holiday Sale",
-    time: "5 min ago",
-  },
-];
+export const Notifications = ({
+  setShowAllNotifications,
+  setIsNotificationsOpen,
+  onUnreadCountChange,
+  isMobile,
+  unreadCount = 0,
+}: NotificationsProps) => {
+  const {userData} = useUserHook();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-const NotificationsPanel: React.FC = () => {
+  useEffect(() => {
+    if (!userData) {
+      console.log("No user found");
+      return;
+    }
+    fetchNotifications();
+  }, [userData]);
+
+  const fetchNotifications = async () => {
+    if (!userData) {
+      console.log("No user found in fetchNotifications");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getUnreadNotifications(userData.id);
+      setNotifications(data);
+      if (onUnreadCountChange) {
+        onUnreadCountChange(data.length);
+      }
+    } catch (error) {
+      setError("Failed to load notifications");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    if (!userData) return;
+    try {
+      await markAllAsRead(userData.id);
+      setNotifications([]);
+      if (onUnreadCountChange) {
+        onUnreadCountChange(0);
+      }
+      await fetchNotifications();
+    } catch (error) {
+      setError("Failed to mark all notifications as read");
+    }
+  };
+
+  const handleMarkAsRead = async (notification: Notification) => {
+    try {
+      await markAsRead(notification.id, userData.id);
+      setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
+      if (onUnreadCountChange) {
+        onUnreadCountChange(notifications.length - 1);
+      }
+      if (notification.link) {
+        router.push(notification.link);
+      }
+      await fetchNotifications();
+    } catch (error) {
+      setError("Failed to mark notification as read");
+    }
+  };
+  const displayCount = unreadCount > 9 ? "9+" : unreadCount;
+
+  if (isMobile) {
+    return (
+      <div className="w-full">
+        {error && <div className="p-4 text-center text-red-500">{error}</div>}
+        {loading ? (
+          <div className="p-4 text-center text-gray-400 gap-2 flex justify-center">
+            <Loader /> <span>Loading notifications...</span>
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="p-4 text-center text-gray-400">
+            No unread notifications
+          </div>
+        ) : (
+          <>
+            {notifications.slice(0, 3).map((notification) => (
+              <div
+                key={notification.id}
+                className="flex items-start gap-3 p-3 border-b border-zinc-800"
+                onClick={() => handleMarkAsRead(notification)}
+              >
+                <div className="flex-shrink-0 mt-1">
+                  <div className="w-6 h-6 bg-[#F9DB6F] rounded-full flex items-center justify-center text-black">
+                    <img
+                      alt="notification"
+                      src="/logo/pohloh.svg"
+                      height={12}
+                    />
+                  </div>
+                </div>
+                <div className="flex-grow">
+                  <p className="text-white text-[20px] font-medium">
+                    {notification.message}
+                  </p>
+                  {/* {notification.subtext && (
+                    <p className="text-xs mt-1 text-[#F9DB6F]">
+                      {notification.subtext}
+                    </p>
+                  )} */}
+                </div>
+                <div className="flex-shrink-0 text-xs text-gray-400">
+                  {formatDistanceToNow(new Date(notification.created_at), {
+                    addSuffix: true,
+                  })}
+                </div>
+              </div>
+            ))}
+            <Button
+              className="w-full text-[#F9DB6F] text-sm text-center mt-2 bg-transparent"
+              onClick={() => {
+                router.push("/notifications");
+                if (setIsNotificationsOpen) setIsNotificationsOpen(false);
+              }}
+            >
+              View all notifications
+            </Button>
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="text-white p-4">
-      <div>
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-          <h1 className="text-xl font-bold flex items-center gap-2">
+    <div
+      className={cn(
+        "absolute right-0 mt-2 w-[700px] bg-[#1a1a1a] rounded-lg shadow-lg border border-zinc-800 overflow-hidden z-50",
+        {"w-full": isMobile}
+      )}
+    >
+      <div className="p-4 flex items-center justify-between border-b border-zinc-800">
+        <div className="flex items-center gap-2">
+          <span className="text-white text-[32px] font-semibold font-urbanist">
             Notifications
-            <span className="bg-[#F9DB6F] text-black rounded-full px-2">
-              {mockNotifications.length}
-            </span>
-          </h1>
-
-          <div className="flex items-center flex-wrap gap-2 md:gap-4">
-            <a
-              href="#"
-              className="text-[#FFFFFF99] text-sm whitespace-nowrap underline"
-            >
-              View history
-            </a>
-            <a
-              href="#"
-              className="text-[#F9DB6F] text-sm whitespace-nowrap"
-            >
-              Mark all as read
-            </a>
+          </span>
+          <div className="bg-[#F9DB6F] text-black text-[16px] font-bold h-6 w-6 rounded-full flex items-center justify-center">
+            {displayCount}
           </div>
         </div>
-
-        {/* Notifications List */}
-        <div className="bg-[#191919] rounded-lg p-4 space-y-4">
-          {mockNotifications.map((notification) => (
-            <NotificationItem key={notification.id} notification={notification} />
-          ))}
+        <div className="flex items-center">
+          <Button
+            className="hover:underline text-[20px] font-urbanist font-semibold bg-transparent text-[#F9DB6F] hover:bg-transparent cursor-pointer"
+            onClick={() => {
+              router.push("/notifications");
+              if (setIsNotificationsOpen) setIsNotificationsOpen(false);
+            }}
+          >
+            Show All
+          </Button>
+          <Button
+            className="hover:underline text-[20px] font-urbanist font-semibold bg-transparent text-[#F9DB6F] hover:bg-transparent cursor-pointer"
+            onClick={handleMarkAllAsRead}
+          >
+            Mark all as read
+          </Button>
         </div>
+      </div>
+
+      <div className="max-h-[400px] overflow-y-auto">
+        {error && <div className="p-4 text-center text-red-500">{error}</div>}
+        {loading ? (
+          <div className="p-4 text-center text-gray-400 gap-2 flex justify-center">
+            <Loader /> <span>Loading notifications...</span>
+          </div>
+        ) : notifications?.length === 0 ? (
+          <div className="p-4 text-center text-gray-400">
+            No unread notifications
+          </div>
+        ) : (
+          notifications?.map((notification, index) => (
+            <React.Fragment key={notification.id}>
+              <div
+                className="flex items-start gap-3 p-4 hover:bg-zinc-800 transition-colors cursor-pointer bg-zinc-800/50"
+                onClick={() => handleMarkAsRead(notification)}
+              >
+                <div className="flex-shrink-0 mt-1">
+                  <div className="w-8 h-8 bg-[#F9DB6F] rounded-full flex items-center justify-center text-black">
+                    <img
+                      alt="notification"
+                      src="/logo/pohloh.svg"
+                      height={16}
+                    />
+                  </div>
+                </div>
+                <div className="flex-grow">
+                  <p className="text-white text-sm">{notification.message}</p>
+                  {notification.subtext && (
+                    <p className="text-[#F9DB6F] text-xs mt-1">
+                      {notification.subtext}
+                    </p>
+                  )}
+                </div>
+                <div className="flex-shrink-0 text-xs text-gray-400">
+                  {formatDistanceToNow(new Date(notification.created_at), {
+                    addSuffix: true,
+                  })}
+                </div>
+              </div>
+              {index !== notifications.length - 1 && (
+                <div className="h-px bg-[#CDCDCD] w-full" />
+              )}
+            </React.Fragment>
+          ))
+        )}
       </div>
     </div>
   );
 };
 
-// interface BadgeProps {
-//   letter: string;
-//   color: string;
-// }
-
-//
-
-//   <div
-//     className={`text-white rounded-full w-8 h-8 flex items-center justify-center text-sm ${color}`}
-//   >
-//     {letter}
-//   </div>
-// );
-
-interface NotificationItemProps {
-  notification: Notification;
-}
-
-const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => {
-  const { message, subtext, time } = notification;
-
-  return (
-    <div>
-
-
-    <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2 h-[88px] ">
-      <div className="flex items-start gap-4">
-        <Image
-          src="/file.png"
-          alt="Notification icon"
-          className="w-10 h-10 rounded-full shrink-0"
-          width={40}
-          height={40}
-        />
-        <div className="text-sm sm:text-base">
-          <p>{message}</p>
-          {subtext && (
-            <p className="text-[#F9DB6F] text-sm mt-0.5">{subtext}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-right sm:text-left">
-        <span className="text-gray-500 text-xs">{time}</span>
-      </div>
-    </div>
-      <div className="border-b"></div>
-    </div>
-  );
-};
-
-export default NotificationsPanel;
+export default Notifications;

@@ -39,6 +39,7 @@ import {
   CardStatus,
   determinePeriodType,
   formatPeriodDisplay,
+  frontend_url,
   visibilityLabels,
   visibilityOptions,
 } from "@/utils/constant";
@@ -47,6 +48,9 @@ import {cn} from "@/lib/utils";
 import ChooseTeamModal from "./ChooseTeamModal";
 import ChooseUserModal from "./ChooseUserModal";
 import SelectUserModal from "./ChooseSelectedUsers";
+import {createNotification} from "@/services/notification.service";
+import {fetchUserData} from "../analytics/analytic.service";
+import {useUserHook} from "@/hooks/useUser";
 
 const TipTapEditor = dynamic(() => import("./editor"), {
   ssr: false,
@@ -190,6 +194,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
 
   const selectedCategory = form.watch("category_id");
   const verificationPeriod = form.watch("verificationperiod");
+  const {userData} = useUserHook();
   const verificationPeriodType = form.watch("verificationPeriodType");
 
   const setLoading = (key: keyof typeof loadingStates, value: boolean) => {
@@ -526,6 +531,20 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           errorData.message ||
             `Failed to ${isEditMode ? "update" : "create"} card`
         );
+      }
+
+      // Notification logic for team
+      if (values.team_to_announce_id && values.team_to_announce_id !== "none") {
+        await createNotification({
+          user_id: userData.id,
+          org_id: org_id,
+          message: `A knowledge card ${values.title} was ${
+            isEditMode ? "updated" : "created"
+          } for your team`,
+          subtext: values.content?.slice(0, 100),
+          link: `${frontend_url}/knowledge-base`,
+          notifying_team_ids: [values.team_to_announce_id],
+        });
       }
 
       ShowToast(
@@ -1200,7 +1219,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                   <div className="pt-4 space-y-4 flex flex-col items-center">
                     <Button
                       type="submit"
-                      className="w-[232px] h-[48px] flex items-center justify-center gap-1 bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black font-medium rounded-[8px] border border-black/10 px-4 py-3 cursor-pointer"
+                      className="w-full max-w-[232px] h-[48px] flex items-center justify-center gap-1 bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black font-medium rounded-[8px] border border-black/10 px-4 py-3 cursor-pointer"
                       disabled={
                         isAnyLoading ||
                         isExtracting ||
@@ -1233,7 +1252,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                       type="button"
                       onClick={onSaveAsDraft}
                       variant="outline"
-                      className="w-[232px] h-[48px] flex items-center justify-center gap-1 bg-[#333435] text-white font-medium rounded-[8px] border border-white px-4 py-3 hover:bg-[#333435] hover:text-white opacity-100 cursor-pointer"
+                      className="w-full max-w-[232px]  h-[48px] flex items-center justify-center gap-1 bg-[#333435] text-white font-medium rounded-[8px] border border-white px-4 py-3 hover:bg-[#333435] hover:text-white opacity-100 cursor-pointer"
                       disabled={
                         isAnyLoading ||
                         isExtracting ||

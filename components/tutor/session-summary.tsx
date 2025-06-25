@@ -2,9 +2,8 @@ import React, {useState, useEffect} from "react";
 import {Button} from "../ui/button";
 import Leavefeedback from "./session-summary/leave-feedback";
 import {Loader2} from "lucide-react";
-import {apiUrl, apiUrl_AI_Tutor} from "@/utils/constant";
+import {apiUrl, apiUrl_AI, apiUrl_AI_Tutor} from "@/utils/constant";
 import {SessionSummaryData, SessionSummaryProps} from "@/types/tutor-types";
-import {useUserHook} from "@/hooks/useUser";
 
 export default function SessionSummary({
   sessionData,
@@ -26,16 +25,13 @@ export default function SessionSummary({
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch(
-          `${apiUrl_AI_Tutor}/tutor-evaluation/evaluate-answers`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(sessionData),
-          }
-        );
+        const response = await fetch(`${apiUrl_AI_Tutor}/evaluate-answers`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(sessionData),
+        });
 
         if (!response.ok) {
           throw new Error("Failed to fetch session summary");
@@ -44,6 +40,54 @@ export default function SessionSummary({
         const data = await response.json();
         if (data) {
           setSummaryData(data);
+
+          // Create comprehensive session summary object
+          const correctAnswers =
+            parseInt(data?.session_summary?.score.split("/")[0]) || 0;
+          const totalQuestions = data?.session_summary?.total_questions || 0;
+          const incorrectAnswers = totalQuestions - correctAnswers;
+
+          const todayLocal = new Date();
+          const localDateString =
+            todayLocal.getFullYear() +
+            "-" +
+            String(todayLocal.getMonth() + 1).padStart(2, "0") +
+            "-" +
+            String(todayLocal.getDate()).padStart(2, "0");
+
+          const sessionSummaryObject = {
+            score: data?.session_summary?.percentage_score || 0,
+            strengths: data?.performance_analysis.strengths,
+            opportunities: data?.performance_analysis.weaknesses,
+
+            session_summary: {
+              total_questions: totalQuestions,
+              correct_answers: correctAnswers,
+              incorrect_answers: incorrectAnswers,
+              score: data?.session_summary?.score || "0/0",
+              percentage_score: data?.session_summary?.percentage_score || 0,
+              performance_level:
+                data?.session_summary?.performance_level || "Unknown",
+              session_feedback: data?.session_summary?.session_feedback || "",
+              completed_at: localDateString,
+              // completed_at: new Date().toISOString(),
+            },
+            completed: true,
+            updated_at: new Date().toISOString(),
+
+            // question_breakdown: data?.question_breakdown || {
+            //   correct_answers: correctAnswers,
+            //   incorrect_answers: incorrectAnswers,
+            //   partially_correct_answers: 0,
+            // },
+            // wrong_answers: data?.wrong_answers || [],
+            // detailed_results: data?.detailed_results || [],
+            // metadata: {
+            //   evaluation_timestamp: new Date().toISOString(),
+            //   relevance_threshold: 0.7,
+            // },
+          };
+
           const updateResponse = await fetch(
             `${apiUrl}/learning-paths/users/${userLearningPath}`,
             {
@@ -51,12 +95,19 @@ export default function SessionSummary({
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({
-                score: data?.session_summary?.percentage_score || 0,
-              }),
+              body: JSON.stringify(sessionSummaryObject),
             }
           );
-          console.log(data?.session_summary?.percentage_score,'e');
+
+          if (!updateResponse.ok) {
+            console.error(
+              "Failed to update learning path with session summary"
+            );
+          } else {
+            console.log("Session summary updated successfully");
+          }
+
+          console.log(data?.session_summary, "e");
         }
       } catch (err) {
         setError(
@@ -121,6 +172,19 @@ export default function SessionSummary({
                 Score:
               </span>{" "}
               {summaryData.session_summary.score}
+            </p>
+            <p>
+              <span className="font-urbanist font-medium text-[20px] leading-[100%] tracking-[0] text-center">
+                Correct Answers:
+              </span>{" "}
+              {summaryData.session_summary.score.split("/")[0]}
+            </p>
+            <p>
+              <span className="font-urbanist font-medium text-[20px] leading-[100%] tracking-[0] text-center">
+                Incorrect Answers:
+              </span>{" "}
+              {summaryData.session_summary.total_questions -
+                parseInt(summaryData.session_summary.score.split("/")[0])}
             </p>
             <p>
               <span className="font-urbanist font-medium text-[20px] leading-[100%] tracking-[0] text-center">

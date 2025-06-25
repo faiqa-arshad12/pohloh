@@ -13,7 +13,7 @@ import {CustomDateFilterModal} from "../shared/date-filter";
 import {DateRangeDropdown} from "../shared/custom-date-picker";
 import {getDropdownOptions} from "@/utils/constant";
 import Loader from "../shared/loader";
-import {fetchTeams} from "./analytic.service";
+import {fetchTeams, fetchTutorStats} from "./analytic.service";
 
 function AnalyticsContent() {
   const {roleAccess} = useRole();
@@ -28,13 +28,13 @@ function AnalyticsContent() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [teams, setTeams] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState("all");
-  const [selectedPath, setSelectedPath] = useState("all");
+  const [stats, setStats] = useState<any>(null);
+  const id = searchParams?.get("id");
 
   useEffect(() => {
     if (roleAccess === "user") {
       setTutorId(userData?.id);
     } else {
-      const id = searchParams?.get("id");
       setTutorId(id);
       if (id) {
         setActiveTab("tutor");
@@ -49,7 +49,6 @@ function AnalyticsContent() {
     }
   }, [searchParams, userData, roleAccess]);
 
-  // Initialize default date range (Last 30 days)
   useEffect(() => {
     const today = new Date();
     const thirtyDaysAgo = new Date();
@@ -59,12 +58,11 @@ function AnalyticsContent() {
   }, []);
 
   const handleRangeChange = async (range: string) => {
-    // Find the selected option to get its label
     const selectedOption = getDropdownOptions().find(
       (option) => option.value === range
     );
 
-    setSelectedRange(range); // Keep the value for logic
+    setSelectedRange(range);
 
     if (range === "Custom") {
       setShowCustomFilterModal(true);
@@ -73,7 +71,6 @@ function AnalyticsContent() {
 
     setIsLoadingData(true);
 
-    // Apply predefined date ranges
     const today = new Date();
     let start: Date;
     const end: Date = today;
@@ -101,7 +98,6 @@ function AnalyticsContent() {
     setStartDate(start);
     setEndDate(end);
 
-    // Simulate data loading
     setTimeout(() => {
       setIsLoadingData(false);
     }, 500);
@@ -147,7 +143,7 @@ function AnalyticsContent() {
             )}
 
             <div className="flex gap-4 mt-2">
-              {activeTab === "tutor" && roleAccess !== "user" && (
+              {activeTab === "tutor"  && (
                 <>
                   <DateRangeDropdown
                     selectedRange={selectedRange}
@@ -163,24 +159,23 @@ function AnalyticsContent() {
                     initialStartDate={startDate}
                     initialEndDate={endDate}
                   />
-                  </>
-                   )}
-                  {activeTab === "tutor" && roleAccess !== "user" && !tutorId && (
-                    <DateRangeDropdown
-                      selectedRange={selectedTeam}
-                      onRangeChange={setSelectedTeam}
-                      width="250px"
-                      disabled={isLoadingData}
-                      options={[
-                        {label: "All Department", value: "all"},
-                        ...teams.map((team: any) => ({
-                          label: team.name,
-                          value: team.id,
-                        })),
-                      ]}
-                    />
-                  )}
-
+                </>
+              )}
+              {activeTab === "tutor" && roleAccess === "owner" && !tutorId && (
+                <DateRangeDropdown
+                  selectedRange={selectedTeam}
+                  onRangeChange={setSelectedTeam}
+                  width="250px"
+                  disabled={isLoadingData}
+                  options={[
+                    {label: "All Department", value: "all"},
+                    ...teams.map((team: any) => ({
+                      label: team.name,
+                      value: team.id,
+                    })),
+                  ]}
+                />
+              )}
 
               {!(roleAccess !== "user" && tutorId) && (
                 <div className="flex items-center gap-2">
@@ -212,19 +207,26 @@ function AnalyticsContent() {
           </div>
         </div>
 
-        {/* Custom Date Filter Modal */}
-
-        {/* Analytics Content */}
         <div
           className={`transition-opacity duration-300 ${
             isLoadingData ? "opacity-50" : "opacity-100"
           }`}
         >
           {activeTab === "tutor" &&
-          (roleAccess == "user" || tutorId !== null) ? (
-            <TutorAnalytics id={tutorId} />
+          (roleAccess === "user" || tutorId !== null) ? (
+            <TutorAnalytics
+              id={tutorId}
+              team={selectedTeam !== "all" ? selectedTeam : undefined}
+              startDate={startDate}
+              endDate={endDate}
+            />
           ) : activeTab === "tutor" && roleAccess !== "user" && !tutorId ? (
-            <AdminAanalytic selectedTeam={selectedTeam} />
+            <AdminAanalytic
+              selectedTeam={selectedTeam}
+              team={selectedTeam !== "all" ? selectedTeam : undefined}
+              startDate={startDate}
+              endDate={endDate}
+            />
           ) : null}
 
           {activeTab === "Card" && <Card />}

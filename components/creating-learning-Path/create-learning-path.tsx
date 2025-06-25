@@ -14,13 +14,15 @@ import {
 import {Minus, Plus, X, PlusIcon} from "lucide-react";
 import {useUser} from "@clerk/nextjs";
 import VerificationPeriodPicker from "./verification-picker";
-import {apiUrl, apiUrl_AI} from "@/utils/constant";
+import {apiUrl, apiUrl_AI, frontend_url} from "@/utils/constant";
 import ArrowBack from "../shared/ArrowBack";
 import {ShowToast} from "../shared/show-toast";
 import QuestionModal, {QuestionModalProps} from "./question-modal";
 import QuestionPreview from "./questions-preview";
 import Loader from "../shared/loader";
 import {Skeleton} from "@/components/ui/skeleton";
+import {createNotification} from "@/services/notification.service";
+import { useUserHook } from "@/hooks/useUser";
 
 // Types
 type Question = {
@@ -97,6 +99,7 @@ export default function LearningPathPage() {
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [questions, setQuestions] = useState<Question[]>([]);
+  const {userData} = useUserHook()
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<Question>({
     id: "",
@@ -673,6 +676,20 @@ export default function LearningPathPage() {
         throw new Error(errorData.message || "Failed to publish path");
       }
 
+      // Notification logic for team
+      if (formData.category_id) {
+        await createNotification({
+          user_id:userData?.id || "",
+          org_id: orgId,
+          message: `A new learning path '${formData.title}' was ${
+            pathId ? "updated" : "created"
+          } for your team`,
+          // subtext: null,
+          link: `${frontend_url}/tutor/explore-learning-paths`,
+          notifying_team_ids: [formData.category_id],
+        });
+      }
+
       showToast(
         pathId
           ? "Learning path updated successfully!"
@@ -758,7 +775,6 @@ export default function LearningPathPage() {
             : undefined,
       });
     } else {
-
       const newQuestion = {
         id: crypto.randomUUID(),
         question: "",
@@ -825,9 +841,7 @@ export default function LearningPathPage() {
   }, [formData.question_type, currentQuestion.type]);
 
   // Add effect to monitor form data changes
-  useEffect(() => {
-
-  }, [formData.question_type, currentQuestion.type]);
+  useEffect(() => {}, [formData.question_type, currentQuestion.type]);
 
   const addQuestion = () => {
     if (!currentQuestion.question.trim()) {
@@ -1094,7 +1108,7 @@ export default function LearningPathPage() {
               </label>
               <Button
                 variant="outline"
-                className="border bg-[#FFFFFF14] border-[#f0d568] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#F9DB6F]/10 h-10 rounded-md cursor-pointer"
+                className="border bg-[#FFFFFF14] h-[44px] border-[#f0d568] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#F9DB6F]/10 h-10 rounded-md cursor-pointer"
                 onClick={() => {
                   // Pass the current path ID if editing
                   const url = pathId

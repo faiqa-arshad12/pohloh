@@ -618,7 +618,9 @@ const TipTapEditor = ({
               <button
                 onClick={() => document.getElementById("file-upload")?.click()}
                 disabled={isExtracting}
-                className={`bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black px-4 py-2 rounded-md flex gap-2 items-center justify-center w-[200px] cursor-pointer \${isExtracting ? "opacity-50 cursor-not-allowed" : ""}`}
+                className={`bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black px-4 py-2 rounded-md flex gap-2 items-center justify-center w-[232px]  h-[48px] cursor-pointer ${
+                  isExtracting ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
                 {isExtracting ? (
                   <>

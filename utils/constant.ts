@@ -279,33 +279,32 @@ export const defaultOptions: DateRangeOption[] = [
     value: "custom",
   },
 ];
- export const getDropdownOptions = () => {
-    const baseOptions = [
-      {
-        label: "Last 7 days",
-        value: "weekly",
-        description: "Past week data",
-      },
-      {
-        label: "Last 30 days",
-        value: "monthly",
-        description: "Past month data",
-      },
-       {
-        label: "Last Year",
-        value: "yearllly",
-        description: "Past month data",
-      },
-    ];
+export const getDropdownOptions = () => {
+  const baseOptions = [
+    {
+      label: "Last 7 days",
+      value: "weekly",
+      description: "Past week data",
+    },
+    {
+      label: "Last 30 days",
+      value: "monthly",
+      description: "Past month data",
+    },
+    {
+      label: "Last Year",
+      value: "yearly",
+      description: "Past month data",
+    },
+  ];
 
-    // Add yearly option for admin users
+  baseOptions.push({
+    label: "Custom",
+    value: "Custom",
+    description: "Select specific dates",
+  });
 
-    // Always add custom option
-    baseOptions.push({
-      label: "Custom",
-      value: "Custom",
-      description: "Select specific dates",
-    });
+  return baseOptions;
+};
 
-    return baseOptions;
-  };
+export const frontend_url= `${process.env.NEXT_PUBLIC_SITE_URL}`

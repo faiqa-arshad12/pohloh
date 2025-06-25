@@ -30,12 +30,13 @@ import {
   SelectValue,
   SelectContent,
 } from "@/components/ui/select";
-import {apiUrl, CardStatus, CardType} from "@/utils/constant";
+import {apiUrl, CardStatus, CardType, frontend_url} from "@/utils/constant";
 import {ShowToast} from "@/components/shared/show-toast";
 import Loader from "@/components/shared/loader";
 import {Skeleton} from "@/components/ui/skeleton";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
+import {createNotification} from "@/services/notification.service";
 
 type RenewSubscriptionProps = {
   open: boolean;
@@ -294,6 +295,16 @@ function CreateAnnouncement({
       //   localStorage.removeItem("selectedAnnouncementCard"); // Clear after loading
       // }
       ShowToast("Announcement created successfully", "success");
+
+      // Create a notification for the selected teams
+      await createNotification({
+        user_id: userData.id,
+        org_id: userData.organizations.id,
+        message: `A New announcement: ${data.title} has been added to your team`,
+        subtext: data.description,
+        link: `${frontend_url}/dashboard`,
+        notifying_team_ids: data.teams,
+      });
 
       router.replace("/dashboard");
       handleClose();

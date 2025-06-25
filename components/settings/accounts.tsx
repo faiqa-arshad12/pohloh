@@ -1,13 +1,10 @@
 "use client";
 import {useEffect, useState} from "react";
 import {
-  User as User_Icon,
   LogOut,
   Ellipsis,
   Trash2,
-  CreditCard,
   MessageSquareWarning,
-  LayoutGrid,
   Check,
 } from "lucide-react";
 import EditProfileModal from "./Account/edit-Profile";
@@ -17,7 +14,7 @@ import Table from "../ui/table";
 import {useClerk, useUser} from "@clerk/nextjs";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Billing from "./billing";
-import Apps from "./Apps";
+// import Apps from "./Apps";
 import EditLeadModal from "./Account/edit-lead";
 import Image from "next/image";
 import {InviteUserModal} from "./Account/Invite-User";
@@ -32,6 +29,8 @@ import {useRouter, useSearchParams} from "next/navigation";
 import {getSubscriptionDetails} from "@/actions/subscription.action";
 import {OrganizationalDetail} from "./Account/organizational-detail";
 import {Icon} from "@iconify/react";
+import LogoutPopup from "../shared/logout-popup";
+
 export default function Account() {
   const {signOut} = useClerk();
   const {roleAccess} = useRole();
@@ -59,11 +58,20 @@ export default function Account() {
 
   const [selectedRow, setSelectedRow] = useState<any>();
   const [users, setUsers] = useState<any>([]);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+  const [isLogoutLoading, setIsLogoutLoading] = useState(false);
+
   const handleLogout = async () => {
-    setStep(3);
-    await signOut();
-    router.replace("/login");
+    setIsLogoutLoading(true);
+    try {
+      await signOut();
+      router.replace("/login");
+    } finally {
+      setIsLogoutLoading(false);
+      setLogoutModalOpen(false);
+    }
   };
+
   const handleInvitingNewUser = async () => {
     try {
       setIsInviteLoading(true);
@@ -319,7 +327,6 @@ export default function Account() {
         }
 
         const result = await response.json();
-        console.log(result, "resu");
         setUsers(result.data);
       } catch (err) {
         console.error("Error fetching user:", err);
@@ -407,7 +414,7 @@ export default function Account() {
 
   return (
     <div className="min-h-screen  text-white py-5 ">
-      {loading || !isLoaded ? (
+      {loading || !isLoaded || userDataLoading ? (
         <div className="flex flex-row justify-center items-center min-h-screen">
           <Loader size={50} />
         </div>
@@ -452,7 +459,7 @@ export default function Account() {
               </Button>
             )}
 
-            {roleAccess === "owner" && (
+            {/* {roleAccess === "owner" && (
               <Button
                 onClick={() => setStep(3)}
                 className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm  cursor-pointer ${
@@ -462,12 +469,11 @@ export default function Account() {
                 }`}
               >
                 <Icon icon="proicons:apps" width="24" height="24" />{" "}
-                {/* <Image src="/app.png" height={24}width={24} alt={"apps"} className=""/> */}
                 <span className="text-[20px] text-normal font-urbanist">
                   Apps
                 </span>
               </Button>
-            )}
+            )} */}
 
             <Button
               onClick={() => setStep(4)}
@@ -486,10 +492,7 @@ export default function Account() {
             </Button>
 
             <Button
-              onClick={() => {
-                handleLogout();
-                setStep(5);
-              }}
+              onClick={() => setLogoutModalOpen(true)}
               className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm cursor-pointer  cursor-pointer ${
                 steps === 5
                   ? "bg-[#F9E36C] text-black"
@@ -540,7 +543,7 @@ export default function Account() {
                     {/* Profile Card */}
                     <div className="bg-[#FFFFFF0A] rounded-xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-[#7963E4] overflow-hidden">
+                        <div className="w-14 h-14 rounded-full  overflow-hidden">
                           <img
                             src={userDetails?.profile_picture || profileImage}
                             alt="avatar"
@@ -561,7 +564,7 @@ export default function Account() {
                           )}
                         </div>
                       </div>
-                      <Button className="self-end md:self-auto bg-[#F9E36C] text-black rounded-lg p-2 flex items-center justify-center cursor-pointer">
+                      <Button className="self-end md:self-auto bg-[#F9E36C] text-black rounded-lg  flex items-center justify-center cursor-pointer">
                         <div
                           onClick={() => {
                             setIsEditProfileModalOpen(true);
@@ -639,7 +642,7 @@ export default function Account() {
                     {/* Preferences Card */}
                     <div className=" rounded-xl p-6 bg-[#FFFFFF0A] relative">
                       <h3 className="text-base font-semibold">Preferences</h3>
-                      <p className="text-sm text-[#A0A0A0] mb-5">
+                      <p className="text-sm text-[#CDCDCD] mb-5 mt-2">
                         Customize tutor/card settings
                       </p>
 
@@ -765,7 +768,7 @@ export default function Account() {
             </>
           )}
           {steps == 2 && <Billing />}
-          {steps == 3 && <Apps />}
+          {/* {steps == 3 && <Apps />} */}
           {steps === 4 && <Feedback />}
         </div>
       )}
@@ -791,6 +794,13 @@ export default function Account() {
         userData={userDetails}
         isOpen={isEditProfileModalOpen}
         setIsOpen={setIsEditProfileModalOpen}
+      />
+      <LogoutPopup
+        isOpen={logoutModalOpen}
+        onClose={() => setLogoutModalOpen(false)}
+        onConfirm={handleLogout}
+        title="Logout"
+        isLoading={isLogoutLoading}
       />
     </div>
   );

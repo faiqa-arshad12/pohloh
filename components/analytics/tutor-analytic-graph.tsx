@@ -1,22 +1,48 @@
-import React from "react";
-import {useEffect, useState} from "react";
-
+"use client";
+import {useEffect, useState, useRef} from "react";
 import {Button} from "../ui/button";
-import Image from "next/image";
-
 import {Icon} from "@iconify/react/dist/iconify.js";
-import {DateRangeDropdown} from "../shared/custom-date-picker";
-import {CustomDateFilterModal} from "../shared/date-filter";
-import {getDropdownOptions} from "@/utils/constant";
 import {useRole} from "../ui/Context/UserContext";
+import {fetchTutorScore, fetchTeams} from "./analytic.service";
+import {useUserHook} from "@/hooks/useUser";
+import {DateRangeDropdown} from "../shared/custom-date-picker";
+import ReusableBarChart from "./BarAnalyticsChart";
+import {generateChartData} from "../../utils/char-helper";
+import {
+  exportToPDF,
+  createTutorAnalyticsPDFConfig,
+} from "../../utils/graphPdfExport";
 
-const AdminTutorAnalyticGraph = ({id}: {id?: string | null}) => {
+const AdminTutorAnalyticGraph = ({
+  id,
+  dashboard,
+}: {
+  id?: string | null;
+  dashboard?: boolean;
+}) => {
   const [selectedRange, setSelectedRange] = useState("Last 30 days");
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState("all");
   const {roleAccess} = useRole();
+  const {userData} = useUserHook();
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  // Fetch teams for owner
+  useEffect(() => {
+    if (userData && roleAccess === "owner") {
+      const fetchteams = async () => {
+        const response = await fetchTeams((userData.org_id as string) || "");
+        setTeams(response || []);
+      };
+      fetchteams();
+    }
+  }, [userData, roleAccess]);
 
   // Initialize default date range (Last 30 days)
   useEffect(() => {
@@ -26,6 +52,45 @@ const AdminTutorAnalyticGraph = ({id}: {id?: string | null}) => {
     setStartDate(thirtyDaysAgo);
     setEndDate(today);
   }, []);
+
+  // Fetch initial data and when selectedTeam changes
+  useEffect(() => {
+    const fetchData = async () => {
+      if (userData?.organizations?.id) {
+        setIsLoadingData(true);
+        try {
+          let category = undefined;
+          if (roleAccess === "owner") {
+            category = selectedTeam !== "all" ? selectedTeam : undefined;
+          } else if (roleAccess === "admin") {
+            category = userData?.team_id;
+          }
+          const response = await fetchTutorScore(
+            id ? id : userData.id,
+            category
+          );
+
+          if (response && response.score && response.score.monthly) {
+            const generatedData = generateChartData(
+              response.score.monthly,
+              "average"
+            );
+            setChartData(generatedData);
+          } else {
+            setChartData(generateChartData([], "average"));
+          }
+        } catch (error) {
+          setChartData(generateChartData([], "average"));
+        } finally {
+          setIsLoadingData(false);
+        }
+      } else {
+        setChartData(generateChartData([], "average"));
+      }
+    };
+
+    fetchData();
+  }, [userData, selectedTeam, roleAccess]);
 
   const handleRangeChange = async (range: string) => {
     setSelectedRange(range);
@@ -63,12 +128,25 @@ const AdminTutorAnalyticGraph = ({id}: {id?: string | null}) => {
     setStartDate(start);
     setEndDate(end);
 
-    setTimeout(() => {
-      setIsLoadingData(false);
-    }, 500);
+    // Fetch data for the selected range
+    if (id) {
+      try {
+        const response = await fetchTutorScore(id);
+        if (response && response.score && response.score.monthly) {
+          setChartData(generateChartData(response.score.monthly, "average"));
+        }
+      } catch (error) {
+        console.error("Error fetching tutor score:", error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    }
   };
 
-  const handleApplyCustomFilter = (newStartDate: Date, newEndDate: Date) => {
+  const handleApplyCustomFilter = async (
+    newStartDate: Date,
+    newEndDate: Date
+  ) => {
     setIsLoadingData(true);
     setStartDate(newStartDate);
     setEndDate(newEndDate);
@@ -76,18 +154,67 @@ const AdminTutorAnalyticGraph = ({id}: {id?: string | null}) => {
       `${newStartDate.toLocaleDateString()} - ${newEndDate.toLocaleDateString()}`
     );
 
-    setTimeout(() => {
-      setIsLoadingData(false);
-    }, 500);
+    // Fetch data for the custom date range
+    if (id) {
+      try {
+        const response = await fetchTutorScore(id);
+        if (response && response.score && response.score.monthly) {
+          setChartData(generateChartData(response.score.monthly, "average"));
+        }
+      } catch (error) {
+        console.error("Error fetching tutor score:", error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    }
+  };
+
+  const handleExportToPDF = async () => {
+    setIsExportingPDF(true);
+
+    try {
+      const config = createTutorAnalyticsPDFConfig(
+        chartData,
+        selectedTeam,
+        teams,
+        "",
+        roleAccess || ""
+      );
+
+      await exportToPDF(config);
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      alert("Failed to export PDF. Please try again.");
+    } finally {
+      setIsExportingPDF(false);
+    }
   };
 
   return (
-    <div className="bg-[#191919] rounded-[30px] p-4 col-span-3">
-      <div className="flex justify-between mb-4">
-        <h3 className="text-[24px] font-medium py-4">Tutor Analytics</h3>
-        <div className="flex items-center gap-2 mb-2">
-          {roleAccess !== "user" && !id && (
-            <Button className="w-[52px] h-[50px] bg-[#F9DB6F] hover:bg-[#F9DB6F] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer">
+    <div className="bg-[#191919] rounded-[30px] p-6 col-span-3" ref={chartRef}>
+      {" "}
+      <ReusableBarChart
+        chartData={chartData}
+        isLoading={isLoadingData}
+        title="Tutor Analytics"
+        tooltipSuffix="%"
+        height="h-80"
+      >
+        {roleAccess !== "user" && !id && !dashboard && (
+          <Button
+            className="w-[52px] h-[50px] bg-[#F9DB6F] hover:bg-[#F9DB6F] rounded-lg border border-gray-700 px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer disabled:opacity-50"
+            onClick={handleExportToPDF}
+            disabled={isExportingPDF || isLoadingData}
+          >
+            {isExportingPDF ? (
+              <Icon
+                icon="eos-icons:loading"
+                width="24"
+                height="24"
+                color="black"
+                className="animate-spin"
+              />
+            ) : (
               <Icon
                 icon="bi:filetype-pdf"
                 width="24"
@@ -95,40 +222,27 @@ const AdminTutorAnalyticGraph = ({id}: {id?: string | null}) => {
                 color="black"
                 className="cursor-pointer"
               />
-            </Button>
-          )}
+            )}
+          </Button>
+        )}
+        {/* Department filter for owners */}
+        {roleAccess === "owner" && !id && (
           <DateRangeDropdown
-            selectedRange={selectedRange}
-            onRangeChange={handleRangeChange}
+            selectedRange={selectedTeam}
+            onRangeChange={setSelectedTeam}
             width="250px"
+            bg={"bg-[black]"}
             disabled={isLoadingData}
-            bg="bg-[black]"
-            options={getDropdownOptions()}
+            options={[
+              {label: "All Department", value: "all"},
+              ...teams.map((team: any) => ({
+                label: team.name,
+                value: team.id,
+              })),
+            ]}
           />
-          <CustomDateFilterModal
-            open={showCustomFilterModal}
-            onOpenChange={setShowCustomFilterModal}
-            onApplyFilter={handleApplyCustomFilter}
-            initialStartDate={startDate}
-            initialEndDate={endDate}
-          />
-        </div>
-      </div>
-      <div
-        className={`relative w-full h-64 transition-opacity duration-300 ${
-          isLoadingData ? "opacity-50" : "opacity-100"
-        }`}
-      >
-        <Image
-          src="/Frame 5.png"
-          alt="Chart Background"
-          fill
-          style={{objectFit: "cover"}}
-          className="rounded-lg"
-          quality={100}
-          priority
-        />
-      </div>
+        )}
+      </ReusableBarChart>
     </div>
   );
 };

@@ -25,6 +25,7 @@ import {
   TimePeriod,
   filterByTimePeriod,
 } from "@/components/shared/TimeFilter";
+import { NoData } from "../shared/NoData";
 
 type Card = {
   id: string;
@@ -287,7 +288,7 @@ export function KnowledgeBaseDraft({
             <div className="text-center py-8 text-gray-400">
               {filters.searchTerm
                 ? "No matching cards found"
-                : "No data found."}
+                : <NoData/>}
             </div>
           ) : (
             <Table

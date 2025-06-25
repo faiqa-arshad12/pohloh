@@ -33,10 +33,10 @@ export function TimeFilter({
   className = "",
 }: TimeFilterProps) {
   const timeOptions = [
-    {value: TimePeriod.ALL, label: "All Time"},
-    {value: TimePeriod.WEEKLY, label: "Last 7 Days"},
-    {value: TimePeriod.MONTHLY, label: "Last 30 Days"},
-    {value: TimePeriod.YEARLY, label: "Last Year"},
+    // {value: TimePeriod.ALL, label: "All Time"},
+    {value: TimePeriod.WEEKLY, label: "Weekly"},
+    {value: TimePeriod.MONTHLY, label: "Monthly"},
+    {value: TimePeriod.YEARLY, label: "Yearly"},
   ];
 
   return (

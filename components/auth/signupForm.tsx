@@ -24,7 +24,7 @@ import {useSignUp, useUser} from "@clerk/nextjs";
 import {ShowToast} from "../shared/show-toast";
 import Loader from "../shared/loader";
 import {Role} from "@/types/types";
-import {apiUrl, nameRegex, usernameRegex, users} from "@/utils/constant";
+import {apiUrl, frontend_url, nameRegex, usernameRegex, users} from "@/utils/constant";
 import {UserStatus} from "@/types/enum";
 
 // const formSchema = z.object({
@@ -142,7 +142,7 @@ export function SignupForm() {
       // await setActive({session: result.createdSessionId});
       const verifyemail = await signUp.prepareEmailAddressVerification({
         strategy: "email_link",
-        redirectUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/owner/onboarding?role=${role}`, // replace this with your actual redirect URL
+        redirectUrl: `${frontend_url}/owner/onboarding?role=${role}`, // replace this with your actual redirect URL
       });
       // signUp.update({
       //   unsafeMetadata: {
@@ -189,8 +189,8 @@ export function SignupForm() {
       // Then authenticate with the provider
       await signUpResult.authenticateWithRedirect({
         strategy: provider,
-        redirectUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/owner/onboarding`,
-        redirectUrlComplete: `${process.env.NEXT_PUBLIC_SITE_URL}/owner/onboarding`,
+        redirectUrl: `${frontend_url}/owner/onboarding`,
+        redirectUrlComplete: `${frontend_url}/owner/onboarding`,
       });
     } catch (err: unknown) {
       console.error("OAuth error:", err);
