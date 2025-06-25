@@ -87,7 +87,7 @@ export function ForgotPassword() {
             />
             <Button
               type="submit"
-              className="w-full text-black"
+              className="w-full text-black cursor-pointer"
               disabled={loading}
             >
               {loading ? <Loader /> : "Continue"}

@@ -134,7 +134,7 @@ export function ResetPasswordForm() {
                       />
                       <button
                         type="button"
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white cursor-pointer"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
@@ -168,7 +168,7 @@ export function ResetPasswordForm() {
                       />
                       <button
                         type="button"
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white cursor-pointer h-[48px]"
                         onClick={() => setShowConfirm(!showConfirm)}
                       >
                         {showConfirm ? (
@@ -187,7 +187,7 @@ export function ResetPasswordForm() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full mt-6 text-black"
+              className="w-full mt-6 text-black cursor-pointer"
               disabled={loading}
             >
               {loading ? <Loader /> : "Reset Password"}
