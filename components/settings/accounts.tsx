@@ -29,6 +29,8 @@ import {useRouter, useSearchParams} from "next/navigation";
 import {getSubscriptionDetails} from "@/actions/subscription.action";
 import {OrganizationalDetail} from "./Account/organizational-detail";
 import {Icon} from "@iconify/react";
+import LogoutPopup from "../shared/logout-popup";
+
 export default function Account() {
   const {signOut} = useClerk();
   const {roleAccess} = useRole();
@@ -56,11 +58,20 @@ export default function Account() {
 
   const [selectedRow, setSelectedRow] = useState<any>();
   const [users, setUsers] = useState<any>([]);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+  const [isLogoutLoading, setIsLogoutLoading] = useState(false);
+
   const handleLogout = async () => {
-    setStep(3);
-    await signOut();
-    router.replace("/login");
+    setIsLogoutLoading(true);
+    try {
+      await signOut();
+      router.replace("/login");
+    } finally {
+      setIsLogoutLoading(false);
+      setLogoutModalOpen(false);
+    }
   };
+
   const handleInvitingNewUser = async () => {
     try {
       setIsInviteLoading(true);
@@ -403,7 +414,7 @@ export default function Account() {
 
   return (
     <div className="min-h-screen  text-white py-5 ">
-      {loading || !isLoaded ||!userDetails ||userDataLoading ? (
+      {loading || !isLoaded || !userDetails || userDataLoading ? (
         <div className="flex flex-row justify-center items-center min-h-screen">
           <Loader size={50} />
         </div>
@@ -481,10 +492,7 @@ export default function Account() {
             </Button>
 
             <Button
-              onClick={() => {
-                handleLogout();
-                setStep(5);
-              }}
+              onClick={() => setLogoutModalOpen(true)}
               className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm cursor-pointer  cursor-pointer ${
                 steps === 5
                   ? "bg-[#F9E36C] text-black"
@@ -556,7 +564,7 @@ export default function Account() {
                           )}
                         </div>
                       </div>
-                      <Button className="self-end md:self-auto bg-[#F9E36C] text-black rounded-lg p-2 flex items-center justify-center cursor-pointer">
+                      <Button className="self-end md:self-auto bg-[#F9E36C] text-black rounded-lg  flex items-center justify-center cursor-pointer">
                         <div
                           onClick={() => {
                             setIsEditProfileModalOpen(true);
@@ -634,7 +642,7 @@ export default function Account() {
                     {/* Preferences Card */}
                     <div className=" rounded-xl p-6 bg-[#FFFFFF0A] relative">
                       <h3 className="text-base font-semibold">Preferences</h3>
-                      <p className="text-sm text-[#A0A0A0] mb-5">
+                      <p className="text-sm text-[#CDCDCD] mb-5 mt-2">
                         Customize tutor/card settings
                       </p>
 
@@ -786,6 +794,13 @@ export default function Account() {
         userData={userDetails}
         isOpen={isEditProfileModalOpen}
         setIsOpen={setIsEditProfileModalOpen}
+      />
+      <LogoutPopup
+        isOpen={logoutModalOpen}
+        onClose={() => setLogoutModalOpen(false)}
+        onConfirm={handleLogout}
+        title="Logout"
+        isLoading={isLogoutLoading}
       />
     </div>
   );

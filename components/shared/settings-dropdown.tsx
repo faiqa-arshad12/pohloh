@@ -3,20 +3,16 @@ import {useClerk} from "@clerk/nextjs";
 import {useRouter} from "next/navigation";
 import {useState, useRef, useEffect} from "react";
 import Image from "next/image"; // Added Next.js Image component
+import LogoutPopup from "./logout-popup";
+
 type TopBarProps = {
   userData: any;
 };
 
-interface DropdownItemProps {
-  icon: React.ReactNode;
-  text: string;
-  className?: string;
-  onClick: () => void;
-  isSelected?: boolean;
-}
-
 export function TopBarIcons({userData}: TopBarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+  const [isLogoutLoading, setIsLogoutLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const {signOut} = useClerk();
   const router = useRouter();
@@ -35,8 +31,14 @@ export function TopBarIcons({userData}: TopBarProps) {
   }, []);
 
   const handleLogout = async () => {
-    await signOut();
-    router.replace("/login");
+    setIsLogoutLoading(true);
+    try {
+      await signOut();
+      router.replace("/login");
+    } finally {
+      setIsLogoutLoading(false);
+      setLogoutModalOpen(false);
+    }
   };
 
   const handleMenuItemClick = (action: () => void) => {
@@ -102,7 +104,10 @@ export function TopBarIcons({userData}: TopBarProps) {
               </li>
               <li
                 className="px-4 py-2 hover:bg-zinc-800 cursor-pointer flex flex-row gap-3 items-center bg-[#F9DB6F33] text-[#F9DB6F]"
-                onClick={() => handleMenuItemClick(handleLogout)}
+                onClick={() => {
+                  setDropdownOpen(false);
+                  setLogoutModalOpen(true);
+                }}
               >
                 <Image
                   src="/logout.svg"
@@ -117,6 +122,13 @@ export function TopBarIcons({userData}: TopBarProps) {
           </div>
         )}
       </div>
+      <LogoutPopup
+        isOpen={logoutModalOpen}
+        onClose={() => setLogoutModalOpen(false)}
+        onConfirm={handleLogout}
+        title="Logout"
+        isLoading={isLogoutLoading}
+      />
     </div>
   );
 }

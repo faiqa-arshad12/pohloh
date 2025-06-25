@@ -508,8 +508,8 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                           </FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="First Name"
-                              className="placeholder:text-sm h-[44px] border border-[#FFFFFF0F] bg-[#FFFFFF14]"
+                              placeholder="Enter the First Name"
+                              className="placeholder:text-[14px] placeholder:text-[#FFFFFF52]  h-[44px] border border-[#FFFFFF0F] bg-[#FFFFFF14]"
                               {...field}
                             />
                           </FormControl>
@@ -527,8 +527,8 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                           <FormLabel className="text-base">Last Name</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="Last Name"
-                              className="placeholder:text-sm h-[44px] border border-[#FFFFFF0F] bg-[#FFFFFF14]"
+                              placeholder="Enter the Last Name"
+                              className="placeholder:text-[14px] placeholder:text-[#FFFFFF52] h-[44px] border border-[#FFFFFF0F] bg-[#FFFFFF14]"
                               {...field}
                             />
                           </FormControl>
@@ -546,8 +546,8 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                           <FormLabel className="text-base">Username</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="Username"
-                              className="placeholder:text-sm h-[44px] border border-[#FFFFFF0F] bg-[#FFFFFF14]"
+                              placeholder="Enter the username"
+                              className="placeholder:text-[14px] placeholder:text-[#FFFFFF52]  h-[44px] border border-[#FFFFFF0F] bg-[#FFFFFF14]"
                               {...field}
                             />
                           </FormControl>
@@ -575,7 +575,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                         defaultValue={field.value}
                       >
                         <FormControl className="w-full !h-[44px] py-3 rounded-[6px] border border-[#FFFFFF0F] text-white bg-[#FFFFFF14] placeholder:text-sm placeholder:text-gray-400">
-                          <SelectTrigger className="w-full placeholder:text-sm">
+                          <SelectTrigger className="w-full placeholder:text-[14px] placeholder:text-[#FFFFFF52] ">
                             <SelectValue placeholder="Select your role" />
                           </SelectTrigger>
                         </FormControl>
@@ -606,7 +606,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                         <FormControl>
                           <Input
                             placeholder="Enter your role"
-                            className="placeholder:text-sm h-[44px] border border-[#FFFFFF0F] bg-[#FFFFFF14]"
+                            className="placeholder:text-[14px] placeholder:text-[14px] placeholder:text-[#FFFFFF52]  h-[44px] border border-[#FFFFFF0F] bg-[#FFFFFF14] "
                             {...field}
                           />
                         </FormControl>
@@ -625,8 +625,8 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                       <FormLabel className="text-base">Location</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Enter your city, state, or country"
-                          className="placeholder:text-sm h-[44px] border border-[#FFFFFF0F] bg-[#FFFFFF14]"
+                          placeholder="i.e: Montreal"
+                          className="placeholder:text-[14px] placeholder:text-[#FFFFFF52]  h-[44px] border border-[#FFFFFF0F] bg-[#FFFFFF14]"
                           {...field}
                           onChange={(e) => {
                             // Remove any special characters except allowed ones
