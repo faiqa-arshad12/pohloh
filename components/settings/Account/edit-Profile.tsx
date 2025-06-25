@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useState} from "react";
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {Edit, User, Upload, Trash2, X, MapPin} from "lucide-react";
+import { User, Trash2, X} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -902,7 +902,7 @@ const EditProfileModal = ({
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent
-                            className="w-90 p-0 bg-[#191919] border-none text-white"
+                            className="w-full p-0 bg-[#191919] border-none text-white"
                             style={{borderRadius: "30px"}}
                           >
                             <div className="p-4 border-b border-[#828282] px-2">

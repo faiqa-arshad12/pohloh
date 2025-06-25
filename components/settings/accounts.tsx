@@ -47,12 +47,11 @@ export default function Account() {
   const [openEditlead, setOpenEditlead] = useState(false);
   const [steps, setStep] = useState<number>();
   const [userDetails, setUserDetails] = useState<any | null>(null);
-  const [loading, setloading] = useState<boolean>(false);
 
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [isInviteLoading, setIsInviteLoading] = useState(false);
   const [isLoadeding, setIsLoading] = useState(false);
-  const [userDataLoading, setUserDataLoading] = useState(false);
+  const [userDataLoading, setUserDataLoading] = useState(true);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const router = useRouter();
 
@@ -413,8 +412,10 @@ export default function Account() {
   }, [user?.id, isLoaded]);
 
   return (
+
+
     <div className="min-h-screen  text-white py-5 ">
-      {loading || !isLoaded || userDataLoading ? (
+      { !isLoaded || userDataLoading ? (
         <div className="flex flex-row justify-center items-center min-h-screen">
           <Loader size={50} />
         </div>
