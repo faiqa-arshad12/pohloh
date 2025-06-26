@@ -32,6 +32,7 @@ type UnverifiedCard = {
     profile_picture: string;
   };
   verificationperiod?: Date | string;
+  verification_duration?: string;
 };
 
 const filters = ["Monthly", "Weekly", "Yearly"];
@@ -95,16 +96,56 @@ export function UnverifiedCards({cards, isAnalytic}: UnverifiedCardProps) {
   const handleFilterChange = (value: string) => {
     setSelectedFilter(value);
   };
-  const handleVerifyCard = async (cardId: string, date?: Date | string) => {
-    const url = `${apiUrl}/cards/${cardId}`;
 
-    try {
-      // ✅ Check if the verification date is in the past
-      if (date && new Date(date) < new Date()) {
-        ShowToast("Cannot verify. Verification period has expired.", "error");
+  const getNewVerificationDate = (duration: string) => {
+    const now = new Date();
+    switch (duration) {
+      case "2 Weeks":
+        return new Date(now.setDate(now.getDate() + 14));
+      case "1 Month":
+        return new Date(now.setMonth(now.getMonth() + 1));
+      case "6 Months":
+        return new Date(now.setMonth(now.getMonth() + 6));
+      case "1 Year":
+        return new Date(now.setFullYear(now.getFullYear() + 1));
+      default:
+        return null;
+    }
+  };
+
+  const handleVerifyCard = async (
+    cardId: string,
+    date?: Date | string,
+    duration?: string
+  ) => {
+    // Prefer duration from argument, fallback to card's verification_duration if available
+    const card = filteredCards.find((c) => c.id === cardId);
+    const effectiveDuration = duration || card?.verification_duration;
+    let verificationDate = date ? new Date(date) : null;
+    const now = new Date();
+
+    // If expired
+    if (verificationDate && verificationDate < now) {
+      if (effectiveDuration && effectiveDuration !== "Custom Date") {
+        // Auto-update to new date based on duration
+        verificationDate = getNewVerificationDate(effectiveDuration);
+        ShowToast(
+          "Verification period was expired and has been updated to a new period.",
+          "info"
+        );
+      } else {
+        // Custom Date and expired
+        ShowToast(
+          "Verification period cannot be in the past. Please update the verification period.",
+          "error"
+        );
         return;
       }
+    }
 
+    // Proceed with verification using the (possibly updated) verificationDate
+    const url = `${apiUrl}/cards/${cardId}`;
+    try {
       setCardId(cardId);
       setIsVerifying(true);
 
@@ -113,8 +154,12 @@ export function UnverifiedCards({cards, isAnalytic}: UnverifiedCardProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({is_verified: true}),
-        // credentials: "include",
+        body: JSON.stringify({
+          is_verified: true,
+          verificationperiod: verificationDate
+            ? verificationDate.toISOString()
+            : undefined,
+        }),
       });
 
       if (!response.ok) {
@@ -138,6 +183,11 @@ export function UnverifiedCards({cards, isAnalytic}: UnverifiedCardProps) {
       setIsVerifying(false);
       setCardId(null);
     }
+  };
+
+  const isVerificationPeriodExpired = (date?: Date | string) => {
+    if (!date) return false;
+    return new Date(date) < new Date();
   };
 
   return (
@@ -216,8 +266,21 @@ export function UnverifiedCards({cards, isAnalytic}: UnverifiedCardProps) {
                       variant="outline"
                       className="max-w-[88px] border-white text-white hover:bg-[#333435] hover:text-white bg-[#333435] !h-[27.58px] !cursor-pointer px-9 rounded-[5.55px]"
                       onClick={() => {
-                        handleVerifyCard(card.id, card.verificationperiod);
+                        handleVerifyCard(
+                          card.id,
+                          card.verificationperiod,
+                          card.verification_duration
+                        );
                       }}
+                      // disabled={
+                      //   isVerificationPeriodExpired(card.verificationperiod) ||
+                      //   isVerifying
+                      // }
+                      // title={
+                      //   isVerificationPeriodExpired(card.verificationperiod)
+                      //     ? "Verification period has expired"
+                      //     : ""
+                      // }
                     >
                       {isVerifying && cardId === card.id ? (
                         <Loader />

@@ -509,6 +509,18 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           url: file.url,
           type: file.type,
         })),
+        verification_duration:
+          values.verificationPeriodType === "custom"
+            ? "Custom Date"
+            : values.verificationPeriodType === "2week"
+            ? "2 Weeks"
+            : values.verificationPeriodType === "1month"
+            ? "1 Month"
+            : values.verificationPeriodType === "6months"
+            ? "6 Months"
+            : values.verificationPeriodType === "12months"
+            ? "1 Year"
+            : undefined,
       };
 
       // Remove the period type before sending to backend
@@ -623,6 +635,18 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           url: file.url,
           type: file.type,
         })),
+        verification_duration:
+          values.verificationPeriodType === "custom"
+            ? "Custom Date"
+            : values.verificationPeriodType === "2week"
+            ? "2 Weeks"
+            : values.verificationPeriodType === "1month"
+            ? "1 Month"
+            : values.verificationPeriodType === "6months"
+            ? "6 Months"
+            : values.verificationPeriodType === "12months"
+            ? "1 Year"
+            : undefined,
       };
 
       // Remove the period type before sending to backend

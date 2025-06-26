@@ -61,6 +61,7 @@ interface KnowledgeCard {
   verificationperiod?: string | Date;
   card_status?: CardStatus;
   attachments?: {name: string; url: string}[];
+  verification_duration?: string;
 }
 
 interface AnalyticsCardProps {
@@ -259,14 +260,55 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
       setAtBottom(el.scrollHeight - el.scrollTop <= el.clientHeight + 1);
     }
   };
+
+  // Helper to check if verification period is expired
+  const isVerificationPeriodExpired = (date?: string | Date) => {
+    if (!date) return false;
+    return new Date(date) < new Date();
+  };
+
+  // Helper to get new verification date based on duration
+  const getNewVerificationDate = (duration: any) => {
+    const now = new Date();
+    switch (duration) {
+      case "2 Weeks":
+        return new Date(now.setDate(now.getDate() + 14));
+      case "1 Month":
+        return new Date(now.setMonth(now.getMonth() + 1));
+      case "6 Months":
+        return new Date(now.setMonth(now.getMonth() + 6));
+      case "1 Year":
+        return new Date(now.setFullYear(now.getFullYear() + 1));
+      default:
+        return null;
+    }
+  };
+
   const handleSaveCard = async (
     id: string,
     is_verified?: boolean,
-    date?: string | Date
+    date?: string | Date,
+    duration?: string
   ) => {
-    if (date && new Date(date) < new Date()) {
-      ShowToast("Cannot verify. Verification period has expired.", "error");
-      return;
+    // Prefer duration from argument, fallback to activeItem.verification_duration if available
+    const effectiveDuration = duration || activeItem?.verification_duration;
+    let verificationDate: any = date ? new Date(date) : undefined;
+    if (is_verified && isVerificationPeriodExpired(verificationDate)) {
+      if (effectiveDuration && effectiveDuration !== "Custom Date") {
+        // Auto-update to new date based on duration
+        verificationDate = getNewVerificationDate(effectiveDuration);
+        ShowToast(
+          "Verification period was expired and has been updated to a new period.",
+          "info"
+        );
+      } else {
+        // Custom Date and expired
+        ShowToast(
+          "Verification period cannot be in the past. Please update the verification period.",
+          "error"
+        );
+        return;
+      }
     }
     if (!id) {
       ShowToast("Invalid card ID", "error");
@@ -280,9 +322,11 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
       const res = await fetch(`${apiUrl}/cards/${id}`, {
         method: "PUT",
         headers: {"Content-Type": "application/json"},
-        // credentials: "include",
         body: JSON.stringify({
           ...cardData,
+          ...(is_verified && verificationDate
+            ? {verificationperiod: verificationDate}
+            : {}),
         }),
       });
 
@@ -293,9 +337,6 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
       ShowToast(
         is_verified ? "Card verified successfully" : "Card Saved successfully"
       );
-      // setActiveItem(null);
-      // fetchData();
-      // if (!is_verified) router.push("/dashboard");
     } catch (err) {
       console.error("Error saving card:", err);
       ShowToast("Something went wrong while saving the card", "error");
@@ -303,6 +344,7 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
       setShowFloating(false);
     }
   };
+
   const handleScroll = (direction: "up" | "down") => {
     const el = scrollRef.current;
     if (!el) return;
@@ -657,10 +699,10 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
         {card === "true" && (
           <div className="flex items-center gap-4">
             {/* <div className="bg-[#2C2D2E] h-[40px] rounded-lg flex items-center cursor-pointer"> */}
-              <Button className=" hover:bg-[#3A3B3C] text-[#F9DB6F] bg-[#2C2D2E] !h-[40px] rounded-lg flex items-center cursor-pointer">
-                {selectedCards.length} card
-                {selectedCards.length !== 1 ? "s" : ""} selected
-              </Button>
+            <Button className=" hover:bg-[#3A3B3C] text-[#F9DB6F] bg-[#2C2D2E] !h-[40px] rounded-lg flex items-center cursor-pointer">
+              {selectedCards.length} card
+              {selectedCards.length !== 1 ? "s" : ""} selected
+            </Button>
             {/* </div> */}
 
             {selectedCards.length > 0 && (
