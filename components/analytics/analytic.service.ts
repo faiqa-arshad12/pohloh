@@ -81,7 +81,8 @@ export const fetchCards = async (orgId: string, role: string, id: string) => {
 };
 export const fetchTutorScore = async (
   userId: string,
-  category?: string | null
+  category?: string | null,
+  isPersonal?: boolean
 ) => {
   try {
     let api;
@@ -90,8 +91,11 @@ export const fetchTutorScore = async (
     else api = `${apiUrl}/users/average-tutor-score/${userId}`;
 
     const response = await fetch(api, {
-      method: "GET",
+      method: "POST",
       headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        isPersonal,
+      }),
     });
 
     if (!response.ok) throw new Error("Failed to fetch cards");
@@ -152,7 +156,8 @@ export const fetchTutorStats = async (
 
   startDate?: string,
   endDate?: string,
-  category?: string
+  category?: string,
+  isPersonal?: boolean
 ) => {
   try {
     const response = await fetch(`${apiUrl}/users/tutor-stats/${userId}`, {
@@ -162,6 +167,7 @@ export const fetchTutorStats = async (
         category,
         startDate,
         endDate,
+        isPersonal,
       }),
     });
 

@@ -180,7 +180,7 @@ const AdminLeaderBoard = () => {
             engagement: `${entry.total} / ${entry.verified}`,
             rankIcon: idx === 0 ? "winner" : idx === 1 ? "second" : "third",
             avatarUrl: entry.card_owner?.profile_picture,
-            departmentId: entry.card_owner.team_id,
+            departmentId: entry.card_owner?.team_id,
             total: entry.total,
             verified: entry.verified,
             percentage: entry.percentage,

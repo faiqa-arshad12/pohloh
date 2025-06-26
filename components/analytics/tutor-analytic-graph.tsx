@@ -16,9 +16,11 @@ import {
 const AdminTutorAnalyticGraph = ({
   id,
   dashboard,
+  isPersonal,
 }: {
   id?: string | null;
   dashboard?: boolean;
+  isPersonal?: boolean;
 }) => {
   const [selectedRange, setSelectedRange] = useState("Last 30 days");
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false);
@@ -67,7 +69,8 @@ const AdminTutorAnalyticGraph = ({
           }
           const response = await fetchTutorScore(
             id ? id : userData.id,
-            category
+            category,
+            isPersonal
           );
 
           if (response && response.score && response.score.monthly) {

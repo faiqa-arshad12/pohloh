@@ -3,7 +3,7 @@ import ScoreProgress from "../shared/score-progress";
 import {fetchTutorScore} from "./analytic.service";
 import {Skeleton} from "../ui/skeleton";
 
-export default function TutorScoreCard({user}: {user?: any}) {
+export default function TutorScoreCard({user,isPersonal}: {user?: any,isPersonal?:boolean}) {
   const [data, setData] = useState<any>();
   const [isLoadingData, setIsLoadingData] = useState(false);
   useEffect(() => {
@@ -11,7 +11,7 @@ export default function TutorScoreCard({user}: {user?: any}) {
       if (user?.id) {
         setIsLoadingData(true);
         try {
-          const response = await fetchTutorScore(user.id);
+          const response = await fetchTutorScore(user.id, undefined, isPersonal);
           setData(response.score);
         } catch (error) {
           console.error("Error fetching tutor score:", error);

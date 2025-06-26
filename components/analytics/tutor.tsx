@@ -21,11 +21,13 @@ export default function TutorAnalytics({
   startDate,
   endDate,
   team,
+  isPersonal
 }: {
   id?: string | null;
   startDate?: Date;
   endDate?: Date;
   team?: string;
+  isPersonal?:boolean
 }) {
   const {roleAccess} = useRole();
   const [data, setData] = useState<any>();
@@ -66,7 +68,8 @@ export default function TutorAnalytics({
         roleAccess === "user" ? userData.id : id,
         startDate ? startDate.toISOString() : undefined,
         endDate ? endDate.toISOString() : undefined,
-        team !== "all" ? team : undefined
+        team !== "all" ? team : undefined,
+        isPersonal
       );
       setStats(stats?.stats);
     };
@@ -144,9 +147,9 @@ export default function TutorAnalytics({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8 h-auto">
-        <TutorScoreCard user={roleAccess === "user" ? userData : data?.user} />
+        <TutorScoreCard user={roleAccess === "user" ? userData : data?.user} isPersonal={isPersonal}/>
 
-        <AdminTutorAnalyticGraph id={id} />
+        <AdminTutorAnalyticGraph id={id} isPersonal={isPersonal} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8 h-auto">

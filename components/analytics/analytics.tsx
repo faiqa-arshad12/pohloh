@@ -28,13 +28,15 @@ function AnalyticsContent() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [teams, setTeams] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState("all");
-  const [stats, setStats] = useState<any>(null);
+  const [isPersonal, setIsPersonal] = useState(false);
   const id = searchParams?.get("id");
 
   useEffect(() => {
     if (roleAccess === "user") {
       setTutorId(userData?.id);
     } else {
+      setIsPersonal(true);
+
       setTutorId(id);
       if (id) {
         setActiveTab("tutor");
@@ -143,7 +145,7 @@ function AnalyticsContent() {
             )}
 
             <div className="flex gap-4 mt-2">
-              {activeTab === "tutor"  && (
+              {activeTab === "tutor" && (
                 <>
                   <DateRangeDropdown
                     selectedRange={selectedRange}
@@ -219,6 +221,8 @@ function AnalyticsContent() {
               team={selectedTeam !== "all" ? selectedTeam : undefined}
               startDate={startDate}
               endDate={endDate}
+              isPersonal={isPersonal}
+
             />
           ) : activeTab === "tutor" && roleAccess !== "user" && !tutorId ? (
             <AdminAanalytic

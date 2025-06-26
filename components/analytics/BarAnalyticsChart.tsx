@@ -35,7 +35,7 @@ const CustomTooltip = ({active, payload, label, tooltipSuffix = ""}: any) => {
     if (data.hasData) {
       return (
         <div className="bg-gray-700 text-white px-3 py-2 rounded-lg text-sm font-medium shadow-lg border-0">
-          <div>{`${label}: ${data.actualValue}${tooltipSuffix}`}</div>
+          <div>{`${label}: ${data.actualValue} ${tooltipSuffix}`}</div>
         </div>
       );
     }

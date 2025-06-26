@@ -232,17 +232,17 @@ export function UnverifiedCards({cards, isAnalytic}: UnverifiedCardProps) {
                       <div className="relative h-8 w-8 overflow-hidden rounded-full">
                         <img
                           src={
-                            card.card_owner_id.profile_picture ||
+                            card.card_owner_id?.profile_picture ||
                             "/placeholder-profile.svg"
                           }
-                          alt={card.card_owner_id.first_name}
+                          alt={card.card_owner_id?.first_name}
                           width={30}
                           height={30}
                           className="object-cover"
                         />
                       </div>
                       <span className="font-urbanist font-normal text-xl leading-[100%] tracking-normal text-white">
-                        {`${card.card_owner_id.first_name} ${card.card_owner_id.last_name}`}
+                        {`${card.card_owner_id?.first_name} ${card.card_owner_id?.last_name}`}
                       </span>
                     </div>
                   </div>
