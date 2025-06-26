@@ -49,7 +49,6 @@ import ChooseTeamModal from "./ChooseTeamModal";
 import ChooseUserModal from "./ChooseUserModal";
 import SelectUserModal from "./ChooseSelectedUsers";
 import {createNotification} from "@/services/notification.service";
-import {fetchUserData} from "../analytics/analytic.service";
 import {useUserHook} from "@/hooks/useUser";
 
 const TipTapEditor = dynamic(() => import("./editor"), {
@@ -537,10 +536,10 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         await createNotification({
           user_id: userData.id,
           org_id: org_id,
-          message: `A knowledge card ${values.title} was ${
-            isEditMode ? "updated" : "created"
-          } for your team`,
-          subtext: values.content?.slice(0, 100),
+          message: ` ${userData?.first_name} has ${
+            isEditMode ? "updated" : "created new"
+          }  knowledge card for your team`,
+          subtext: values.title,
           link: `${frontend_url}/knowledge-base`,
           notifying_team_ids: [values.team_to_announce_id],
         });
