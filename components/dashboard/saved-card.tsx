@@ -165,17 +165,17 @@ export function SavedCards({cards}: SavedCardsProp) {
                 <div className="relative h-8 w-8 overflow-hidden rounded-full">
                   <Image
                     src={
-                      displayedCard.card_owner_id.profile_picture ||
+                      displayedCard?.card_owner_id?.profile_picture ||
                       "/placeholder-profile.svg"
                     }
-                    alt={displayedCard.card_owner_id.first_name}
+                    alt={displayedCard?.card_owner_id?.first_name}
                     width={30}
                     height={30}
                     className="object-cover"
                   />
                 </div>
                 <span className="font-urbanist font-normal text-xl leading-[100%] tracking-normal text-white">
-                  {`${displayedCard.card_owner_id.first_name} ${displayedCard.card_owner_id.last_name}`}
+                  {`${displayedCard?.card_owner_id?.first_name} ${displayedCard?.card_owner_id?.last_name}`}
                 </span>
               </div>
             </div>
