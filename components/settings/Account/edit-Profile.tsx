@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useState} from "react";
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
-import { User, Trash2, X} from "lucide-react";
+import {User, Trash2, X} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -97,12 +97,16 @@ type EditProfileModalProps = {
   userData: UserDetails | null;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  fetchUserDetails?: () => void;
+  fetchUsers?: () => void;
 };
 
 const EditProfileModal = ({
   userData,
   isOpen,
   setIsOpen,
+  fetchUsers,
+  fetchUserDetails,
 }: EditProfileModalProps) => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
@@ -298,6 +302,9 @@ const EditProfileModal = ({
       }
 
       ShowToast("Profile updated successfully");
+      if (fetchUsers) fetchUsers();
+      if (fetchUserDetails) fetchUserDetails();
+
       handleClose();
     } catch (error) {
       ShowToast("Failed to update profile", "error");
@@ -947,7 +954,8 @@ const EditProfileModal = ({
                                           </Avatar>
                                           <div>
                                             <p className="text-sm font-medium">
-                                              {user?.first_name} {user?.last_name}
+                                              {user?.first_name}{" "}
+                                              {user?.last_name}
                                             </p>
                                             <p className="text-xs text-[#FFFFFF52]">
                                               {user?.email}

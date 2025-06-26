@@ -20,7 +20,7 @@ import Image from "next/image";
 import {InviteUserModal} from "./Account/Invite-User";
 import {EditUserModal} from "./Account/edit-User";
 import {useRole} from "../ui/Context/UserContext";
-import {apiUrl} from "@/utils/constant";
+import {apiUrl, User_columns} from "@/utils/constant";
 import {ShowToast} from "../shared/show-toast";
 import Loader from "../shared/loader";
 import {defaultWorkDays, Weekday, WorkDaysState, User} from "@/types/types";
@@ -38,9 +38,6 @@ export default function Account() {
   const searchParams = useSearchParams();
   const page = searchParams?.get("page");
   const [activeTab, setActiveTab] = useState("user");
-  const [selectedDepartments, setSelectedDepartments] = useState(["Customer"]);
-  const [organizationName, setOrganizationName] = useState("");
-  const [seats, setSeats] = useState<number>(0);
   const [profileImage, setProfileImage] = useState("/placeholder-profile.svg");
   const [openInvite, setOpenInvite] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
@@ -172,63 +169,49 @@ export default function Account() {
       setIsLoading(false);
     }
   };
+  const fetchUserDetails = async () => {
+    try {
+      const res = await fetch(`${apiUrl}/users/${user?.id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-  useEffect(() => {
-    const fetchUserDetails = async () => {
-      try {
-        const res = await fetch(`${apiUrl}/users/${user?.id}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          // credentials: "include",
+      if (!res.ok) {
+        throw new Error("Failed to fetch user details");
+      }
+
+      const data = await res.json();
+      setUserDetails(data.user);
+      setWeeklyCards(data.user?.num_of_card?.toString() || "0");
+      setDailyQuestions(data.user?.num_of_questions?.toString() || "0");
+      setProfileImage(data.user?.organizations.org_picture);
+      // setDepa(data.user?.organizations.num_of_seat||'')
+
+      if (data?.week_days && Array.isArray(data.week_days)) {
+        const updatedWorkDays = {...defaultWorkDays};
+        data.user?.week_days.forEach((day: any) => {
+          if (day in updatedWorkDays) {
+            updatedWorkDays[day as keyof WorkDaysState] = true;
+          }
         });
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch user details");
-        }
-
-        const data = await res.json();
-        setUserDetails(data.user);
-        setWeeklyCards(data.user?.num_of_card?.toString() || "0");
-        setDailyQuestions(data.user?.num_of_questions?.toString() || "0");
-        setOrganizationName(data.user?.organizations.name || "");
-        setSeats(data.user?.organizations.num_of_seat || "");
-        setSelectedDepartments(data.user?.organizations.departments || []);
-        setProfileImage(data.user?.organizations.org_picture);
-        // setDepa(data.user?.organizations.num_of_seat||'')
-
-        if (data?.week_days && Array.isArray(data.week_days)) {
-          const updatedWorkDays = {...defaultWorkDays};
-          data.user?.week_days.forEach((day: any) => {
-            if (day in updatedWorkDays) {
-              updatedWorkDays[day as keyof WorkDaysState] = true;
-            }
-          });
-          setWorkDays(updatedWorkDays);
-        } else {
-          setWorkDays(defaultWorkDays);
-        }
-      } catch (error) {
-        console.error("Failed to fetch user details:", error);
-        setWeeklyCards("0");
-        setDailyQuestions("0");
+        setWorkDays(updatedWorkDays);
+      } else {
         setWorkDays(defaultWorkDays);
       }
-    };
-
+    } catch (error) {
+      console.error("Failed to fetch user details:", error);
+      setWeeklyCards("0");
+      setDailyQuestions("0");
+      setWorkDays(defaultWorkDays);
+    }
+  };
+  useEffect(() => {
     if (user?.id) {
       fetchUserDetails();
     }
   }, [user?.id, isLoaded]);
-
-  const columns = [
-    {Header: "Name", accessor: "user_name"},
-    {Header: "Seat Type", accessor: "role"},
-    {Header: "Team", accessor: "users_team.name"},
-    {Header: "Job Role", accessor: "user_role"},
-    {Header: "Action", accessor: "action"},
-  ];
 
   useEffect(() => {
     if (page) {
@@ -302,67 +285,66 @@ export default function Account() {
   const handleCheckboxChange = (day: Weekday) => {
     setWorkDays((prev) => ({...prev, [day]: !prev[day]}));
   };
+  const fetchUsers = async () => {
+    try {
+      setUserDataLoading(true);
+
+      const response = await fetch(
+        `${apiUrl}/users/organizations/${userDetails?.organizations?.id}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Failed to fetch organization data: ${response.status} - ${errorText}`
+        );
+      }
+
+      const result = await response.json();
+      setUsers(result.data);
+    } catch (err) {
+      console.error("Error fetching user:", err);
+    } finally {
+      setUserDataLoading(false);
+    }
+  };
+  const fetchUsersByTeam = async () => {
+    try {
+      setUserDataLoading(true);
+
+      const response = await fetch(
+        `${apiUrl}/users/organizations/teams/${userDetails.team_id}?orgId=${userDetails.org_id}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Failed to fetch organization data: ${response.status} - ${errorText}`
+        );
+      }
+
+      const result = await response.json();
+      setUsers(result.data);
+    } catch (err) {
+      console.error("Error fetching user:", err);
+    } finally {
+      setUserDataLoading(false);
+    }
+  };
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setUserDataLoading(true);
-
-        const response = await fetch(
-          `${apiUrl}/users/organizations/${userDetails?.organizations?.id}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            // credentials: "include",
-          }
-        );
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(
-            `Failed to fetch organization data: ${response.status} - ${errorText}`
-          );
-        }
-
-        const result = await response.json();
-        setUsers(result.data);
-      } catch (err) {
-        console.error("Error fetching user:", err);
-      } finally {
-        setUserDataLoading(false);
-      }
-    };
-    const fetchUsersByTeam = async () => {
-      try {
-        setUserDataLoading(true);
-
-        const response = await fetch(
-          `${apiUrl}/users/organizations/teams/${userDetails.team_id}?orgId=${userDetails.org_id}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            // credentials: "include",
-          }
-        );
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(
-            `Failed to fetch organization data: ${response.status} - ${errorText}`
-          );
-        }
-
-        const result = await response.json();
-        setUsers(result.data);
-      } catch (err) {
-        console.error("Error fetching user:", err);
-      } finally {
-        setUserDataLoading(false);
-      }
-    };
     if (userDetails && userDetails?.role === "owner") fetchUsers();
     else if (userDetails && userDetails.role === "admin") fetchUsersByTeam();
   }, [user, userDetails]);
@@ -372,41 +354,40 @@ export default function Account() {
       return prev ? prev[curr] : null;
     }, obj);
   };
+  const fetchUserData = async () => {
+    try {
+      const res = await fetch(`${apiUrl}/users/${user?.id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // credentials: "include",
+      });
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const res = await fetch(`${apiUrl}/users/${user?.id}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          // credentials: "include",
-        });
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch user details");
-        }
-
-        const data = await res.json();
-        setWeeklyCards(data.user?.num_of_card?.toString() || "5");
-        setDailyQuestions(data.user?.num_of_questions?.toString() || "3");
-
-        if (data.user?.week_days && Array.isArray(data.user.week_days)) {
-          const updatedWorkDays = {...defaultWorkDays};
-          data.user.week_days.forEach((day: string) => {
-            if (day in updatedWorkDays) {
-              updatedWorkDays[day as Weekday] = true;
-            }
-          });
-          setWorkDays(updatedWorkDays);
-        }
-      } catch (error) {
-        console.error("Failed to fetch user data:", error);
-      } finally {
-        setIsLoading(false);
+      if (!res.ok) {
+        throw new Error("Failed to fetch user details");
       }
-    };
+
+      const data = await res.json();
+      setWeeklyCards(data.user?.num_of_card?.toString() || "5");
+      setDailyQuestions(data.user?.num_of_questions?.toString() || "3");
+
+      if (data.user?.week_days && Array.isArray(data.user.week_days)) {
+        const updatedWorkDays = {...defaultWorkDays};
+        data.user.week_days.forEach((day: string) => {
+          if (day in updatedWorkDays) {
+            updatedWorkDays[day as Weekday] = true;
+          }
+        });
+        setWorkDays(updatedWorkDays);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  useEffect(() => {
     if (user?.id) fetchUserData();
   }, [user?.id, isLoaded]);
 
@@ -433,8 +414,6 @@ export default function Account() {
               }`}
             >
               <Icon icon="heroicons:users" width="24" height="24" />
-              {/* <Image src="/users.png" height={24}width={24} alt={"users"} className=""/> */}
-
               <span className="text-[20px] text-normal font-urbanist">
                 Account
               </span>
@@ -449,29 +428,12 @@ export default function Account() {
                 }`}
               >
                 <Icon icon="octicon:credit-card-24" width="24" height="24" />
-                {/* <Image src="/billing.png" height={24}width={24} alt={"billing"} className=""/> */}
 
                 <span className="text-[20px] text-normal font-urbanist">
                   Billing
                 </span>
               </Button>
             )}
-
-            {/* {roleAccess === "owner" && (
-              <Button
-                onClick={() => setStep(3)}
-                className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm  cursor-pointer ${
-                  steps === 3
-                    ? "bg-[#F9E36C] text-black"
-                    : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
-                }`}
-              >
-                <Icon icon="proicons:apps" width="24" height="24" />{" "}
-                <span className="text-[20px] text-normal font-urbanist">
-                  Apps
-                </span>
-              </Button>
-            )} */}
 
             <Button
               onClick={() => setStep(4)}
@@ -482,7 +444,6 @@ export default function Account() {
               }`}
             >
               <MessageSquareWarning className="w-10 h-10" />
-              {/* <Image src="/feedback.png" height={24}width={24} alt={"feedback"} className=""/> */}
 
               <span className="text-[20px] text-normal font-urbanist">
                 Feedback
@@ -553,7 +514,8 @@ export default function Account() {
                           {userDetails && (
                             <>
                               <p className="font-urbanist font-semibold text-[30px] ">
-                                {userDetails?.first_name} {userDetails?.last_name}
+                                {userDetails?.first_name}{" "}
+                                {userDetails?.last_name}
                               </p>
                               <p className="font-urbanist font-normal text-[30px]  text-[#FFFFFFCC]">
                                 {userDetails.location}
@@ -597,7 +559,7 @@ export default function Account() {
 
                         <div className="overflow-x-auto">
                           <Table
-                            columns={columns.slice(0, -1)}
+                            columns={User_columns.slice(0, -1)}
                             data={users}
                             renderActions={(row) =>
                               renderRowActions(row as User)
@@ -780,6 +742,7 @@ export default function Account() {
         open={deleteModalOpen}
         UserDetails={selectedRow}
         onOpenChange={setDeleteModalOpen}
+        fetchUserDetails={fetchUserDetails}
       />
       <InviteUserModal open={openInvite} onOpenChange={setOpenInvite} />
 
@@ -787,11 +750,14 @@ export default function Account() {
         open={openEdit}
         userDetails={selectedRow}
         onOpenChange={setOpenEdit}
+        fetchUserDetails={fetchUserDetails}
       />
       <EditProfileModal
         userData={userDetails}
         isOpen={isEditProfileModalOpen}
         setIsOpen={setIsEditProfileModalOpen}
+        fetchUserDetails={fetchUserDetails}
+        fetchUsers={fetchUsers}
       />
       <LogoutPopup
         isOpen={logoutModalOpen}

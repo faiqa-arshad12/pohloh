@@ -308,3 +308,10 @@ export const getDropdownOptions = () => {
 };
 
 export const frontend_url = `${process.env.NEXT_PUBLIC_SITE_URL}`;
+ export const User_columns = [
+    {Header: "Name", accessor: "user_name"},
+    {Header: "Seat Type", accessor: "role"},
+    {Header: "Team", accessor: "users_team.name"},
+    {Header: "Job Role", accessor: "user_role"},
+    {Header: "Action", accessor: "action"},
+  ];

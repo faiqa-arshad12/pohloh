@@ -8,19 +8,20 @@ import {
 import {Button} from "@/components/ui/button";
 import {ShowToast} from "@/components/shared/show-toast";
 import Loader from "@/components/shared/loader";
-import {AlertTriangle} from "lucide-react";
 import {deleteUser} from "@/actions/auth";
 
 interface DeleteUserModalProps {
   open: boolean;
   UserDetails: any;
   onOpenChange: (open: boolean) => void;
+  fetchUserDetails?: () => void;
 }
 
 export function DeleteUserModal({
   open,
   onOpenChange,
   UserDetails,
+  fetchUserDetails,
 }: DeleteUserModalProps) {
   const [isDeleting, setIsDeleting] = React.useState(false);
 
@@ -36,6 +37,8 @@ export function DeleteUserModal({
       const res = await deleteUser(UserDetails.user_id);
       console.log("Delete Response:", res);
       console.log("User Details:", UserDetails);
+      if (fetchUserDetails) fetchUserDetails();
+
       if (res.success) {
         ShowToast("User deleted successfully", "success");
         onOpenChange(false);

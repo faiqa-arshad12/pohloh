@@ -53,6 +53,7 @@ interface EditUserModalProps {
   userDetails: any;
   onOpenChange: (open: boolean) => void;
   className?: string;
+  fetchUserDetails?: () => void;
 }
 
 export function EditUserModal({
@@ -60,6 +61,7 @@ export function EditUserModal({
   onOpenChange,
   className,
   userDetails,
+  fetchUserDetails,
 }: EditUserModalProps) {
   const [orgDepartments, setOrgDepartments] = React.useState<any[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -451,6 +453,7 @@ export function EditUserModal({
           );
         }
       }
+      if (fetchUserDetails) fetchUserDetails();
 
       ShowToast("User has been updated successfully");
       onOpenChange(false);
