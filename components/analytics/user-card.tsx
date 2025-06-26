@@ -13,10 +13,20 @@ import {CustomDateFilterModal} from "../shared/date-filter";
 import {getDropdownOptions} from "@/utils/constant";
 import Loader from "../shared/loader";
 
+interface UserSearchItem {
+  id: string;
+  item: string;
+  org_id: string;
+  user_id: string;
+  created_at: string;
+  team_id?: string | null;
+}
+
 interface TrendingSearchItem {
   item: string;
-  search_count: number;
-  latest_search: string;
+  recent_count: number;
+  historical_count: number;
+  trend_score: number;
 }
 
 interface Card {
@@ -41,10 +51,13 @@ interface Card {
 }
 
 export const UserCard = () => {
+  const [userSearches, setUserSearches] = useState<UserSearchItem[]>([]);
+  const [trendingSearches, setTrendingSearches] = useState<
+    TrendingSearchItem[]
+  >([]);
   const {userData} = useUserHook();
   const searchParams = useSearchParams();
   const userId = searchParams?.get("id") || userData?.id;
-  const [trendingData, setTrendingData] = useState<TrendingSearchItem[]>([]);
   const [cardsData, setCardsData] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,33 +77,24 @@ export const UserCard = () => {
   const CARDS_PER_PAGE = 3;
   const ITEMS_PER_PAGE = 4;
   const totalPages = Math.ceil(cardsData.length / CARDS_PER_PAGE);
-  const totalTrendingPages = Math.ceil(trendingData.length / ITEMS_PER_PAGE);
+  const totalUserSearchPages = Math.ceil(userSearches.length / ITEMS_PER_PAGE);
+  const totalTrendingPages = Math.ceil(
+    trendingSearches.length / ITEMS_PER_PAGE
+  );
 
   const visibleCards = cardsData.slice(
     currentPage * CARDS_PER_PAGE,
     (currentPage + 1) * CARDS_PER_PAGE
   );
 
-  const visibleTrending = trendingData.slice(
-    currentPageTrending * ITEMS_PER_PAGE,
-    (currentPageTrending + 1) * ITEMS_PER_PAGE
-  );
-
-  // Process trending data for the left section
-  const processedTrendingSearches = trendingData.map(
-    (item: TrendingSearchItem) => ({
-      item: item.item,
-      count: item.search_count,
-    })
-  );
-
-  const visibleTrendingSearches = processedTrendingSearches.slice(
+  const visibleUserSearches = userSearches.slice(
     currentPageStrength * ITEMS_PER_PAGE,
     (currentPageStrength + 1) * ITEMS_PER_PAGE
   );
 
-  const totalTrendingSearchesPages = Math.ceil(
-    processedTrendingSearches.length / ITEMS_PER_PAGE
+  const visibleTrending = trendingSearches.slice(
+    currentPageTrending * ITEMS_PER_PAGE,
+    (currentPageTrending + 1) * ITEMS_PER_PAGE
   );
 
   useEffect(() => {
@@ -146,7 +150,8 @@ export const UserCard = () => {
         );
 
         if (response.success && response.data) {
-          setTrendingData(response.data);
+          setUserSearches(response.data.user_searches || []);
+          setTrendingSearches(response.data.trending_searches || []);
         } else {
           setError("Failed to fetch trending data");
         }
@@ -160,6 +165,7 @@ export const UserCard = () => {
 
     fetchTrendingData();
   }, [userId, userData?.org_id, startDate, endDate]);
+
   useEffect(() => {
     const fetchUserInfo = async () => {
       if (!userId && !userData?.org_id) return;
@@ -257,7 +263,7 @@ export const UserCard = () => {
     setCurrentPageStrength((prev) => Math.max(prev - 1, 0));
   const goToNextStrength = () =>
     setCurrentPageStrength((prev) =>
-      Math.min(prev + 1, totalTrendingSearchesPages - 1)
+      Math.min(prev + 1, totalUserSearchPages - 1)
     );
   const goToPreviousTrending = () =>
     setCurrentPageTrending((prev) => Math.max(prev - 1, 0));
@@ -386,13 +392,13 @@ export const UserCard = () => {
                     </button>
                     <button
                       className={`w-[20px] h-[20px] flex items-center justify-center rounded-full ${
-                        currentPageStrength < totalTrendingSearchesPages - 1
+                        currentPageStrength < totalUserSearchPages - 1
                           ? "text-[#F9DB6F] border-2 border-[#F9DB6F]"
                           : "bg-[#1e1e1e] text-gray-400 cursor-not-allowed"
                       }`}
                       onClick={goToNextStrength}
                       disabled={
-                        currentPageStrength === totalTrendingSearchesPages - 1
+                        currentPageStrength === totalUserSearchPages - 1
                       }
                     >
                       <ChevronRight size={18} />
@@ -403,10 +409,10 @@ export const UserCard = () => {
                 <div className="flex-1">
                   {error ? (
                     <div className="text-center py-8 text-red-400">{error}</div>
-                  ) : visibleTrendingSearches.length > 0 ? (
-                    visibleTrendingSearches.map((search, index) => (
+                  ) : visibleUserSearches.length > 0 ? (
+                    visibleUserSearches.map((search, index) => (
                       <div
-                        key={index}
+                        key={search.id}
                         className={`p-3 rounded-lg cursor-pointer transition-colors border-l-4 mb-4 border-[#F9DB6F] bg-[#0f0f0f] hover:bg-[#0f0f0f]`}
                         onClick={() => toggleExpanded(index)}
                       >
@@ -461,7 +467,7 @@ export const UserCard = () => {
                   ) : visibleTrending.length > 0 ? (
                     visibleTrending.map((search, index) => (
                       <div
-                        key={index}
+                        key={search.item}
                         className={`p-3 rounded-lg cursor-pointer transition-colors mb-4 border-l-4 border-[#F9DB6F] bg-[#0f0f0f] hover:bg-[#0f0f0f]`}
                         onClick={() => toggleExpanded(index)}
                       >
@@ -470,6 +476,7 @@ export const UserCard = () => {
                             <span className="truncate font-medium">
                               {search.item}
                             </span>
+                          
                           </div>
                         </div>
                       </div>
