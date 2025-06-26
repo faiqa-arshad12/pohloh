@@ -140,6 +140,24 @@ const TipTapEditor = ({
         view.dispatch(view.state.tr.insertText(sanitizedText));
         return true;
       },
+      handleKeyDown: (view, event) => {
+        if (event.key === "Enter") {
+          // Get the current position
+          const {$from} = view.state.selection;
+          // Get the node before the cursor
+          const prevNode = $from.nodeBefore;
+          // Get the node after the cursor
+          const nextNode = $from.nodeAfter;
+          // Check if previous node was a heading
+          if (prevNode && prevNode.type.name.startsWith("heading")) {
+            // Get HTML for the new line (or the whole doc)
+            const html = view.dom.innerHTML; // or use editor.getHTML()
+            // Call your onChange or custom callback
+            onChange(html);
+          }
+        }
+        return false; // allow default behavior
+      },
     },
   });
 
