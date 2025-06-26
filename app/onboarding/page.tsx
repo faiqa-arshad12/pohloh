@@ -19,16 +19,13 @@ const OnboardingPage = () => {
 
       setIsLoading(true);
       try {
-        const response = await fetch(
-          `${apiUrl}/${users}/${user.id}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            // credentials: "include",
-          }
-        );
+        const response = await fetch(`${apiUrl}/${users}/${user.id}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // credentials: "include",
+        });
 
         if (!response.ok) {
           throw new Error("Failed to fetch user data");
@@ -38,9 +35,9 @@ const OnboardingPage = () => {
         setUser(data.user);
 
         // Redirect to dashboard if status is approved
-        if (data.user.status === "approved") {
-          router.push("/dashboard");
-        }
+        // if (data.user.status === "approved") {
+        //   router.push("/dashboard");
+        // }
       } catch (error) {
         console.error("Error fetching user data:", error);
       } finally {
@@ -58,7 +55,9 @@ const OnboardingPage = () => {
       </div>
     );
   }
-
+  if (userData && userData?.status === "approved") {
+    router.push("/dashboard");
+  }
   return (
     <div className="w-full relative">
       <div className="absolute top-0 left-0 z-50 flex items-center px-4 py-3 w-full">
