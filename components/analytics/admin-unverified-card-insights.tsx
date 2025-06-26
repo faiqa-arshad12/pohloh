@@ -81,7 +81,7 @@ const AdminUnverifiedCard = () => {
     setIsExportingPDF(true);
     try {
       const dataForPdf = filteredUnverifiedCards.map((card) => {
-        const ownerName = `${card.card_owner_id.first_name} ${card.card_owner_id.last_name}`;
+        const ownerName = `${card?.card_owner_id?.first_name} ${card?.card_owner_id?.last_name}`;
         const formattedDate = new Date(card.created_at).toLocaleDateString(
           "en-US",
           {
@@ -268,7 +268,7 @@ const AdminUnverifiedCard = () => {
       case "ownerName":
         return (
           <div className="flex items-center gap-2">
-            {row.card_owner_id.first_name} {row.card_owner_id.last_name}
+            {row.card_owner_id?.first_name} {row.card_owner_id?.last_name}
           </div>
         );
       case "action":

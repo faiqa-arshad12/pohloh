@@ -133,11 +133,11 @@ const EditProfileModal = ({
     if (userData) {
       const isCustomRole = !user_roles.includes(userData.user_role);
       form.reset({
-        firstName: userData.first_name || "",
-        lastName: userData.last_name || "",
-        username: userData.user_name || "",
-        location: userData.location || "",
-        user_role: isCustomRole ? "Other" : userData.user_role || "",
+        firstName: userData?.first_name || "",
+        lastName: userData?.last_name || "",
+        username: userData?.user_name || "",
+        location: userData?.location || "",
+        user_role: isCustomRole ? "Other" : userData?.user_role || "",
       });
       setShowCustomRole(isCustomRole);
       if (isCustomRole) {
@@ -855,21 +855,21 @@ const EditProfileModal = ({
                             >
                               <Avatar className="h-[20px] w-[20px]">
                                 <AvatarImage
-                                  src={member.profile_picture || ""}
-                                  alt={member.first_name}
+                                  src={member?.profile_picture || ""}
+                                  alt={member?.first_name}
                                   className="object-cover"
                                 />
                                 <AvatarFallback className="bg-[#F9E36C] text-black text-xs font-normal">
-                                  {member.first_name?.charAt(0)}
-                                  {member.last_name?.charAt(0)}
+                                  {member?.first_name?.charAt(0)}
+                                  {member?.last_name?.charAt(0)}
                                 </AvatarFallback>
                               </Avatar>
 
                               <span
                                 className="text-black text-[10.44px] font-normal max-w-[60px] truncate overflow-hidden whitespace-nowrap"
-                                title={member.first_name}
+                                title={member?.first_name}
                               >
-                                {member.first_name}
+                                {member?.first_name}
                               </span>
 
                               {member.user_id !== userData.user_id && (
@@ -937,20 +937,20 @@ const EditProfileModal = ({
                                         <div className="flex items-center gap-2">
                                           <Avatar className="h-12 w-12">
                                             <AvatarImage
-                                              src={user.profile_picture || ""}
-                                              alt={user.first_name}
+                                              src={user?.profile_picture || ""}
+                                              alt={user?.first_name}
                                             />
                                             <AvatarFallback className="bg-[#F9E36C] text-black">
-                                              {user.first_name?.charAt(0)}
-                                              {user.last_name?.charAt(0)}
+                                              {user?.first_name?.charAt(0)}
+                                              {user?.last_name?.charAt(0)}
                                             </AvatarFallback>
                                           </Avatar>
                                           <div>
                                             <p className="text-sm font-medium">
-                                              {user.first_name} {user.last_name}
+                                              {user?.first_name} {user?.last_name}
                                             </p>
                                             <p className="text-xs text-[#FFFFFF52]">
-                                              {user.email}
+                                              {user?.email}
                                             </p>
                                           </div>
                                         </div>

@@ -122,7 +122,7 @@ export default function ExploreLearningPath() {
               day: "numeric",
               year: "2-digit",
             }),
-            owner: card.path_owner.first_name + " " + card.path_owner.last_name,
+            owner: card.path_owner?.first_name + " " + card.path_owner?.last_name,
             totalQuestions: card.num_of_questions.toString(),
             enrolledUsers: [],
             enrolled: false,

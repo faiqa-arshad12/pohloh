@@ -98,7 +98,7 @@ const Feedback: React.FC = () => {
       await sendOwnerFeedback({
         user_id: userData.id,
         org_id: userData.org_id,
-        message: `${userData.first_name} has sent a feedback!`,
+        message: `${userData?.first_name} has sent a feedback!`,
         subtext: feedback.trim(),
         // link: undefined,
       });

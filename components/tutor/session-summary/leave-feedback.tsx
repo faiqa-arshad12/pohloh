@@ -134,7 +134,7 @@ export default function FeedbackForm({
           await createNotification({
             user_id: learningPath.path_owner.id,
             org_id: userData.org_id,
-            message: `You have new feedback on your learning path: ${learningPath.title} by ${userData.first_name}`,
+            message: `You have new feedback on your learning path: ${learningPath.title} by ${userData?.first_name}`,
             subtext: data.comments,
             // link: `/tutor/explore-learning-paths`,
             // link: null,

@@ -1,5 +1,6 @@
 import React, {useState, useEffect, useCallback} from "react";
 import {Button} from "../ui/button";
+
 import Image from "next/image";
 import Table from "../ui/table";
 import {Icon} from "@iconify/react/dist/iconify.js";
@@ -173,12 +174,12 @@ const AdminLeaderBoard = () => {
       if (data?.stats) {
         setFilteredLeaderboardData(
           data.stats.map((entry: any, idx: number) => ({
-            name: `${entry.card_owner.first_name} ${entry.card_owner.last_name}`,
+            name: `${entry?.card_owner?.first_name} ${entry?.card_owner?.last_name}` ||'',
             completion: `${entry.percentage}%`,
             cards: `${entry.total} (${entry.verified} Verified)`,
             engagement: `${entry.total} / ${entry.verified}`,
             rankIcon: idx === 0 ? "winner" : idx === 1 ? "second" : "third",
-            avatarUrl: entry.card_owner.profile_picture,
+            avatarUrl: entry.card_owner?.profile_picture,
             departmentId: entry.card_owner.team_id,
             total: entry.total,
             verified: entry.verified,

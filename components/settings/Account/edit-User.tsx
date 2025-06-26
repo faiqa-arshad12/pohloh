@@ -701,21 +701,21 @@ export function EditUserModal({
                             >
                               <Avatar className="h-[20px] w-[20px]">
                                 <AvatarImage
-                                  src={member.profile_picture || ""}
-                                  alt={member.first_name}
+                                  src={member?.profile_picture || ""}
+                                  alt={member?.first_name}
                                   className="object-cover"
                                 />
                                 <AvatarFallback className="bg-[#F9E36C] text-black text-xs font-normal">
-                                  {member.first_name?.charAt(0)}
-                                  {member.last_name?.charAt(0)}
+                                  {member?.first_name?.charAt(0)}
+                                  {member?.last_name?.charAt(0)}
                                 </AvatarFallback>
                               </Avatar>
 
                               <span
                                 className="text-black text-[10.44px] font-normal w-full truncate overflow-hidden whitespace-nowrap"
-                                title={member.first_name}
+                                title={member?.first_name}
                               >
-                                {member.first_name}
+                                {member?.first_name}
                               </span>
 
                               {member.user_id !== userDetails.user_id && (

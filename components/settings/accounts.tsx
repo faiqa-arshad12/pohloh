@@ -553,7 +553,7 @@ export default function Account() {
                           {userDetails && (
                             <>
                               <p className="font-urbanist font-semibold text-[30px] ">
-                                {userDetails.first_name} {userDetails.last_name}
+                                {userDetails?.first_name} {userDetails?.last_name}
                               </p>
                               <p className="font-urbanist font-normal text-[30px]  text-[#FFFFFFCC]">
                                 {userDetails.location}
