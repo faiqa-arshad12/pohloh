@@ -171,6 +171,10 @@ export function UnverifiedCards({cards, isAnalytic}: UnverifiedCardProps) {
 
       const data = await response.json();
       ShowToast("Card verified successfully!");
+
+      // Remove the verified card from the local state
+      setFilteredCards((prev) => prev.filter((c) => c.id !== cardId));
+
       return data;
     } catch (error: any) {
       console.error("Error verifying card:", error.message || error);
