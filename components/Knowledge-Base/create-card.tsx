@@ -974,6 +974,11 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-[#2C2D2E] border-none text-white">
+                              {teams.length === 0 && (
+                                <div className="px-3 py-2 text-gray-400 text-sm select-none cursor-default">
+                                  No categories available
+                                </div>
+                              )}
                               {teams.map((team) => (
                                 <SelectItem key={team.id} value={team.id}>
                                   {team.name}
@@ -1022,6 +1027,11 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-[#2C2D2E] border-none text-white">
+                              {subcategories.length === 0 && (
+                                <div className="px-3 py-2 text-gray-400 text-sm select-none cursor-default">
+                                  No folders available for selected category
+                                </div>
+                              )}
                               {subcategories.map((subcategory) => (
                                 <SelectItem
                                   key={subcategory.id}
@@ -1067,6 +1077,11 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-[#2C2D2E] border-none text-white">
+                              {users.length === 0 && (
+                                <div className="px-3 py-2 text-gray-400 text-sm select-none cursor-default">
+                                  No users available
+                                </div>
+                              )}
                               {users.map((user) => (
                                 <SelectItem key={user.id} value={user.id}>
                                   {`${user.first_name} ${
@@ -1223,6 +1238,11 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-[#2C2D2E] border-none text-white">
+                              {teams.length === 0 && (
+                                <div className="px-3 py-2 text-gray-400 text-sm select-none cursor-default">
+                                  No teams available
+                                </div>
+                              )}
                               <SelectItem value="none">None</SelectItem>
                               {teams.map((team) => (
                                 <SelectItem key={team.id} value={team.id}>

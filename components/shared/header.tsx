@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import {Bell, Menu, X} from "lucide-react";
 import Image from "next/image";
 import NavList from "./nav-list";
@@ -15,6 +14,7 @@ import Loader from "./loader";
 import {apiUrl_AI, apiUrl} from "@/utils/constant";
 import {Notifications} from "./notifications";
 import {getUnreadCount} from "@/services/notification.service";
+import {supabase} from "@/supabase/client";
 
 interface SearchResult {
   id: string;
@@ -42,7 +42,6 @@ function useSearch(
         return;
       }
 
-      // Use the existing Node.js API server
       const response = await fetch(`${apiUrl}/searches`, {
         method: "POST",
         headers: {
@@ -58,8 +57,6 @@ function useSearch(
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error("Failed to save search query:", errorData);
-      } else {
-        console.log("Search query saved successfully");
       }
     } catch (error) {
       console.error("Error saving search query:", error);
@@ -69,12 +66,10 @@ function useSearch(
   const handleSearch = async (input: string) => {
     setSearchQuery(input);
 
-    // Clear previous timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
 
-    // Set new timeout for debouncing
     searchTimeoutRef.current = setTimeout(async () => {
       if (!input.trim()) {
         setSearchResults([]);
@@ -84,6 +79,7 @@ function useSearch(
 
       setIsSearching(true);
       setIsSearchResultsOpen(true);
+
       try {
         const response = await fetch(`${apiUrl_AI}/search/cards`, {
           method: "POST",
@@ -92,7 +88,7 @@ function useSearch(
           },
           body: JSON.stringify({
             query: input,
-            user_id: "ad2c8be5-b36a-44a2-8942-25f268ddc479",
+            user_id: userData?.id,
             limit: 20,
           }),
         });
@@ -100,33 +96,26 @@ function useSearch(
         const data = await response.json();
         if (data.success) {
           setSearchResults(data.cards);
-          // If no results found, save the search query
           if (data.cards.length === 0) {
             await saveSearchQuery(input);
           }
         } else {
-          // If search failed, save the search query
           await saveSearchQuery(input);
         }
       } catch (error) {
         console.error("Search error:", error);
-        // If search throws an error, save the search query
         await saveSearchQuery(input);
       } finally {
         setIsSearching(false);
       }
-    }, 300); // 300ms debounce
+    }, 300);
   };
 
   const handleResultClick = (resultId: string) => {
     router.push(`/knowledge-base?cardId=${resultId}`);
-
-    // Close all dropdowns and menus immediately
     setIsSearchResultsOpen(false);
     setIsMobileMenuOpen(false);
     setIsNotificationsOpen(false);
-
-    // Clear search query and results
     setSearchQuery("");
     setSearchResults([]);
   };
@@ -172,7 +161,6 @@ function SearchResultItem({
     <div
       className="p-3 border-b border-zinc-800 hover:bg-zinc-800 transition-colors cursor-pointer"
       onMouseDown={(e) => {
-        // Prevent the input from losing focus when clicking on results
         e.preventDefault();
       }}
       onClick={onClick}
@@ -212,8 +200,12 @@ export function Header({
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [connectionStatus, setConnectionStatus] =
+    useState<string>("disconnected");
   const notificationRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<any>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
     searchQuery,
@@ -227,19 +219,115 @@ export function Header({
     closeSearchResults,
   } = useSearch(setIsMobileMenuOpen, setIsNotificationsOpen, userData);
 
-  // Fetch unread count on mount and when userData changes
-  useEffect(() => {
-    if (userData?.id) {
-      getUnreadCount(userData.id)
-        .then(setUnreadCount)
-        .catch(() => setUnreadCount(0));
+  // Function to fetch unread count
+  const fetchUnreadCount = async () => {
+    if (!userData?.id) return;
+
+    try {
+      const count = await getUnreadCount(userData.id);
+      setUnreadCount(count);
+    } catch (error) {
+      console.error(" Error fetching unread count:", error);
+      setUnreadCount(0);
     }
-  }, [userData]);
+  };
+
+  // Function to setup real-time subscription
+  const setupRealtimeSubscription = () => {
+    if (!userData?.id) {
+      return;
+    }
+
+    // Clean up existing channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    // Clear any existing reconnect timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+
+    const channelName = `notifications_${userData.id}_${Date.now()}`;
+
+    setConnectionStatus("connecting");
+
+    channelRef.current = supabase
+      .channel(channelName, {
+        config: {
+          broadcast: {self: true},
+          presence: {key: userData.id},
+        },
+      })
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userData.id}`,
+        },
+        (payload) => {
+          fetchUnreadCount();
+        }
+      )
+      .subscribe((status, err) => {
+        setConnectionStatus(status);
+
+        if (err) {
+          console.error("Subscription error:", err);
+        }
+
+        switch (status) {
+          case "SUBSCRIBED":
+            break;
+          case "CHANNEL_ERROR":
+            setConnectionStatus("error");
+            // Retry after 5 seconds
+            reconnectTimeoutRef.current = setTimeout(() => {
+              setupRealtimeSubscription();
+            }, 5000);
+            break;
+          case "TIMED_OUT":
+            setConnectionStatus("timeout");
+            // Retry after 3 seconds
+            reconnectTimeoutRef.current = setTimeout(() => {
+              setupRealtimeSubscription();
+            }, 3000);
+            break;
+          case "CLOSED":
+            setConnectionStatus("closed");
+            break;
+        }
+      });
+  };
+  useEffect(() => {
+    if (!userData?.id || !userData?.org_id) {
+      return;
+    }
+    fetchUnreadCount();
+    setupRealtimeSubscription();
+
+    // Cleanup function
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+    };
+  }, [userData?.id, userData?.org_id]);
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
+
     handleResize();
     window.addEventListener("resize", handleResize);
 
@@ -265,7 +353,7 @@ export function Header({
       window.removeEventListener("resize", handleResize);
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [closeSearchResults]);
 
   return (
     <>
@@ -278,7 +366,6 @@ export function Header({
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </Button>
-
           <div className="flex items-center gap-2">
             <div className="text-yellow-400 text-2xl">
               <Image
@@ -293,7 +380,6 @@ export function Header({
               Pohloh
             </span>
           </div>
-
           <div className="hidden md:block bg-[transparent] backdrop-blur-xl">
             <NavList
               setShowAllNotifications={setShowAllNotifications}
@@ -434,7 +520,6 @@ export function Header({
                   </span>
                 )}
               </div>
-
               <div className="max-h-[300px] overflow-y-auto">
                 <Notifications
                   setShowAllNotifications={setShowAllNotifications}

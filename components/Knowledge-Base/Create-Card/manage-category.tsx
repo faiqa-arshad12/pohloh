@@ -1035,7 +1035,7 @@ export function ManageCategory({
         onOpenChange={setDeleteConfirmationOpen}
       >
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[102]" />
+          <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[102] rounded-[30px]" />
           <Dialog.Content className="fixed z-[103] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E1E1E] text-white rounded-lg w-[90vw] max-w-[400px] p-6 shadow-xl">
             <div className="flex justify-between items-center mb-4">
               <Dialog.Title className="font-bold text-xl text-white">
@@ -1049,10 +1049,19 @@ export function ManageCategory({
             </div>
 
             <div className="mb-6">
-              <p>
-                Are you sure you want to delete "{itemToDelete?.name}"? This
-                action cannot be undone.
-              </p>
+              {itemToDelete?.type === "category" &&
+              itemToDelete.children &&
+              itemToDelete.children.length > 0 ? (
+                <p>
+                  This department has sub-departments. Deleting it will remove
+                  all associated data. Are you sure you want to continue?
+                </p>
+              ) : (
+                <p>
+                  Are you sure you want to delete "{itemToDelete?.name}"? This
+                  action cannot be undone.
+                </p>
+              )}
             </div>
 
             <div className="flex justify-end gap-3">
