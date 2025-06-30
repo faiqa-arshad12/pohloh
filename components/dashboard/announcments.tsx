@@ -6,7 +6,7 @@ import {Button} from "@/components/ui/button";
 import {cn} from "@/lib/utils";
 import ViewAnnouncmentModal from "./modals/view-announcement";
 import Image from "next/image";
-import {apiUrl, CardType} from "@/utils/constant";
+import {apiUrl} from "@/utils/constant";
 import {stripHtml} from "@/lib/stripeHtml";
 
 type Announcement = {
