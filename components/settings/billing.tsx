@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {useEffect, useState, useCallback} from "react";
 import {Download} from "lucide-react";
 import Image from "next/image";
 import Table from "../ui/table";
@@ -16,6 +16,7 @@ import {SubscriptionSkeleton} from "../shared/subscription-skeleton";
 import InvoicesSkeleton from "../shared/invoices-skeleton";
 import PaymentModal from "./payment-modal";
 import type {Plan} from "@/types/billings.types";
+import CancelConfirmationModal from "../shared/logout-popup";
 
 const handleDownloadInvoice = (invoiceUrl: string) => {
   if (!invoiceUrl) {
@@ -35,15 +36,23 @@ const handleDownloadInvoice = (invoiceUrl: string) => {
 const getPlanTypeFromInvoice = (invoice: any) => {
   if (invoice.lines && invoice.lines.data && invoice.lines.data.length > 0) {
     const lineItem = invoice.lines.data[0];
-
+    // Try to get product name from price or product
+    if (
+      lineItem.price &&
+      lineItem.price.product &&
+      typeof lineItem.price.product === "object"
+    ) {
+      return lineItem.price.product.name || "Unknown";
+    }
+    // Fallback to description parsing
     if (lineItem.description) {
-      const match = lineItem.description.match(/×\s*(\w+)\s*\(/);
+      // Try to match 'Standard' or 'Premium' in the description
+      const match = lineItem.description.match(/(Standard|Premium)/i);
       if (match) {
         return match[1];
       }
     }
   }
-
   return "Unknown";
 };
 
@@ -122,14 +131,132 @@ export default function Billing() {
   const [isSubscriptionCanceled, setIsSubscriptionCanceled] = useState(false);
   const [invoiceLoading, setIsInvoiceLoading] = useState(false);
   const [userLoading, setIsUserLoading] = useState(false);
+  const [refetchTrigger, setRefetchTrigger] = useState(0); // Add trigger for refetching
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
-  const createPaymentIntent = async () => {
+  // Memoized fetch functions to prevent unnecessary re-renders
+  const fetchCustomerInvoices = useCallback(async (customerId: string) => {
+    try {
+      setIsInvoiceLoading(true);
+      const response = await fetch(
+        `/api/stripe/invoices?customerId=${customerId}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch invoices");
+      }
+      const data = await response.json();
+      console.log(data, "invoices data");
+      setInvoices(data);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      ShowToast("Failed to fetch invoices", "error");
+    } finally {
+      setIsInvoiceLoading(false);
+    }
+  }, []);
+
+  const fetchUser = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      setIsUserLoading(true);
+      const response = await fetch(
+        `${apiUrl}/${users}/onboarding-data/${user.id}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Failed to fetch user: ${response.status} - ${errorText}`
+        );
+      }
+
+      const result = await response.json();
+      setUserData(result?.data);
+    } catch (err) {
+      console.error("Error fetching user:", err);
+      ShowToast("Failed to fetch user data", "error");
+    } finally {
+      setIsUserLoading(false);
+    }
+  }, [user?.id]);
+
+  const getSubscriptionData = useCallback(async () => {
+    if (!userData?.organizations?.subscriptions?.[0]?.subscription_id) return;
+
+    try {
+      const subscription = await getSubscriptionDetails(
+        userData.organizations.subscriptions[0].subscription_id
+      );
+      setSubscription(subscription);
+      setBillingCycle((subscription?.plan?.interval as "month") || "year");
+
+      if (subscription?.status === "canceled") {
+        setIsSubscriptionCanceled(true);
+        setSelectedPriceId("");
+      } else {
+        setIsSubscriptionCanceled(false);
+        setSelectedPriceId(subscription?.plan?.id || "");
+      }
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+      ShowToast("Failed to fetch subscription data", "error");
+    }
+  }, [userData?.organizations?.subscriptions]);
+
+  // Function to trigger refetch of all data
+  const refetchAllData = useCallback(() => {
+    setRefetchTrigger((prev) => prev + 1);
+  }, []);
+
+
+  const createPaymentIntent = async (priceId?: string) => {
     try {
       setIsLoading(true);
-      let response;
+
+      // Prevent empty priceId
+      if (!priceId && !selectedPriceId) {
+        ShowToast("Please select a plan before subscribing.", "error");
+        setIsLoading(false);
+        return;
+      }
+
+      const effectivePriceId = priceId || selectedPriceId;
+
       if (
         userData.organizations.subscriptions[0]?.subscription_id &&
-        !isSubscriptionCanceled
+        !isSubscriptionCanceled &&
+        subscription?.status !== "incomplete"
+      ) {
+        // Compare current plan and quantity
+        const currentPlanId = subscription?.plan?.id;
+        const currentQuantity = subscription?.plan?.subscription?.quantity;
+        if (
+          effectivePriceId === currentPlanId &&
+          (userData.organizations.num_of_seat || 1) === currentQuantity
+        ) {
+          ShowToast(
+            "You are already on this plan with the same seats.",
+            "warning"
+          );
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      let response;
+
+      // If updating an existing subscription (change plan or quantity), allow directly
+      if (
+        userData.organizations.subscriptions[0]?.subscription_id &&
+        !isSubscriptionCanceled &&
+        subscription?.status !== "incomplete"
       ) {
         response = await fetch(
           `${window.location.origin}/api/stripe/update-subscription`,
@@ -141,7 +268,7 @@ export default function Billing() {
                 userData.organizations.subscriptions[0]?.subscription_id,
               currentPriceId: subscription.plan.id,
               quantity: userData.organizations.num_of_seat || 1,
-              newPriceId: selectedPriceId,
+              newPriceId: effectivePriceId,
             }),
           }
         );
@@ -152,7 +279,7 @@ export default function Billing() {
           body: JSON.stringify({
             customerId: userData.organizations.subscriptions[0]?.customer_id,
             quantity: userData.organizations.num_of_seat || 1,
-            priceId: selectedPriceId,
+            priceId: effectivePriceId,
             email: userData.email,
           }),
         });
@@ -162,11 +289,13 @@ export default function Billing() {
 
       const data = await response.json();
 
-      if (!data.clientSecret) {
-        ShowToast("Subscription has been updated successfully!");
-      } else {
+      if (data.clientSecret) {
         setClientSecret(data.clientSecret);
         setOpenEdit(true);
+      } else {
+        ShowToast("Subscription has been updated successfully!");
+        // Refetch all data after successful update
+        refetchAllData();
       }
     } catch (err) {
       ShowToast(err instanceof Error ? err.message : "Unknown error", "error");
@@ -175,130 +304,7 @@ export default function Billing() {
     }
   };
 
-  useEffect(() => {
-    async function fetchCustomerInvoices(customerId: string) {
-      try {
-        setIsInvoiceLoading(true);
-        const response = await fetch(
-          `/api/stripe/invoices?customerId=${customerId}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch invoices");
-        }
-        const data = await response.json();
-        console.log(data, "data");
-        setInvoices(data);
-      } catch (error) {
-        console.error("Error fetching invoices:", error);
-        throw error;
-      } finally {
-        setIsInvoiceLoading(false);
-      }
-    }
-
-    if (userData && userData?.organizations?.subscriptions)
-      fetchCustomerInvoices(
-        userData.organizations.subscriptions[0].customer_id
-      );
-  }, [userData]);
-
-  useEffect(() => {
-    const fetchPlans = async () => {
-      try {
-        setIsFetchingPlans(true);
-        const res = await fetch("/api/stripe/plan");
-        const data = await res.json();
-        if (data && data.length > 0) {
-          setPlans(data);
-        }
-      } catch (error) {
-        console.error("Error fetching plans:", error);
-        ShowToast("Failed to fetch plans", "error");
-      } finally {
-        setIsFetchingPlans(false);
-      }
-    };
-
-    fetchPlans();
-  }, []);
-
-  const handleOpenModal = () => {
-    setOpenEdit(false);
-  };
-
-  const renderTutorCell = (accessor: any, row: any) => {
-    const column = invoiceColumns.find((col) => col.accessor === accessor);
-    const value = row[accessor];
-    if (column && column.cell) {
-      // Pass both value and row for cases where we need access to the full row data
-      return column.cell(value, row);
-    }
-    return <span>{value}</span>;
-  };
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        setIsUserLoading(true);
-        const response = await fetch(
-          `${apiUrl}/${users}/onboarding-data/${user?.id}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(
-            `Failed to create user: ${response.status} - ${errorText}`
-          );
-        }
-
-        const result = await response.json();
-        setUserData(result?.data);
-      } catch (err) {
-        console.error("Error creating user:", err);
-      } finally {
-        setIsUserLoading(false);
-      }
-    };
-
-    if (user) {
-      fetchUser();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    const getSubscriptionData = async () => {
-      const subscription = await getSubscriptionDetails(
-        userData?.organizations?.subscriptions[0].subscription_id
-      );
-      setSubscription(subscription);
-      setBillingCycle((subscription?.plan?.interval as "month") || "year");
-      if (subscription?.status === "canceled") {
-        setIsSubscriptionCanceled(true);
-        setSelectedPriceId("");
-      } else {
-        setIsSubscriptionCanceled(false);
-        setSelectedPriceId(subscription?.plan?.id || "");
-      }
-    };
-
-    if (userData && userData?.organizations?.subscriptions) {
-      getSubscriptionData();
-    }
-  }, [userData]);
-
-  const handleCancelPlan = async () => {
-    const shouldCancel = window.confirm(
-      "Are you sure you want to cancel your subscription?"
-    );
-
-    if (!shouldCancel) return;
-
+  const confirmCancelPlan = async () => {
     try {
       setIsCancelling(true);
       if (!userData?.organizations?.subscriptions?.[0]?.customer_id) {
@@ -320,9 +326,13 @@ export default function Billing() {
       }
 
       ShowToast("Subscription canceled successfully", "success");
-      router.push("/settings?page=2");
       setIsSubscriptionCanceled(true);
       setSelectedPriceId("");
+
+      // Refetch all data after successful cancellation
+      refetchAllData();
+
+      router.push("/settings?page=2");
     } catch (err) {
       console.error("Error canceling subscription:", err);
       const errorMessage =
@@ -330,7 +340,59 @@ export default function Billing() {
       ShowToast(`Failed to cancel subscription: ${errorMessage}`, "error");
     } finally {
       setIsCancelling(false);
+      setShowCancelModal(false);
     }
+  };
+
+  const handleOpenModal = () => {
+    setOpenEdit(false);
+    // Refetch data when modal closes (after successful payment)
+    refetchAllData();
+  };
+
+  // Initial data fetching
+  useEffect(() => {
+    if (user) {
+      fetchUser();
+    }
+  }, [user, fetchUser, refetchTrigger]); // Add refetchTrigger as dependency
+
+  useEffect(() => {
+    if (userData && userData?.organizations?.subscriptions) {
+      fetchCustomerInvoices(
+        userData.organizations.subscriptions[0].customer_id
+      );
+      getSubscriptionData();
+    }
+  }, [userData, fetchCustomerInvoices, getSubscriptionData, refetchTrigger]); // Add refetchTrigger as dependency
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        setIsFetchingPlans(true);
+        const res = await fetch("/api/stripe/plan");
+        const data = await res.json();
+        if (data && data.length > 0) {
+          setPlans(data);
+        }
+      } catch (error) {
+        console.error("Error fetching plans:", error);
+        ShowToast("Failed to fetch plans", "error");
+      } finally {
+        setIsFetchingPlans(false);
+      }
+    };
+
+    fetchPlans();
+  }, [refetchTrigger]); // Add refetchTrigger as dependency
+
+  const renderTutorCell = (accessor: any, row: any) => {
+    const column = invoiceColumns.find((col) => col.accessor === accessor);
+    const value = row[accessor];
+    if (column && column.cell) {
+      return column.cell(value, row);
+    }
+    return <span>{value}</span>;
   };
 
   const isInitialLoading = !isLoaded || (isLoaded && !user);
@@ -404,7 +466,7 @@ export default function Billing() {
                     <div
                       key={plan.id}
                       onClick={() => {
-                        if (!isCurrent) setSelectedPriceId(price.id);
+                        setSelectedPriceId(price.id);
                       }}
                       className={`w-full h-full p-6 rounded-[23px] flex flex-col justify-between border transition cursor-pointer relative
                         ${
@@ -520,16 +582,11 @@ export default function Billing() {
                             disabled={isLoading}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedPriceId(price.id);
-                              createPaymentIntent();
+                              createPaymentIntent(price.id);
                             }}
                           >
-                            {isSelected ? (
-                              isLoading ? (
-                                <Loader />
-                              ) : (
-                                <>Change Plan</>
-                              )
+                            {isLoading && selectedPriceId === price.id ? (
+                              <Loader />
                             ) : (
                               "Change Plan"
                             )}
@@ -545,14 +602,15 @@ export default function Billing() {
                               : "bg-transparent border border-white text-white w-full hover:bg-[#F9DB6F] hover:text-black"
                           }
                         `}
-                          disabled={isLoading}
+                          disabled={isLoading || isCancelling}
                           onClick={(e) => {
                             e.stopPropagation();
                             if (isCurrent) {
-                              handleCancelPlan();
+                              setShowCancelModal(true);
+                            } else {
+                              setSelectedPriceId(price.id);
+                              createPaymentIntent(price.id);
                             }
-                            setSelectedPriceId(price.id);
-                            createPaymentIntent();
                           }}
                         >
                           {isCurrent ? (
@@ -561,14 +619,8 @@ export default function Billing() {
                             ) : (
                               "Cancel Plan"
                             )
-                          ) : isSelected ? (
-                            isLoading ? (
-                              <Loader />
-                            ) : plan.name === "Premium" ? (
-                              `Upgrade to ${plan.name}`
-                            ) : (
-                              `Choose ${plan.name}`
-                            )
+                          ) : isLoading && selectedPriceId === price.id ? (
+                            <Loader />
                           ) : plan.name === "Premium" ? (
                             `Upgrade to ${plan.name}`
                           ) : (
@@ -613,6 +665,14 @@ export default function Billing() {
         setOpenEdit={setOpenEdit}
         openEdit={openEdit}
         clientSecret={clientSecret}
+      />
+      <CancelConfirmationModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={confirmCancelPlan}
+        title="Cancel Plan"
+        isLoading={isCancelling}
+        confirmText="Confirm"
       />
     </div>
   );

@@ -14,6 +14,7 @@ interface DeleteConfirmationModalProps {
   onConfirm?: (id: string) => void;
   title?: string;
   isLoading?: boolean;
+  confirmText?:string
 }
 
 export default function DeleteConfirmationModal({
@@ -21,6 +22,7 @@ export default function DeleteConfirmationModal({
   onClose,
   onConfirm,
   title,
+  confirmText,
   // message = "Do you want to delete the learning path?",
   isLoading = false,
 }: DeleteConfirmationModalProps) {
@@ -59,7 +61,7 @@ export default function DeleteConfirmationModal({
             disabled={isLoading}
             className="bg-[#f0d568] hover:bg-[#e0c558] text-black font-medium rounded-md py-2 h-[48px] w-[full] w-[210px] cursor-pointer"
           >
-            {isLoading ? <Loader /> : "Logout"}
+            {isLoading ? <Loader /> : confirmText? confirmText : "Logout"}
           </Button>
         </div>
       </DialogContent>

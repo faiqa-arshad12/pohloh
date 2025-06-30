@@ -34,23 +34,34 @@ export async function POST(req: Request) {
         // Use existing customer
         customer = existingCustomers.data[0].id
 
-        // Check if customer already has an active subscription for this price
+        // Check if customer already has any active or incomplete subscription
         const existingSubscriptions = await stripe.subscriptions.list({
           customer: customer,
-          price: priceId,
-          status: "active",
-        })
+          status: "all",
+          limit: 10,
+        });
 
-        if (existingSubscriptions.data.length > 0) {
-          // Customer already has an active subscription to this product
-          return NextResponse.json(
-            {
-              error: "You already have an active subscription to this product",
-              existingSubscription: existingSubscriptions.data[0].id,
-              isExistingSubscriber: true,
-            },
-            { status: 409 }, // Conflict status code
-          )
+        const activeOrIncomplete = existingSubscriptions.data.find(
+          s => s.status === "active" || s.status === "incomplete"
+        );
+
+        if (activeOrIncomplete) {
+          if (activeOrIncomplete.status === "incomplete") {
+            // Cancel the incomplete subscription before creating a new one
+            await stripe.subscriptions.cancel(activeOrIncomplete.id);
+            // Proceed to create a new subscription
+          } else {
+            // If active, block as before
+            return NextResponse.json(
+              {
+                error: "You already have an active subscription. Please update or cancel your existing subscription before creating a new one.",
+                existingSubscription: activeOrIncomplete.id,
+                isExistingSubscriber: true,
+                status: activeOrIncomplete.status,
+              },
+              { status: 409 }
+            );
+          }
         }
       } else {
         // Create new customer if none exists

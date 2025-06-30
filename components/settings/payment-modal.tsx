@@ -19,7 +19,7 @@ const PaymentModal = ({
 }) => {
   return (
     <Dialog open={openEdit} onOpenChange={handleOpenModal}>
-      <DialogContent className="overflow-y-auto w-full max-w-[864px] h-auto bg-[#222222] text-white border-none bg-[#0E0F11]">
+      <DialogContent className="overflow-y-auto w-full max-w-[864px] h-auto bg-[#222222] text-white border-none bg-[#0E0F11] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="text-[32px]">Payment Method</DialogTitle>
         </DialogHeader>

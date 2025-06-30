@@ -150,6 +150,7 @@ function StripePaymentForm({setOpen, clientSecret}: PaymentFormProps) {
               applePay: "never",
               googlePay: "never",
             },
+            paymentMethodOrder: ["card"],
           }}
         />
       </div>
@@ -170,7 +171,7 @@ function StripePaymentForm({setOpen, clientSecret}: PaymentFormProps) {
       <button
         type="submit"
         disabled={!stripe || loading}
-        className={`w-full py-3 px-4 rounded-lg font-medium ${
+        className={`w-full py-3 px-4 rounded-lg font-medium cursor-pointer ${
           loading
             ? "bg-[#F9DB6F] cursor-not-allowed"
             : "bg-[#F9DB6F] hover:bg-[#F9DB6F]"
@@ -211,10 +212,7 @@ export default function PaymentPage({clientSecret, setOpen}: PaymentPageProps) {
         appearance: STRIPE_THEME,
         clientSecret,
         loader: "always",
-
       }}
-
-
     >
       <StripePaymentForm clientSecret={clientSecret} setOpen={setOpen} />
     </Elements>
