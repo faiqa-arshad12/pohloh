@@ -28,7 +28,6 @@ export async function getUnreadCount(userId: string): Promise<number> {
       throw new Error("Failed to fetch unread count");
     }
     const {data} = await response.json();
-    console.log(data, "ppppp");
     return data.count || 0;
   } catch (error) {
     console.error("Error fetching unread count:", error);

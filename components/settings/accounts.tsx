@@ -103,10 +103,7 @@ export default function Account() {
       weeklyCards !== initialState.weeklyCards ||
       JSON.stringify(workDays) !== JSON.stringify(initialState.workDays);
 
-    // Temporary debugging - you can remove this
-    console.log("Current values:", {dailyQuestions, weeklyCards, workDays});
-    console.log("Initial values:", initialState);
-    console.log("Has changes:", changes);
+   
 
     return changes;
   };

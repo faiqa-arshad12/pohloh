@@ -94,7 +94,6 @@ export function AnnouncementCard({userData}: AnnouncementCardProps) {
       fetchAnnouncements();
     }
   }, [userData]);
-  console.log(announcements, "alsklskdk");
   const isFirstAnnouncement = currentIndex === 0;
   const isLastAnnouncement = currentIndex === announcements.length - 1;
 

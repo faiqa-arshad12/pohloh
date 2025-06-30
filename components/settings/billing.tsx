@@ -1,4 +1,5 @@
 "use client";
+
 import {useEffect, useState} from "react";
 import {Download} from "lucide-react";
 import Image from "next/image";
@@ -14,7 +15,7 @@ import {PlansSkeleton} from "../shared/plans-skeleton";
 import {SubscriptionSkeleton} from "../shared/subscription-skeleton";
 import InvoicesSkeleton from "../shared/invoices-skeleton";
 import PaymentModal from "./payment-modal";
-import {Plan} from "@/types/billings.types";
+import type {Plan} from "@/types/billings.types";
 
 const handleDownloadInvoice = (invoiceUrl: string) => {
   if (!invoiceUrl) {
@@ -28,7 +29,22 @@ const handleDownloadInvoice = (invoiceUrl: string) => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  ShowToast("Invoice downloaing...", "success");
+  ShowToast("Invoice downloading...", "success");
+};
+
+const getPlanTypeFromInvoice = (invoice: any) => {
+  if (invoice.lines && invoice.lines.data && invoice.lines.data.length > 0) {
+    const lineItem = invoice.lines.data[0];
+
+    if (lineItem.description) {
+      const match = lineItem.description.match(/×\s*(\w+)\s*\(/);
+      if (match) {
+        return match[1];
+      }
+    }
+  }
+
+  return "Unknown";
 };
 
 const invoiceColumns = [
@@ -38,7 +54,6 @@ const invoiceColumns = [
     cell: (value: any) => (
       <span className="flex items-center gap-2">
         <Icon icon="ph:files-bold" width="24" height="24" color="white" />
-
         {`Inv ${value.substring(0, 8)}`}
       </span>
     ),
@@ -56,10 +71,17 @@ const invoiceColumns = [
     },
   },
   {
+    Header: "Plan",
+    accessor: "planType",
+    cell: (value: any, row: any) => {
+      const planType = getPlanTypeFromInvoice(row);
+      return <p>{planType} Plan</p>;
+    },
+  },
+  {
     Header: "Amount",
     accessor: "amount_paid",
     cell: (value: any) => {
-      // Format as currency
       return new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
@@ -84,16 +106,12 @@ const invoiceColumns = [
 ];
 
 export default function Billing() {
-  // const searchParams = useSearchParams();
-  // const page = searchParams.get("page");
-
   const [billingCycle, setBillingCycle] = useState<"month" | "year">("month");
   const [selectedPriceId, setSelectedPriceId] = useState<string>("");
   const [clientSecret, setClientSecret] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [fetchingPlans, setIsFetchingPlans] = useState<boolean>(false);
   const router = useRouter();
-
   const [openEdit, setOpenEdit] = useState<boolean>(false);
   const [userData, setUserData] = useState<any>();
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -139,9 +157,11 @@ export default function Billing() {
           }),
         });
       }
+
       if (!response.ok) throw new Error("Failed to create payment intent");
 
       const data = await response.json();
+
       if (!data.clientSecret) {
         ShowToast("Subscription has been updated successfully!");
       } else {
@@ -162,12 +182,11 @@ export default function Billing() {
         const response = await fetch(
           `/api/stripe/invoices?customerId=${customerId}`
         );
-
         if (!response.ok) {
           throw new Error("Failed to fetch invoices");
         }
-
         const data = await response.json();
+        console.log(data, "data");
         setInvoices(data);
       } catch (error) {
         console.error("Error fetching invoices:", error);
@@ -176,6 +195,7 @@ export default function Billing() {
         setIsInvoiceLoading(false);
       }
     }
+
     if (userData && userData?.organizations?.subscriptions)
       fetchCustomerInvoices(
         userData.organizations.subscriptions[0].customer_id
@@ -188,7 +208,6 @@ export default function Billing() {
         setIsFetchingPlans(true);
         const res = await fetch("/api/stripe/plan");
         const data = await res.json();
-
         if (data && data.length > 0) {
           setPlans(data);
         }
@@ -210,11 +229,10 @@ export default function Billing() {
   const renderTutorCell = (accessor: any, row: any) => {
     const column = invoiceColumns.find((col) => col.accessor === accessor);
     const value = row[accessor];
-
     if (column && column.cell) {
-      return column.cell(value);
+      // Pass both value and row for cases where we need access to the full row data
+      return column.cell(value, row);
     }
-
     return <span>{value}</span>;
   };
 
@@ -278,7 +296,9 @@ export default function Billing() {
     const shouldCancel = window.confirm(
       "Are you sure you want to cancel your subscription?"
     );
+
     if (!shouldCancel) return;
+
     try {
       setIsCancelling(true);
       if (!userData?.organizations?.subscriptions?.[0]?.customer_id) {
@@ -287,7 +307,6 @@ export default function Billing() {
       }
 
       const customerId = userData.organizations.subscriptions[0].customer_id;
-
       const response = await fetch(`api/stripe/cancel-subscription`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -295,7 +314,6 @@ export default function Billing() {
       });
 
       const data = await response.json();
-
       if (!response.ok) {
         const errorMessage = data.message || response.statusText;
         throw new Error(`Failed to cancel subscription: ${errorMessage}`);
@@ -342,10 +360,7 @@ export default function Billing() {
   return (
     <div className="bg-[#191919] rounded-[30px] w-full text-white p-4 md:p-6 mx-auto">
       <div className="mb-6 text-white font-sans">
-        <div
-          className={`flex flex-col md:flex-row gap-5 mt-2 justify-center
-          `}
-        >
+        <div className={`flex flex-col md:flex-row gap-5 mt-2 justify-center`}>
           {fetchingPlans ? (
             <PlansSkeleton isCanceled={isSubscriptionCanceled} />
           ) : (
@@ -375,11 +390,13 @@ export default function Billing() {
                     (p) => p.interval === billingCycle
                   );
                   if (!price) return null;
+
                   // Determine if this is the current plan
                   const isCurrent =
                     subscription?.plan?.id === price.id &&
                     userData?.organizations?.subscriptions[0]?.is_subscribed &&
                     !isSubscriptionCanceled;
+
                   // Determine if this is the selected plan (but not current)
                   const isSelected = selectedPriceId === price.id && !isCurrent;
 
@@ -437,6 +454,7 @@ export default function Billing() {
                         <p className="text-[#707070] font-urbanist text-[14px] mb-4">
                           {plan.description || "Perfect plan to check"}
                         </p>
+
                         {/* Show current plan info only on current plan */}
                         {isCurrent && (
                           <div className="flex flex-row justify-between py-4">
@@ -473,16 +491,11 @@ export default function Billing() {
                             .find((p) => p.tier === plan.name)
                             ?.features.map((feature) => (
                               <div className="flex items-center" key={feature}>
-                                {/* <Check
-                                  size={16}
-                                  className="text-[#F9DB6F] mr-2"
-                                /> */}
                                 <img
                                   src="/billing-check.png"
                                   className="mr-2"
                                   alt="billing"
                                 />
-
                                 <span className="font-urbanist font-normal text-[14.13px] text-[#707070]">
                                   {feature}
                                 </span>
@@ -490,8 +503,8 @@ export default function Billing() {
                             ))}
                         </div>
                       </div>
+
                       <div className="flex flex-row justify-between gap-7">
-                        {" "}
                         {/* Button logic */}
                         {isCurrent && (
                           <button
@@ -503,14 +516,8 @@ export default function Billing() {
                                  ? "bg-[#F9DB6F] text-black border-none"
                                  : "bg-transparent border border-white text-white w-full hover:bg-[#F9DB6F] hover:text-black"
                              }
-
                            `}
-                            disabled={
-                              isLoading
-                              // ||
-                              // isCurrent ||
-                              // (isSubscriptionCanceled && !isCurrent)
-                            }
+                            disabled={isLoading}
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedPriceId(price.id);
@@ -537,23 +544,15 @@ export default function Billing() {
                               ? "bg-[#F9DB6F] text-black border-none w-full"
                               : "bg-transparent border border-white text-white w-full hover:bg-[#F9DB6F] hover:text-black"
                           }
-
                         `}
-                          disabled={
-                            isLoading
-                            // ||
-                            // isCurrent ||
-                            // (isSubscriptionCanceled && !isCurrent)
-                          }
+                          disabled={isLoading}
                           onClick={(e) => {
                             e.stopPropagation();
                             if (isCurrent) {
                               handleCancelPlan();
                             }
-                            // if (!isCurrent && !isSubscriptionCanceled) {
                             setSelectedPriceId(price.id);
                             createPaymentIntent();
-                            // }
                           }}
                         >
                           {isCurrent ? (
@@ -593,7 +592,6 @@ export default function Billing() {
           <div className="flex justify-between mb-4 flex-wrap">
             <h3 className="text-[24px] font-urbanist">Invoices</h3>
           </div>
-
           <div className="mt-4 overflow-x-auto ">
             <Table
               columns={invoiceColumns}

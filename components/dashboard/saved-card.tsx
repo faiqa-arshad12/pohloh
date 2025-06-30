@@ -75,9 +75,7 @@ export function SavedCards({cards}: SavedCardsProp) {
       return () => clearTimeout(timer);
     }
   }, [currentIndex, isTransitioning, savedCards]);
-  console.log(savedCards, "cards");
 
-  // Handle case when there are no saved cards
   if (savedCards.length === 0 || !displayedCard) {
     return (
       <div
