@@ -1,107 +1,20 @@
 "use client";
 import {useEffect, useState} from "react";
-import {Check, Download, FileText} from "lucide-react";
+import {Download} from "lucide-react";
 import Image from "next/image";
 import Table from "../ui/table";
 import {useRouter} from "next/navigation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {ShowToast} from "@/components/shared/show-toast";
 import {useUser} from "@clerk/nextjs";
 import Loader from "../shared/loader";
 import {apiUrl, users, planFeatures} from "@/utils/constant";
 import {getSubscriptionDetails} from "@/actions/subscription.action";
-import PaymentPage from "./payment";
-import {Skeleton} from "@/components/ui/skeleton";
 import {Icon} from "@iconify/react/dist/iconify.js";
-
-// Skeleton components for loading states
-const SubscriptionSkeleton = () => (
-  <div className="w-full lg:w-1/3 flex flex-col justify-between p-4 rounded-lg animate-pulse">
-    <div className="gap-5 mt-20">
-      <Skeleton className="h-8 w-3/4  mb-4" />
-      <Skeleton className="h-6 w-1/2  mb-2" />
-      <Skeleton className="h-8 w-2/3  mb-4" />
-      <div className="flex flex-row items-center mt-5">
-        <Skeleton className="h-8 w-32  mr-2" />
-        <Skeleton className="h-8 w-8 " />
-      </div>
-    </div>
-    <div className="my-15">
-      <Skeleton className="h-10 w-full  mt-8" />
-    </div>
-  </div>
-);
-
-const PlansSkeleton = ({isCanceled = false}) => (
-  <div className="w-full lg:w-2/3 flex flex-col p-6 rounded-2xl animate-pulse">
-    <div className="flex justify-center w-full">
-      <Skeleton className="h-16 w-full max-w-md  mb-6 rounded-2xl" />
-    </div>
-    <div className="w-full flex gap-6 mt-6">
-      {[1, 2].map((i) => (
-        <div
-          key={i}
-          className={`w-full h-full p-4 rounded-[23px] flex flex-col justify-between bg-[#FFFFFF0A] ${
-            isCanceled ? "opacity-80" : ""
-          }`}
-        >
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <Skeleton className="w-[78.81px] h-[78.81px] rounded-full " />
-              <div className="text-right">
-                <Skeleton className="h-12 w-24 " />
-              </div>
-            </div>
-            <Skeleton className="h-6 w-1/2  mb-2" />
-            <Skeleton className="h-4 w-3/4  mb-4" />
-            <Skeleton className="h-px w-full bg-gray-600 mb-5" />
-            <div className="space-y-5">
-              {[1, 2, 3, 4].map((j) => (
-                <div className="flex items-center" key={j}>
-                  <Skeleton className="w-4 h-4 rounded-full  mr-2" />
-                  <Skeleton className="h-4 w-3/4 " />
-                </div>
-              ))}
-            </div>
-          </div>
-          <Skeleton
-            className={`h-[56.51px] w-full  mt-5 rounded-[9.42px] ${
-              isCanceled ? "/30" : ""
-            }`}
-          />
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-const InvoicesSkeleton = () => (
-  <div className="animate-pulse">
-    <div className="flex justify-between mb-4 flex-wrap">
-      <Skeleton className="h-8 w-32 " />
-    </div>
-    <div className="mt-4">
-      <Skeleton className="h-12 w-full  mb-2 rounded" />
-      <div className="space-y-4">
-        {Array.from({length: 5}).map((_, i) => {
-          const widthPercent = 100 - i * 10; // 100%, 90%, 80%, ...
-          return (
-            <Skeleton
-              key={i}
-              className={`h-[28px]`}
-              style={{width: `${widthPercent}%`}}
-            />
-          );
-        })}
-      </div>
-    </div>
-  </div>
-);
+import {PlansSkeleton} from "../shared/plans-skeleton";
+import {SubscriptionSkeleton} from "../shared/subscription-skeleton";
+import InvoicesSkeleton from "../shared/invoices-skeleton";
+import PaymentModal from "./payment-modal";
+import {Plan} from "@/types/billings.types";
 
 const handleDownloadInvoice = (invoiceUrl: string) => {
   if (!invoiceUrl) {
@@ -118,7 +31,7 @@ const handleDownloadInvoice = (invoiceUrl: string) => {
   ShowToast("Invoice downloaing...", "success");
 };
 
-const tutorColumns = [
+const invoiceColumns = [
   {
     Header: "Invoice",
     accessor: "id",
@@ -169,20 +82,6 @@ const tutorColumns = [
     ),
   },
 ];
-
-type Price = {
-  id: string;
-  interval: "month" | "year";
-  amount: number;
-  currency: string;
-};
-
-type Plan = {
-  id: string;
-  name: string;
-  description: string | null;
-  prices: Price[];
-};
 
 export default function Billing() {
   // const searchParams = useSearchParams();
@@ -309,7 +208,7 @@ export default function Billing() {
   };
 
   const renderTutorCell = (accessor: any, row: any) => {
-    const column = tutorColumns.find((col) => col.accessor === accessor);
+    const column = invoiceColumns.find((col) => col.accessor === accessor);
     const value = row[accessor];
 
     if (column && column.cell) {
@@ -330,7 +229,6 @@ export default function Billing() {
             headers: {
               "Content-Type": "application/json",
             },
-            // credentials: "include",
           }
         );
 
@@ -417,7 +315,6 @@ export default function Billing() {
     }
   };
 
-  // Check if we're in a global loading state
   const isInitialLoading = !isLoaded || (isLoaded && !user);
 
   if (isInitialLoading) {
@@ -444,78 +341,15 @@ export default function Billing() {
 
   return (
     <div className="bg-[#191919] rounded-[30px] w-full text-white p-4 md:p-6 mx-auto">
-      {/* Header */}
       <div className="mb-6 text-white font-sans">
         <div
-          // className={`flex flex-col md:flex-row gap-5 mt-2 ${
-          //   !userData?.organizations?.subscriptions[0]?.is_subscribed ||
-          //   isSubscriptionCanceled
-          //     ? "justify-center"
-          //     : "justify-between"
-          // }`}
           className={`flex flex-col md:flex-row gap-5 mt-2 justify-center
           `}
         >
-          {/* {userLoading
-            ? !isSubscriptionCanceled && <SubscriptionSkeleton />
-            : userData?.organizations?.subscriptions[0]?.is_subscribed &&
-              !isSubscriptionCanceled && (
-                <div className="w-full lg:w-1/3 flex flex-col justify-between p-4 rounded-lg">
-                  <div className="gap-5 mt-20">
-                    <h2 className="text-[#F9DB6F] font-urbanist font-semibold text-[30px] leading-[24px] tracking-[0]">
-                      Pohloh {subscription?.plan?.name} Plan
-                    </h2>
-                    <div className="flex flex-row justify-between">
-                      <>
-                        <p className="font-urbanist font-medium text-[24px] leading-[24px] tracking-[0] mt-5">
-                          Next Bill Date
-                        </p>
-                        <p className="text-[#F9DB6F] font-urbanist font-semibold text-[30px] leading-[24px] tracking-[0] mt-2">
-                          {subscription?.nextBillingDate
-                            ? new Date(
-                                subscription.nextBillingDate * 1000
-                              ).toDateString()
-                            : "N/A"}
-                        </p>
-                      </>
-                      <div className="flex flex-row items-center mt-5">
-                        <p className="text-white font-urbanist font-semibold text-[30px] leading-[24px] tracking-[0]">
-                          Total Seat:
-                        </p>
-                        <p className="ml-1 text-white font-urbanist font-semibold text-[30px] leading-[24px] tracking-[0]">
-                          {subscription?.plan?.subscription?.quantity}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-row items-center mt-5">
-                      <p className="text-white font-urbanist font-semibold text-[30px] leading-[24px] tracking-[0]">
-                        Total Seat:
-                      </p>
-                      <p className="ml-1 text-white font-urbanist font-semibold text-[30px] leading-[24px] tracking-[0]">
-                        {subscription?.plan?.subscription?.quantity}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="my-15">
-                    {!isSubscriptionCanceled && (
-                      <button
-                        className="bg-transparent text-white border border-white rounded-[8px] py-2 px-4 font-medium w-full cursor-pointer text-center items-center justify-center flex"
-                        onClick={handleCancelPlan}
-                      >
-                        {isCancelling ? <Loader /> : "Cancel Plan"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )} */}
-
           {fetchingPlans ? (
             <PlansSkeleton isCanceled={isSubscriptionCanceled} />
           ) : (
             <div className="w-full lg:w-2/3 flex flex-col justify-center p-6 rounded-2xl">
-              {/* Billing Toggle */}
               <div className="flex justify-center w-full">
                 <div className="bg-[#FFFFFF14] bg-opacity-10 rounded-2xl p-2 flex items-center justify-center gap-2 w-full max-w-md">
                   {["year", "month"].map((type) => (
@@ -567,17 +401,6 @@ export default function Billing() {
                       `}
                       style={{minHeight: 420}}
                     >
-                      {/* Badge for Current/Selected */}
-                      {/* {isCurrent && (
-                        <span className="absolute top-4 right-4 bg-[#F9DB6F] text-black font-urbanist font-bold text-[15px] px-4 py-1 rounded-full z-10 shadow">
-                          Current
-                        </span>
-                      )}
-                      {isSelected && !isCurrent && (
-                        <span className="absolute top-4 right-4 bg-[#232323] text-[#F9DB6F] font-urbanist font-bold text-[15px] px-4 py-1 rounded-full z-10 border border-[#F9DB6F] shadow">
-                          Selected
-                        </span>
-                      )} */}
                       <div>
                         <div className="flex justify-between items-center mb-4">
                           <div className="w-[78.81px] h-[78.81px] flex items-center justify-center">
@@ -763,7 +586,6 @@ export default function Billing() {
         </div>
       </div>
 
-      {/**Invoices */}
       {invoiceLoading || userLoading ? (
         <InvoicesSkeleton />
       ) : (
@@ -774,7 +596,7 @@ export default function Billing() {
 
           <div className="mt-4 overflow-x-auto ">
             <Table
-              columns={tutorColumns}
+              columns={invoiceColumns}
               data={invoices}
               renderCell={renderTutorCell}
               tableClassName="w-full text-sm cursor-pointer"
@@ -788,19 +610,12 @@ export default function Billing() {
         </div>
       )}
 
-      <Dialog open={openEdit} onOpenChange={handleOpenModal}>
-        <DialogContent className="overflow-y-auto w-full max-w-[864px] h-auto bg-[#222222] text-white border-none bg-[#0E0F11]">
-          <DialogHeader>
-            <DialogTitle className="text-[32px]">Payment Method</DialogTitle>
-          </DialogHeader>
-          <div className="w-full">
-            <PaymentPage
-              clientSecret={clientSecret || ""}
-              setOpen={setOpenEdit}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <PaymentModal
+        handleOpenModal={handleOpenModal}
+        setOpenEdit={setOpenEdit}
+        openEdit={openEdit}
+        clientSecret={clientSecret}
+      />
     </div>
   );
 }

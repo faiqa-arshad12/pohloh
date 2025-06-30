@@ -205,7 +205,10 @@ export function AnnouncementCard({userData}: AnnouncementCardProps) {
             />
           </div>
 
-          <h3 className="text-white font-normal text-[20px] mt-2">
+          <h3
+            className="text-white font-normal text-[20px] mt-2 line-clamp-1"
+            title={displayedAnnouncement.title}
+          >
             {displayedAnnouncement.title}
           </h3>
           <p className="text-[#6F767E] text-[12px] line-clamp-4 h-20">
@@ -225,8 +228,11 @@ export function AnnouncementCard({userData}: AnnouncementCardProps) {
           </Button>
           <div className="inline-flex items-center gap-2 bg-[black] rounded-full py-2 px-4">
             <div className="relative h-8 w-8 overflow-hidden rounded-full">
-              <Image
-                src="/placeholder-profile.svg" // Default profile picture
+              <img
+                src={`${
+                  displayedAnnouncement?.user_id.profile_picture ||
+                  "/placeholder-profile.svg"
+                } `} // Default profile picture
                 alt="Announcement author"
                 width={30}
                 height={30}
