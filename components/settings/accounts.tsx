@@ -1,5 +1,7 @@
 "use client";
+
 import {useEffect, useState} from "react";
+
 import {
   LogOut,
   Ellipsis,
@@ -7,28 +9,56 @@ import {
   MessageSquareWarning,
   Check,
 } from "lucide-react";
+
 import EditProfileModal from "./Account/edit-Profile";
+
 import {Button} from "../ui/button";
+
 import Feedback from "./feedback";
+
 import Table from "../ui/table";
+
 import {useClerk, useUser} from "@clerk/nextjs";
+
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+
 import Billing from "./billing";
+
 // import Apps from "./Apps";
+
 import EditLeadModal from "./Account/edit-lead";
+
 import Image from "next/image";
+
 import {InviteUserModal} from "./Account/Invite-User";
+
 import {EditUserModal} from "./Account/edit-User";
+
 import {useRole} from "../ui/Context/UserContext";
+
 import {apiUrl, User_columns} from "@/utils/constant";
+
 import {ShowToast} from "../shared/show-toast";
+
 import Loader from "../shared/loader";
-import {defaultWorkDays, Weekday, WorkDaysState, User} from "@/types/types";
+
+import {
+  defaultWorkDays,
+  type Weekday,
+  type WorkDaysState,
+  type User,
+} from "@/types/types";
+
 import {DeleteUserModal} from "./Account/delete-user";
+
 import {useRouter, useSearchParams} from "next/navigation";
+
 import {getSubscriptionDetails} from "@/actions/subscription.action";
+
 import {OrganizationalDetail} from "./Account/organizational-detail";
+
 import {Icon} from "@iconify/react";
+
 import LogoutPopup from "../shared/logout-popup";
 
 export default function Account() {
@@ -44,18 +74,42 @@ export default function Account() {
   const [openEditlead, setOpenEditlead] = useState(false);
   const [steps, setStep] = useState<number>();
   const [userDetails, setUserDetails] = useState<any | null>(null);
-
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [isInviteLoading, setIsInviteLoading] = useState(false);
   const [isLoadeding, setIsLoading] = useState(false);
   const [userDataLoading, setUserDataLoading] = useState(true);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const router = useRouter();
-
   const [selectedRow, setSelectedRow] = useState<any>();
   const [users, setUsers] = useState<any>([]);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const [isLogoutLoading, setIsLogoutLoading] = useState(false);
+
+  const [dailyQuestions, setDailyQuestions] = useState<string>("0");
+  const [weeklyCards, setWeeklyCards] = useState<string>("0");
+  const [workDays, setWorkDays] = useState<WorkDaysState>(defaultWorkDays);
+
+  // Initial state tracking for changes detection
+  const [initialState, setInitialState] = useState({
+    dailyQuestions: "0",
+    weeklyCards: "0",
+    workDays: defaultWorkDays,
+  });
+
+  // Check if any changes have been made
+  const hasChanges = () => {
+    const changes =
+      dailyQuestions !== initialState.dailyQuestions ||
+      weeklyCards !== initialState.weeklyCards ||
+      JSON.stringify(workDays) !== JSON.stringify(initialState.workDays);
+
+    // Temporary debugging - you can remove this
+    console.log("Current values:", {dailyQuestions, weeklyCards, workDays});
+    console.log("Initial values:", initialState);
+    console.log("Has changes:", changes);
+
+    return changes;
+  };
 
   const handleLogout = async () => {
     setIsLogoutLoading(true);
@@ -75,7 +129,6 @@ export default function Account() {
         const subscription: any = await getSubscriptionDetails(
           userDetails?.organizations?.subscriptions[0].subscription_id
         );
-
         const response = await fetch(
           `${apiUrl}/users/count/${userDetails?.organizations?.id}`,
           {
@@ -95,7 +148,9 @@ export default function Account() {
         }
 
         const result = await response.json();
+
         console.log(subscription, "subscription");
+
         if (subscription?.plan?.subscription?.status !== "active") {
           ShowToast("Upgrade your subscription to invite users", "error");
           return;
@@ -126,13 +181,10 @@ export default function Account() {
     }
   };
 
-  const [dailyQuestions, setDailyQuestions] = useState<string>("0");
-  const [weeklyCards, setWeeklyCards] = useState<string>("0");
-  const [workDays, setWorkDays] = useState<WorkDaysState>(defaultWorkDays);
-
   const handleSaveChange = async () => {
     try {
       setIsLoading(true);
+
       if (!user) {
         console.error("User not found");
         return;
@@ -162,6 +214,13 @@ export default function Account() {
       }
 
       ShowToast("Profile updated successfully");
+
+      // Update initial state after successful save
+      setInitialState({
+        dailyQuestions: dailyQuestions,
+        weeklyCards: weeklyCards,
+        workDays: {...workDays},
+      });
     } catch (error) {
       ShowToast("Failed to update profile", "error");
       console.error("Error updating profile:", error);
@@ -169,6 +228,7 @@ export default function Account() {
       setIsLoading(false);
     }
   };
+
   const fetchUserDetails = async () => {
     try {
       const res = await fetch(`${apiUrl}/users/${user?.id}`, {
@@ -184,29 +244,52 @@ export default function Account() {
 
       const data = await res.json();
       setUserDetails(data.user);
-      setWeeklyCards(data.user?.num_of_card?.toString() || "0");
-      setDailyQuestions(data.user?.num_of_questions?.toString() || "0");
-      setProfileImage(data.user?.organizations.org_picture);
-      // setDepa(data.user?.organizations.num_of_seat||'')
 
-      if (data?.week_days && Array.isArray(data.week_days)) {
-        const updatedWorkDays = {...defaultWorkDays};
-        data.user?.week_days.forEach((day: any) => {
+      // Use consistent default values - match what the user expects
+      const weeklyCardsValue = data.user?.num_of_card?.toString() || "5";
+      const dailyQuestionsValue =
+        data.user?.num_of_questions?.toString() || "5";
+
+      setWeeklyCards(weeklyCardsValue);
+      setDailyQuestions(dailyQuestionsValue);
+      setProfileImage(data.user?.organizations.org_picture);
+
+      const updatedWorkDays = {...defaultWorkDays};
+      if (data.user?.week_days && Array.isArray(data.user.week_days)) {
+        data.user.week_days.forEach((day: any) => {
           if (day in updatedWorkDays) {
             updatedWorkDays[day as keyof WorkDaysState] = true;
           }
         });
-        setWorkDays(updatedWorkDays);
-      } else {
-        setWorkDays(defaultWorkDays);
       }
+      setWorkDays(updatedWorkDays);
+
+      // Set initial state for change tracking - only once here
+      setInitialState({
+        dailyQuestions: dailyQuestionsValue,
+        weeklyCards: weeklyCardsValue,
+        workDays: updatedWorkDays,
+      });
     } catch (error) {
       console.error("Failed to fetch user details:", error);
-      setWeeklyCards("0");
-      setDailyQuestions("0");
-      setWorkDays(defaultWorkDays);
+      // Set fallback values
+      const fallbackWeeklyCards = "5";
+      const fallbackDailyQuestions = "5";
+      const fallbackWorkDays = defaultWorkDays;
+
+      setWeeklyCards(fallbackWeeklyCards);
+      setDailyQuestions(fallbackDailyQuestions);
+      setWorkDays(fallbackWorkDays);
+
+      // Set initial state even for fallback values
+      setInitialState({
+        dailyQuestions: fallbackDailyQuestions,
+        weeklyCards: fallbackWeeklyCards,
+        workDays: fallbackWorkDays,
+      });
     }
   };
+
   useEffect(() => {
     if (user?.id) {
       fetchUserDetails();
@@ -215,7 +298,7 @@ export default function Account() {
 
   useEffect(() => {
     if (page) {
-      setStep(parseInt(page));
+      setStep(Number.parseInt(page));
     } else {
       setStep(1);
     }
@@ -233,7 +316,6 @@ export default function Account() {
               <Ellipsis className="h-5 w-5 text-white" />
             </button>
           </DropdownMenu.Trigger>
-
           <DropdownMenu.Content
             side="bottom"
             align="end"
@@ -256,10 +338,8 @@ export default function Account() {
             >
               {/* <Pencil className="h-4 w-4" /> */}
               <Icon icon="iconamoon:edit-light" width="24" height="24" />
-
               <span>Edit</span>
             </DropdownMenu.Item>
-
             <DropdownMenu.Item
               className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer"
               style={{borderRadius: "4px"}}
@@ -282,13 +362,14 @@ export default function Account() {
       </div>
     );
   };
+
   const handleCheckboxChange = (day: Weekday) => {
     setWorkDays((prev) => ({...prev, [day]: !prev[day]}));
   };
+
   const fetchUsers = async () => {
     try {
       setUserDataLoading(true);
-
       const response = await fetch(
         `${apiUrl}/users/organizations/${userDetails?.organizations?.id}`,
         {
@@ -314,10 +395,10 @@ export default function Account() {
       setUserDataLoading(false);
     }
   };
+
   const fetchUsersByTeam = async () => {
     try {
       setUserDataLoading(true);
-
       const response = await fetch(
         `${apiUrl}/users/organizations/teams/${userDetails.team_id}?orgId=${userDetails.org_id}`,
         {
@@ -344,6 +425,7 @@ export default function Account() {
       setUserDataLoading(false);
     }
   };
+
   useEffect(() => {
     if (userDetails && userDetails?.role === "owner") fetchUsers();
     else if (userDetails && userDetails.role === "admin") fetchUsersByTeam();
@@ -354,42 +436,6 @@ export default function Account() {
       return prev ? prev[curr] : null;
     }, obj);
   };
-  const fetchUserData = async () => {
-    try {
-      const res = await fetch(`${apiUrl}/users/${user?.id}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        // credentials: "include",
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch user details");
-      }
-
-      const data = await res.json();
-      setWeeklyCards(data.user?.num_of_card?.toString() || "5");
-      setDailyQuestions(data.user?.num_of_questions?.toString() || "3");
-
-      if (data.user?.week_days && Array.isArray(data.user.week_days)) {
-        const updatedWorkDays = {...defaultWorkDays};
-        data.user.week_days.forEach((day: string) => {
-          if (day in updatedWorkDays) {
-            updatedWorkDays[day as Weekday] = true;
-          }
-        });
-        setWorkDays(updatedWorkDays);
-      }
-    } catch (error) {
-      console.error("Failed to fetch user data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  useEffect(() => {
-    if (user?.id) fetchUserData();
-  }, [user?.id, isLoaded]);
 
   return (
     <div className="min-h-screen  text-white py-5 ">
@@ -404,7 +450,6 @@ export default function Account() {
             <div className="font-urbanist font-medium text-[32px] leading-[100%] tracking-[0%] p-4 pb-6 pt-0">
               Settings
             </div>
-
             <Button
               onClick={() => setStep(1)}
               className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm cursor-pointer ${
@@ -428,13 +473,11 @@ export default function Account() {
                 }`}
               >
                 <Icon icon="octicon:credit-card-24" width="24" height="24" />
-
                 <span className="text-[20px] text-normal font-urbanist">
                   Billing
                 </span>
               </Button>
             )}
-
             <Button
               onClick={() => setStep(4)}
               className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm  cursor-pointer ${
@@ -444,12 +487,10 @@ export default function Account() {
               }`}
             >
               <MessageSquareWarning className="w-10 h-10" />
-
               <span className="text-[20px] text-normal font-urbanist">
                 Feedback
               </span>
             </Button>
-
             <Button
               onClick={() => setLogoutModalOpen(true)}
               className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm cursor-pointer  cursor-pointer ${
@@ -556,7 +597,6 @@ export default function Account() {
                             {isInviteLoading ? <Loader /> : "Invite User"}
                           </button>
                         </div>
-
                         <div className="overflow-x-auto">
                           <Table
                             columns={User_columns.slice(0, -1)}
@@ -590,8 +630,10 @@ export default function Account() {
 
                               if (value === null || value === undefined)
                                 return "";
+
                               if (typeof value === "object")
                                 return JSON.stringify(value);
+
                               return value;
                             }}
                           />
@@ -605,7 +647,6 @@ export default function Account() {
                       <p className="text-sm text-[#CDCDCD] mb-5 mt-2">
                         Customize tutor/card settings
                       </p>
-
                       <div className="space-y-6">
                         {/* Work Days */}
                         <div className="bg-[#FFFFFF0A] p-5 rounded-[20px]">
@@ -632,12 +673,10 @@ export default function Account() {
                                     }
                                     className="peer h-full w-full appearance-none border border-[#F9E36C] bg-transparent cursor-pointer"
                                   />
-
                                   {checked && (
                                     <Check className="absolute top-0 left-0 h-full w-full text-[#F9E36C] p-[6px] pointer-events-none cursor-pointer" />
                                   )}
                                 </div>
-
                                 <label
                                   htmlFor={day}
                                   className="inline-flex items-center justify-center w-9 h-9 rounded-md"
@@ -657,14 +696,13 @@ export default function Account() {
                             Select the number of tutor questions to be asked
                             daily:
                           </label>
-
                           <select
                             value={dailyQuestions}
                             onChange={(e) => setDailyQuestions(e.target.value)}
                             className="w-full max-w-xs bg-[#FFFFFF14] text-white rounded-md px-3 py-3 text-sm border-none appearance-none bg-no-repeat bg-[right_12px_center] focus:outline-none cursor-pointer"
                             style={{
                               backgroundImage:
-                                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
+                                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
                             }}
                           >
                             {[3, 5, 10, 15, 20].map((num) => (
@@ -694,7 +732,7 @@ export default function Account() {
                             className="w-full max-w-xs bg-[#FFFFFF14] text-white rounded-md px-3 py-3 text-sm border-none appearance-none bg-no-repeat bg-[right_12px_center] focus:outline-none cursor-pointer"
                             style={{
                               backgroundImage:
-                                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
+                                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
                             }}
                           >
                             {[5, 10, 15, 20, 25].map((num) => (
@@ -710,13 +748,19 @@ export default function Account() {
                         </div>
                       </div>
                     </div>
+
                     <Button
-                      className="w-[164px] h-12 rounded-[8px] border  px-10 py-[10px] text-black  cursor-pointer"
+                      className={`w-[164px] h-12 rounded-[8px] border px-10 py-[10px] cursor-pointer transition-all bg-[#F9DB6F] text-black hover:bg-[#F9DB6F]/90
+
+                      `}
                       onClick={() => {
-                        handleSaveChange();
+                        if (hasChanges() && !isLoadeding) {
+                          handleSaveChange();
+                        }
                       }}
+                      disabled={!hasChanges() || isLoadeding}
                     >
-                      {isLoadeding ? <Loader /> : " Save Changes"}
+                      {isLoadeding ? <Loader /> : "Save Changes"}
                     </Button>
                   </div>
                 )}
@@ -727,6 +771,7 @@ export default function Account() {
               </div>
             </>
           )}
+
           {steps == 2 && <Billing />}
           {/* {steps == 3 && <Apps />} */}
           {steps === 4 && <Feedback />}
@@ -745,7 +790,6 @@ export default function Account() {
         fetchUserDetails={fetchUserDetails}
       />
       <InviteUserModal open={openInvite} onOpenChange={setOpenInvite} />
-
       <EditUserModal
         open={openEdit}
         userDetails={selectedRow}

@@ -193,7 +193,7 @@ export default function QuestionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-[#1a1a1a] border-none rounded-lg w-full max-w-xl">
+      <DialogContent className="bg-[#1a1a1a] border-none rounded-lg w-full max-w-xl !max-h-[90vh] overflow-auto">
         <DialogHeader>
           <DialogTitle className="text-white text-2xl font-medium">
             {isEditing ? "Edit Question" : "Add Question"}

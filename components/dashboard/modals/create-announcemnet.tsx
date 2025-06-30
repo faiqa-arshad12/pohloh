@@ -3,11 +3,10 @@
 import {useEffect, useRef, useState} from "react";
 import {useForm} from "react-hook-form";
 import {useRouter} from "next/navigation";
-import {Calendar, Loader2, Check, ChevronDown} from "lucide-react";
+import {Calendar, Loader2, Check} from "lucide-react";
 import {zodResolver} from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {useUser} from "@clerk/nextjs";
-
 import {Input} from "@/components/ui/input";
 import {Textarea} from "@/components/ui/textarea";
 import {
@@ -24,17 +23,11 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-} from "@/components/ui/select";
-import {apiUrl, CardStatus, CardType, frontend_url} from "@/utils/constant";
+import {Select, SelectTrigger, SelectContent} from "@/components/ui/select";
+import {apiUrl, frontend_url} from "@/utils/constant";
 import {ShowToast} from "@/components/shared/show-toast";
 import Loader from "@/components/shared/loader";
 import {Skeleton} from "@/components/ui/skeleton";
-import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
 import {createNotification} from "@/services/notification.service";
 
@@ -88,11 +81,6 @@ function CreateAnnouncement({
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [savedCard, setSaved] = useState<any>();
 
-  // const [selectedCard, setSelectedCard] = useState<{
-  //   id: string;
-  //   title: string;
-  // } | null>(null);
-
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -104,32 +92,25 @@ function CreateAnnouncement({
     },
   });
 
+  // Watch the description field for character counting
+  const descriptionValue = form.watch("description");
+  const descriptionLength = descriptionValue?.length || 0;
+  const maxDescriptionLength = 300;
+
   useEffect(() => {
     if (open) {
       form.reset();
       fetchTeams();
-
-      // Check for selected card in URL params when modal opens
-      // const params = new URLSearchParams(window.location.search);
-      // const selectedCardId = params.get("selectedCardId");
-      // const selectedCardTitle = params.get("selectedCardTitle");
-
-      // if (selectedCardId && selectedCardTitle) {
-      //   setSelectedCard({id: selectedCardId, title: selectedCardTitle});
-      //   form.setValue("card_id", selectedCardId);
-
-      //   // Clean up the URL
-      //   const newUrl = window.location.pathname;
-      //   window.history.replaceState(null, "", newUrl);
-      // }
     }
   }, [open, form]);
+
   useEffect(() => {
     const savedCard = localStorage.getItem("selectedAnnouncementCard");
     if (savedCard) {
       setSaved(JSON.parse(savedCard));
     }
   }, []);
+
   const fetchTeams = async () => {
     setIsTeamsLoading(true);
     setIsInitialLoading(true);
@@ -140,7 +121,6 @@ function CreateAnnouncement({
           headers: {
             "Content-Type": "application/json",
           },
-          // credentials: "include",
         });
 
         if (!userResponse.ok) {
@@ -162,7 +142,6 @@ function CreateAnnouncement({
             headers: {
               "Content-Type": "application/json",
             },
-            // credentials: "include",
             body: JSON.stringify({
               role: userDataa.user.role,
               userId: userDataa.user.id,
@@ -192,7 +171,6 @@ function CreateAnnouncement({
 
   const handleClose = () => {
     onClose(false);
-    // setSelectedCard(null);
     form.reset();
   };
 
@@ -213,15 +191,12 @@ function CreateAnnouncement({
 
   const renderSelectedTeams = () => {
     const selectedNames = getSelectedTeamNames();
-
     if (selectedNames.length === 0) {
       return <span className="text-muted-foreground">Select teams</span>;
     }
-
     if (selectedNames.length <= 3) {
       return selectedNames.join(", ");
     }
-
     return `${selectedNames.slice(0, 3).join(", ")} +${
       selectedNames.length - 3
     } more`;
@@ -229,20 +204,16 @@ function CreateAnnouncement({
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
-
     try {
       if (!userData || !userData.organizations?.id) {
         throw new Error("User organization information is missing");
       }
 
-      // Validate at least one team is selected
       if (data.teams.length === 0) {
         throw new Error("Please select at least one team");
       }
 
-      // Validate expiry date is in the future
       const selectedDate = new Date(data.expiry_date);
-
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       if (selectedDate < today) {
@@ -262,7 +233,6 @@ function CreateAnnouncement({
           "Content-Type": "application/json",
         },
         body: JSON.stringify(cardData),
-        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -271,7 +241,6 @@ function CreateAnnouncement({
           const errorData = await response.json();
           errorMessage = errorData.message || errorMessage;
           if (errorData.errors) {
-            // Handle field-specific errors from API
             Object.entries(errorData.errors).forEach(([field, messages]) => {
               if (Array.isArray(messages)) {
                 form.setError(field as keyof FormData, {
@@ -289,14 +258,9 @@ function CreateAnnouncement({
       }
 
       const result = await response.json();
-      // const cardSaved = localStorage.getItem("selectedAnnouncementCard");
-      // if (cardSaved) {
-      //   setSelectedCard(JSON.parse(cardSaved));
-      //   localStorage.removeItem("selectedAnnouncementCard"); // Clear after loading
-      // }
+
       ShowToast("Announcement created successfully", "success");
 
-      // Create a notification for the selected teams
       await createNotification({
         user_id: userData.id,
         org_id: userData.organizations.id,
@@ -327,28 +291,23 @@ function CreateAnnouncement({
           <DialogHeader>
             <Skeleton className="h-8 w-[200px] mb-6" />
           </DialogHeader>
-
           <div className="space-y-6">
             <div>
               <Skeleton className="h-4 w-[150px] mb-2" />
               <Skeleton className="w-full h-10 rounded-md" />
             </div>
-
             <div>
               <Skeleton className="h-4 w-[200px] mb-2" />
               <Skeleton className="w-full h-24 rounded-md" />
             </div>
-
             <div>
               <Skeleton className="h-4 w-[180px] mb-2" />
               <Skeleton className="w-full h-10 rounded-md" />
             </div>
-
             <div>
               <Skeleton className="h-4 w-[100px] mb-2" />
               <Skeleton className="w-full h-10 rounded-md" />
             </div>
-
             <div className="flex gap-4 pt-4">
               <Skeleton className="w-full h-12 rounded-md" />
               <Skeleton className="w-full h-12 rounded-md" />
@@ -361,7 +320,7 @@ function CreateAnnouncement({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="overflow-y-auto w-full max-w-[864px] h-auto bg-[#222222] text-white border-none">
+      <DialogContent className="overflow-y-auto w-full max-w-[864px] h-auto max-h-[90vh] bg-[#222222] text-white border-none">
         <DialogHeader>
           <DialogTitle className="text-[32px]">Create Announcement</DialogTitle>
         </DialogHeader>
@@ -406,9 +365,22 @@ function CreateAnnouncement({
                       {...field}
                       placeholder="Enter Description"
                       className="w-full min-h-[125px] rounded-md border border-[#FFFFFF14] bg-[#FFFFFF14] text-white font-urbanist font-semibold"
+                      maxLength={maxDescriptionLength}
                       required
                     />
                   </FormControl>
+                  <div className="flex justify-between items-center mt-1">
+                    <div></div>
+                    <span
+                      className={`text-sm  text-gray-400 ${
+                        descriptionLength > maxDescriptionLength
+                          ? "text-red-400"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      {descriptionLength}/{maxDescriptionLength}
+                    </span>
+                  </div>
                   <FormMessage className="text-red-400" />
                 </FormItem>
               )}
@@ -484,26 +456,17 @@ function CreateAnnouncement({
 
             <div className="space-y-2">
               <FormLabel className="text-[16px] font-normal mb-2 block">
-                {/* {savedCard ? "Selected Card" : "Select Card"} */}
                 Selected Card
               </FormLabel>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   className="border bg-[#FFFFFF14] border-[#f0d568] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#F9DB6F]/10 h-10 rounded-md cursor-pointer"
-                  // onClick={() => {
-                  //   router.push("/knowledge-base?selectForAnnouncement=true");
-                  // }}
                   disabled
                   type="button"
                 >
                   {selectedCard.title}
                 </Button>
-                {/* {selectedCard && (
-                  <Badge className="bg-[#F9DB6F1a] text-[#F9DB6F] hover:bg-[#F9DB6F1a]">
-                    {selectedCard.title}
-                  </Badge>
-                )} */}
               </div>
               <FormMessage className="text-red-400">
                 {form.formState.errors.card_id?.message}

@@ -1,13 +1,11 @@
 "use client";
 
 import {ShowToast} from "@/components/shared/show-toast";
-import React, {useEffect, useState} from "react";
+import type React from "react";
+import {useEffect, useState} from "react";
 import {BuildingIcon, TrashIcon} from "lucide-react";
-
 import {useUser} from "@clerk/nextjs";
-
 import Image from "next/image";
-
 import {
   allowedTypes,
   apiUrl,
@@ -16,6 +14,7 @@ import {
 } from "@/utils/constant";
 import Loader from "../../shared/loader";
 import {supabase} from "@/supabase/client";
+import {Button} from "@/components/ui/button";
 
 interface OrganizationProps {
   organization: any;
@@ -44,6 +43,26 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
   const [departmentError, setDepartmentError] = useState("");
   const [org_loading, setOrg_loading] = useState<boolean>(false);
   const [teams, setTeams] = useState<Team[]>([]);
+
+  // Initial state tracking for changes detection
+  const [initialState, setInitialState] = useState({
+    organizationName: "",
+    seats: 0,
+    profileImage: "/placeholder-profile.svg",
+    selectedDepartments: [] as string[],
+  });
+
+  // Check if any changes have been made
+  const hasChanges = () => {
+    return (
+      organizationName !== initialState.organizationName ||
+      seats !== initialState.seats ||
+      profileImage !== initialState.profileImage ||
+      fileToUpload !== null ||
+      JSON.stringify(selectedDepartments.sort()) !==
+        JSON.stringify(initialState.selectedDepartments.sort())
+    );
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -109,10 +128,8 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
           body: JSON.stringify({
             name: department,
             org_id: organization?.organizations?.id,
-            // For custom departments, you might want to set different defaults
             lead_id: null,
             user_id: null,
-            // icon: DEPARTMENTS.includes(department) ? department : null,
           }),
         });
 
@@ -139,6 +156,7 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
 
   const removeImage = () => {
     setProfileImage("/organization-logo.png");
+    setFileToUpload(null);
   };
 
   useEffect(() => {
@@ -179,11 +197,35 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
 
   useEffect(() => {
     if (organization) {
-      setOrganizationName(organization.organizations.name || "");
-      setSeats(organization.organizations.num_of_seat || "");
-      setProfileImage(organization.organizations.org_picture);
+      const orgName = organization.organizations.name || "";
+      const orgSeats = organization.organizations.num_of_seat || 0;
+      const orgPicture =
+        organization.organizations.org_picture || "/placeholder-profile.svg";
+
+      setOrganizationName(orgName);
+      setSeats(orgSeats);
+      setProfileImage(orgPicture);
+
+      // Set initial state for change tracking
+      setInitialState({
+        organizationName: orgName,
+        seats: orgSeats,
+        profileImage: orgPicture,
+        selectedDepartments: [],
+      });
     }
   }, [organization]);
+
+  // Update initial departments when teams are loaded
+  useEffect(() => {
+    if (teams.length > 0) {
+      const departmentNames = teams.map((team: Team) => team.name);
+      setInitialState((prev) => ({
+        ...prev,
+        selectedDepartments: departmentNames,
+      }));
+    }
+  }, [teams]);
 
   const uploadFileToSupabase = async (file: File): Promise<string | null> => {
     try {
@@ -209,6 +251,7 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
       const {
         data: {publicUrl},
       } = supabase.storage.from("images").getPublicUrl(filePath);
+
       return publicUrl;
     } catch (error) {
       console.error("Error in file upload:", error);
@@ -223,18 +266,21 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
         setOrganizationNameError("Organization name is required");
         return;
       }
+
       if (organizationName.length < 2) {
         setOrganizationNameError(
           "Organization name must be at least 2 characters"
         );
         return;
       }
+
       if (organizationName.length > 50) {
         setOrganizationNameError(
           "Organization name cannot exceed 50 characters"
         );
         return;
       }
+
       if (!/^[a-zA-Z0-9\s&'-]+$/.test(organizationName)) {
         setOrganizationNameError(
           "Organization name contains invalid characters"
@@ -260,6 +306,7 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
         num_of_seat: seats,
         org_picture: profilePictureUrl,
       };
+
       const totalUserData = await fetch(
         `${apiUrl}/users/count/${organization?.organizations.id}`,
         {
@@ -267,7 +314,6 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
           headers: {
             "Content-Type": "application/json",
           },
-          // credentials: "include",
         }
       );
 
@@ -279,6 +325,7 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
       }
 
       const totalUser = await totalUserData.json();
+
       if (totalUser.data.count > seats) {
         ShowToast(
           "The number of seats must be at least equal to the number of active users.",
@@ -286,6 +333,7 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
         );
         return;
       }
+
       const response = await fetch(
         `${apiUrl}/${organizations}/${organization?.organizations.id}`,
         {
@@ -304,6 +352,16 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
 
       const result = await response.json();
       ShowToast("Organization data has been updated successfully!");
+
+      // Update initial state after successful save
+      setInitialState({
+        organizationName: organizationName,
+        seats: seats,
+        profileImage: profilePictureUrl,
+        selectedDepartments: [...selectedDepartments],
+      });
+      setFileToUpload(null);
+
       setOrg_loading(false);
       return result;
     } catch (error) {
@@ -328,14 +386,13 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
               <div className="flex items-center justify-start space-x-4">
                 <div className="w-24 h-24 bg-[#F9DB6F] rounded-full overflow-hidden">
                   <Image
-                    src={profileImage}
+                    src={profileImage || "/placeholder.svg"}
                     alt="Organization logo"
                     width={500}
                     height={300}
                     className="w-full h-full object-cover"
                   />
                 </div>
-
                 <label className="bg-[#F9DB6F] gap-2 h-[48px] text-black px-4 py-2 rounded-[8px] flex items-center cursor-pointer font-urbanist font-medium text-[14px] leading-[100%] tracking-[0]">
                   <img src="/upload-image.png" alt="user" />
                   Upload Image
@@ -346,7 +403,6 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
                     accept="image/*"
                   />
                 </label>
-
                 <button
                   className=" border border-[#FFFFFF] h-[48px] px-4 py-2 rounded-[8px] flex items-center font-urbanist font-medium text-[14px] leading-[100%] tracking-[0] cursor-pointer"
                   onClick={removeImage}
@@ -408,13 +464,11 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
                 <label className="block text-[16px] leading-[24px] tracking-[0px] align-middle font-normal font-['Urbanist'] mb-2">
                   Add departments to your organization
                 </label>
-
                 <p className="text-[12px] leading-[14px] font-normal tracking-[0px] align-middle font-['Urbanist'] text-[#FFFFFF52] mb-4">
                   {
                     "This will pre-populate categories for your knowledge base. Don't worry you can always edit these later. Select all that apply."
                   }
                 </p>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-6">
                   {DEPARTMENTS.map((dept) => (
                     <button
@@ -440,7 +494,6 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
                 <label className="text-[16px] text-[#F9DB6F] leading-[24px] font-medium tracking-[0px] align-middle font-['Urbanist'] mb-2 block">
                   Add your Custom Department
                 </label>
-
                 {customDepartments?.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
                     {customDepartments.map((department) => (
@@ -465,7 +518,6 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
                   <label className="text-[16px] leading-[24px] font-normal tracking-[0px] align-middle font-['Urbanist'] text-white mb-1 block">
                     Add Department Name
                   </label>
-
                   <input
                     type="text"
                     placeholder="Enter the department name"
@@ -479,7 +531,6 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
                       if (e.key === "Enter") {
                         e.preventDefault();
                         const customDept = customDepartment.trim();
-
                         if (!customDept) {
                           setCustomDepartmentError(
                             "Department name cannot be empty"
@@ -520,7 +571,6 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
                           }
 
                           const newTeam = await response.json();
-
                           setSelectedDepartments([
                             ...selectedDepartments,
                             customDept,
@@ -548,7 +598,6 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
                   <label className="text-[16px] leading-[24px] font-normal tracking-[0px] align-middle font-['Urbanist'] text-white mb-1 block">
                     Number of Seats
                   </label>
-
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
@@ -557,7 +606,6 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
                     >
                       +
                     </button>
-
                     <input
                       type="text"
                       placeholder="Enter the department name"
@@ -565,7 +613,6 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
                       value={seats}
                       onChange={(e) => setSeats(Number(e.target.value) || 0)}
                     />
-
                     <button
                       type="button"
                       onClick={() => setSeats((prev) => Math.max(prev - 1, 0))}
@@ -583,15 +630,16 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
               </div>
 
               <div className="flex space-x-4 pt-4 justify-between">
-                <button className=" h-[48px] w-[370px] py-3 border border-gray-600 rounded cursor-pointer">
+                <Button className=" h-[48px] w-[370px] py-3 border bg-[#333435]  rounded-[8px] cursor-pointer">
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="py-3 w-[370px] h-[48px] bg-[#F9DB6F] text-black rounded cursor-pointer"
+                  className={`py-3 w-[370px] h-[48px] rounded-[8px] cursor-pointer transition-all text-[black]
+
+                  `}
                   onClick={(e) => {
                     e.preventDefault();
-
                     // Validate all fields
                     let isValid = true;
 
@@ -627,11 +675,11 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
                       isValid = false;
                     }
 
-                    if (isValid) {
+                    if (isValid && hasChanges()) {
                       submitOrganizationDetails();
                     }
                   }}
-                  disabled={org_loading}
+                  disabled={!hasChanges() || org_loading}
                 >
                   {org_loading ? (
                     <div className="flex justify-center ">
@@ -640,7 +688,7 @@ export function OrganizationalDetail({organization}: OrganizationProps) {
                   ) : (
                     "Save"
                   )}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
