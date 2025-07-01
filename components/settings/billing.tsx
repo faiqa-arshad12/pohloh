@@ -36,7 +36,6 @@ const handleDownloadInvoice = (invoiceUrl: string) => {
 const getPlanTypeFromInvoice = (invoice: any) => {
   if (invoice.lines && invoice.lines.data && invoice.lines.data.length > 0) {
     const lineItem = invoice.lines.data[0];
-    // Try to get product name from price or product
     if (
       lineItem.price &&
       lineItem.price.product &&
@@ -44,9 +43,7 @@ const getPlanTypeFromInvoice = (invoice: any) => {
     ) {
       return lineItem.price.product.name || "Unknown";
     }
-    // Fallback to description parsing
     if (lineItem.description) {
-      // Try to match 'Standard' or 'Premium' in the description
       const match = lineItem.description.match(/(Standard|Premium)/i);
       if (match) {
         return match[1];
@@ -208,17 +205,17 @@ export default function Billing() {
       console.error("Error fetching subscription:", error);
       ShowToast("Failed to fetch subscription data", "error");
     }
-  }, [userData?.organizations?.subscriptions]);
+  }, [userData?.organizations?.subscriptions, refetchTrigger]);
 
   // Function to trigger refetch of all data
   const refetchAllData = useCallback(() => {
+    // getSubscriptionData();
     setRefetchTrigger((prev) => prev + 1);
   }, []);
 
   const createPaymentIntent = async (priceId?: string) => {
     try {
       setIsLoading(true);
-      console.log(subscription, "dfjsdksjkfjskfsjgks");
       // Prevent empty priceId
       if (!priceId && !selectedPriceId) {
         ShowToast("Please select a plan before subscribing.", "error");
@@ -258,8 +255,7 @@ export default function Billing() {
       // If updating an existing subscription (change plan or quantity), allow directly
       if (
         userData.organizations.subscriptions[0]?.subscription_id &&
-        !isSubscriptionCanceled &&
-        subscription?.status !== "incomplete"
+        subscription?.status === "active"
       ) {
         response = await fetch(
           `${window.location.origin}/api/stripe/update-subscription`,
@@ -348,9 +344,8 @@ export default function Billing() {
   };
 
   const handleOpenModal = () => {
-    setOpenEdit(false);
-    // Refetch data when modal closes (after successful payment)
     refetchAllData();
+    setOpenEdit(false);
   };
 
   // Initial data fetching
@@ -399,7 +394,6 @@ export default function Billing() {
   };
 
   const isInitialLoading = !isLoaded || (isLoaded && !user);
-console.log(subscription,';klklklk')
   if (isInitialLoading) {
     return (
       <div className="bg-[#191919] rounded-[30px] w-full text-white p-4 md:p-6 mx-auto">
@@ -668,6 +662,7 @@ console.log(subscription,';klklklk')
         setOpenEdit={setOpenEdit}
         openEdit={openEdit}
         clientSecret={clientSecret}
+        onPaymentSuccess={refetchAllData}
       />
       <CancelConfirmationModal
         isOpen={showCancelModal}

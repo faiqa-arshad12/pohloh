@@ -15,6 +15,8 @@ import {useUser} from "@clerk/nextjs";
 type PaymentFormProps = {
   clientSecret: string;
   setOpen: (open: boolean) => void;
+  refetchAllData?: () => void;
+  onPaymentSuccess?: () => void;
 };
 
 const STRIPE_THEME = {
@@ -30,19 +32,22 @@ const STRIPE_THEME = {
   },
   rules: {
     ".Input": {
-      backgroundColor: "#1a1a1a",
+      backgroundColor: "#FFFFFF14",
       borderColor: "#333",
       color: "#fff",
-      padding: "18px",
+      // padding: "18px",
+      height:'40.65px',
+      marginTop:'10px'
     },
     ".Input:focus": {
       borderColor: "white",
       boxShadow: "0 0 0 1pxrgb(228, 228, 228)",
     },
     ".Label": {
-      color: "#bbb",
+      color: "#FFFFFF",
       marginBottom: "6px",
       fontWeight: "500",
+      fontSize:'12.38px'
     },
     ".Tab": {
       backgroundColor: "#1a1a1a",
@@ -62,7 +67,12 @@ const STRIPE_THEME = {
   },
 };
 
-function StripePaymentForm({setOpen, clientSecret}: PaymentFormProps) {
+function StripePaymentForm({
+  setOpen,
+  clientSecret,
+  refetchAllData,
+  onPaymentSuccess,
+}: PaymentFormProps) {
   const stripe = useStripe();
   const {user, isLoaded} = useUser();
 
@@ -102,9 +112,15 @@ function StripePaymentForm({setOpen, clientSecret}: PaymentFormProps) {
 
       switch (paymentIntent?.status) {
         case "succeeded":
-          setSuccess(true);
-          ShowToast("Subscribed Successfully!");
-          setOpen(false);
+          ShowToast("Subscription is in progress, Please wait...");
+
+          setTimeout(() => {
+            setSuccess(true);
+
+            if (onPaymentSuccess) onPaymentSuccess();
+            setOpen(false);
+            ShowToast("Subscribed Successfully!");
+          }, 5000); // 3 seconds delay
           break;
         case "processing":
           setMessage("Payment processing. We'll update you when complete.");
@@ -127,31 +143,35 @@ function StripePaymentForm({setOpen, clientSecret}: PaymentFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="border border-gray-700 rounded-lg p-4 bg-transparent">
-        <PaymentElement
-          options={{
-            layout: {
-              type: "tabs",
-              defaultCollapsed: false,
-              spacedAccordionItems: true,
-            },
-            fields: {
-              billingDetails: {
-                name: "auto",
-                email: "auto",
-                phone: "auto",
-                address: {
-                  country: "auto",
-                  postalCode: "auto",
+      <div className="bg-[#FFFFFF0A] rounded-xl shadow-lg p-6 mb-4">
+        <div className="space-y-4">
+
+          <PaymentElement
+            options={{
+              layout: {
+                type: "tabs",
+                defaultCollapsed: false,
+                spacedAccordionItems: true,
+              },
+              fields: {
+                billingDetails: {
+                  name: "auto",
+                  email: "auto",
+                  phone: "auto",
+                  address: {
+                    country: "auto",
+                    postalCode: "auto",
+                  },
                 },
               },
-            },
-            wallets: {
-              applePay: "never",
-              googlePay: "never",
-            },
-          }}
-        />
+              wallets: {
+                applePay: "never",
+                googlePay: "never",
+              },
+            }}
+            className="rounded-lg bg-transparent  text-white"
+          />
+        </div>
       </div>
 
       {error && (
@@ -167,33 +187,43 @@ function StripePaymentForm({setOpen, clientSecret}: PaymentFormProps) {
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={!stripe || loading}
-        className={`w-full py-3 px-4 rounded-lg font-medium cursor-pointer ${
-          loading
-            ? "bg-[#F9DB6F] cursor-not-allowed"
-            : "bg-[#F9DB6F] hover:bg-[#F9DB6F]"
-        } text-black transition-colors flex items-center justify-center gap-2`}
-      >
-        {loading ? (
-          <>
-            <Loader />
-          </>
-        ) : (
-          `Confirm & Subscribe`
-        )}
-      </button>
+      <div className="flex gap-4 py-6">
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="w-1/2 py-3 px-4 rounded-lg border cursor-pointer  text-[white] bg-[#333435] font-medium transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={!stripe || loading}
+          className={`w-1/2 py-3 px-4 rounded-lg font-medium  cursor-pointer ${
+            loading
+              ? "bg-[#F9DB6F] cursor-not-allowed"
+              : "bg-[#F9DB6F] hover:bg-[#F9DB6F]/90"
+          } text-black transition-colors flex items-center justify-center gap-2`}
+        >
+          {loading ? <Loader /> : "Change Plan"}
+        </button>
+      </div>
     </form>
   );
 }
 
 type PaymentPageProps = {
   clientSecret: string;
+  refetchAllData?: () => void;
   setOpen: (open: boolean) => void;
+  onPaymentSuccess?: () => void;
 };
 
-export default function PaymentPage({clientSecret, setOpen}: PaymentPageProps) {
+export default function PaymentPage({
+  clientSecret,
+  setOpen,
+  refetchAllData,
+  onPaymentSuccess,
+}: PaymentPageProps) {
   const [stripePromise] = useState(() =>
     loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
   );
@@ -213,7 +243,12 @@ export default function PaymentPage({clientSecret, setOpen}: PaymentPageProps) {
         loader: "always",
       }}
     >
-      <StripePaymentForm clientSecret={clientSecret} setOpen={setOpen} />
+      <StripePaymentForm
+        clientSecret={clientSecret}
+        setOpen={setOpen}
+        refetchAllData={refetchAllData}
+        onPaymentSuccess={onPaymentSuccess}
+      />
     </Elements>
   );
 }

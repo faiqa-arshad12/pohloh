@@ -35,6 +35,18 @@ export async function POST(req: Request) {
 
         // Retrieve current subscription
         const currentSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+        // Only allow updates if subscription is active or trialing
+        if (currentSubscription.status !== 'active' && currentSubscription.status !== 'trialing') {
+            return NextResponse.json(
+                {
+                    error: `Subscription cannot be updated in its current state (${currentSubscription.status}). Please create a new subscription instead.`,
+                    status: currentSubscription.status,
+                },
+                { status: 409 }
+            );
+        }
+
         const currentItem = currentSubscription.items.data.find(
             item => item.price.id === currentPriceId
         );

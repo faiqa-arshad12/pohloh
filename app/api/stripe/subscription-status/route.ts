@@ -1,15 +1,15 @@
 import Stripe from "stripe";
-import {NextResponse} from "next/server";
+import { NextResponse } from "next/server";
 
 const stripe = new Stripe(process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY!, {
   apiVersion: "2025-02-24.acacia",
 });
 
 export async function GET(req: Request) {
-  const {searchParams} = new URL(req.url);
+  const { searchParams } = new URL(req.url);
   const customerId = searchParams.get("customerId");
   if (!customerId)
-    return NextResponse.json({error: "Missing customerId"}, {status: 400});
+    return NextResponse.json({ error: "Missing customerId" }, { status: 400 });
 
   const subs = await stripe.subscriptions.list({
     customer: customerId,
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     limit: 1,
     expand: ["data.latest_invoice.payment_intent"],
   });
-  if (!subs.data.length) return NextResponse.json({status: "none"});
+  if (!subs.data.length) return NextResponse.json({ status: "none" });
 
   const sub = subs.data[0];
   let clientSecret = null;
@@ -75,7 +75,7 @@ export async function GET(req: Request) {
           status: existingSub.status,
           clientSecret,
         },
-        {status: 409}
+        { status: 409 }
       );
     } else {
       return NextResponse.json(
@@ -86,7 +86,7 @@ export async function GET(req: Request) {
           isExistingSubscriber: true,
           status: existingSub.status,
         },
-        {status: 409}
+        { status: 409 }
       );
     }
   }
@@ -100,4 +100,33 @@ export async function GET(req: Request) {
     clientSecret,
     subscriptionId: sub.id,
   });
+}
+
+// Utility to cancel all incomplete subscriptions for a customer
+async function cancelAllIncompleteSubscriptions(customerId: string) {
+  const subs = await stripe.subscriptions.list({
+    customer: customerId,
+    status: "all",
+    limit: 100,
+  });
+  const incompleteSubs = subs.data.filter(
+    (s) => s.status === "incomplete"
+  );
+  for (const sub of incompleteSubs) {
+    try {
+      await stripe.subscriptions.cancel(sub.id);
+    } catch (err) {
+      console.error(`Failed to cancel incomplete subscription ${sub.id}:`, err);
+    }
+  }
+}
+
+// Add POST handler to allow frontend to trigger cleanup if needed
+export async function POST(req: Request) {
+  const { customerId } = await req.json();
+  if (!customerId) {
+    return NextResponse.json({ error: "Missing customerId" }, { status: 400 });
+  }
+  await cancelAllIncompleteSubscriptions(customerId);
+  return NextResponse.json({ message: "All incomplete subscriptions cancelled for customer." });
 }

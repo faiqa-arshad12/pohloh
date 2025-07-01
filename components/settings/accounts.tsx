@@ -103,8 +103,6 @@ export default function Account() {
       weeklyCards !== initialState.weeklyCards ||
       JSON.stringify(workDays) !== JSON.stringify(initialState.workDays);
 
-   
-
     return changes;
   };
 
@@ -145,8 +143,6 @@ export default function Account() {
         }
 
         const result = await response.json();
-
-        console.log(subscription, "subscription");
 
         if (subscription?.plan?.subscription?.status !== "active") {
           ShowToast("Upgrade your subscription to invite users", "error");
@@ -542,7 +538,7 @@ export default function Account() {
                       <div className="flex items-center gap-4">
                         <div className="w-14 h-14 rounded-full  overflow-hidden">
                           <img
-                            src={userDetails?.profile_picture || profileImage}
+                            src={userDetails?.profile_picture || '/placeholder-profile.svg'}
                             alt="avatar"
                             className="w-full h-full"
                             // style={{width:'90px', height:'90px'}}
