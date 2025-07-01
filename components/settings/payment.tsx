@@ -150,7 +150,6 @@ function StripePaymentForm({setOpen, clientSecret}: PaymentFormProps) {
               applePay: "never",
               googlePay: "never",
             },
-            paymentMethodOrder: ["card"],
           }}
         />
       </div>

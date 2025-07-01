@@ -215,11 +215,10 @@ export default function Billing() {
     setRefetchTrigger((prev) => prev + 1);
   }, []);
 
-
   const createPaymentIntent = async (priceId?: string) => {
     try {
       setIsLoading(true);
-
+      console.log(subscription, "dfjsdksjkfjskfsjgks");
       // Prevent empty priceId
       if (!priceId && !selectedPriceId) {
         ShowToast("Please select a plan before subscribing.", "error");
@@ -228,11 +227,15 @@ export default function Billing() {
       }
 
       const effectivePriceId = priceId || selectedPriceId;
-
+      if (
+        subscription?.status !== "incomplete" ||
+        subscription?.status !== "past_due"
+      ) {
+      }
       if (
         userData.organizations.subscriptions[0]?.subscription_id &&
         !isSubscriptionCanceled &&
-        subscription?.status !== "incomplete"
+        subscription?.status === "active"
       ) {
         // Compare current plan and quantity
         const currentPlanId = subscription?.plan?.id;
@@ -396,7 +399,7 @@ export default function Billing() {
   };
 
   const isInitialLoading = !isLoaded || (isLoaded && !user);
-
+console.log(subscription,';klklklk')
   if (isInitialLoading) {
     return (
       <div className="bg-[#191919] rounded-[30px] w-full text-white p-4 md:p-6 mx-auto">

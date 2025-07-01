@@ -73,6 +73,7 @@ async function createPaymentIntent(amount: number, customerId: string, currency:
             amount,
             currency,
             customer: customerId,
+            payment_method_types: ['card'],
             payment_method: 'pm_card_visa',
         });
         return {

@@ -52,6 +52,9 @@ export async function POST(req: Request) {
             proration_behavior: 'create_prorations',
             items: [],
             payment_behavior: 'default_incomplete', // Ensure payment intent is created
+            payment_settings: {
+                payment_method_types: ['card'],
+            },
             expand: ['latest_invoice.payment_intent'],
         };
 
