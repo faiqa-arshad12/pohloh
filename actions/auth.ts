@@ -1,7 +1,7 @@
 "use server";
-import {auth, clerkClient} from "@clerk/nextjs/server";
-import {supabase} from "@/supabase/client";
-import {createClerkClient} from "@clerk/backend";
+import { auth, clerkClient } from "@clerk/nextjs/server";
+import { supabase } from "@/supabase/client";
+import { createClerkClient } from "@clerk/backend";
 import { frontend_url } from "@/utils/constant";
 
 // export async function inviteUser(email: string, role: string, org_id: string) {
@@ -36,12 +36,12 @@ export async function setUserRole(id: string, role: string) {
 
   try {
     const res = await client.users.updateUser(id, {
-      unsafeMetadata: {role: role},
+      unsafeMetadata: { role: role },
     });
-    return {message: res.unsafeMetadata};
+    return { message: res.unsafeMetadata };
   } catch (err) {
     console.log(err, "err");
-    return {message: err};
+    return { message: err };
   }
 }
 export async function removeRole(formData: FormData) {
@@ -51,18 +51,18 @@ export async function removeRole(formData: FormData) {
     const res = await client.users.updateUserMetadata(
       formData.get("id") as string,
       {
-        unsafeMetadata: {role: null},
+        unsafeMetadata: { role: null },
       }
     );
-    return {message: res.publicMetadata};
+    return { message: res.publicMetadata };
   } catch (err) {
-    return {message: err};
+    return { message: err };
   }
 }
 
 export async function inviteUser(email: string, role: string, user_id: string) {
   try {
-    const {userId} = await auth();
+    const { userId } = await auth();
     if (userId) {
       const user = await getUserDetails(userId);
       if (user) {
@@ -91,8 +91,26 @@ export async function inviteUser(email: string, role: string, user_id: string) {
       }
     }
   } catch (error) {
-    console.error("Error inviting user:", error);
-    return {success: false, error};
+    // console.error("Error inviting user:", error.errors || error);
+    let message = "Unknown error";
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "errors" in error &&
+      Array.isArray(error.errors) &&
+      error.errors[0]
+    ) {
+      // Prefer longMessage, then message, then JSON
+      message =
+        error.errors[0].longMessage ||
+        error.errors[0].message ||
+        JSON.stringify(error.errors[0]);
+    } else if (error instanceof Error && error.message) {
+      message = error.message;
+    } else {
+      message = JSON.stringify(error);
+    }
+    return { success: false, message };
   }
 }
 
@@ -133,7 +151,7 @@ export async function getUserDetails(userId: string) {
       throw new Error("Not authenticated");
     }
 
-    const {data, error} = await supabase
+    const { data, error } = await supabase
       .from("users")
 
       .select(
@@ -166,9 +184,9 @@ export async function getTotalUser(orgId: string) {
       throw new Error("Not authenticated");
     }
 
-    const {count, error} = await supabase
+    const { count, error } = await supabase
       .from("users")
-      .select("*", {count: "exact", head: true})
+      .select("*", { count: "exact", head: true })
       .eq("org_id", orgId);
 
     if (error) {
