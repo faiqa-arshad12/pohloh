@@ -94,7 +94,6 @@ export function AnnouncementCard({userData}: AnnouncementCardProps) {
       fetchAnnouncements();
     }
   }, [userData]);
-  console.log(announcements, "alsklskdk");
   const isFirstAnnouncement = currentIndex === 0;
   const isLastAnnouncement = currentIndex === announcements.length - 1;
 
@@ -243,7 +242,7 @@ export function AnnouncementCard({userData}: AnnouncementCardProps) {
               {/* Display user info if available, otherwise just "Admin" */}
               {displayedAnnouncement?.user_id.first_name
                 ? `${displayedAnnouncement?.user_id.first_name} ${displayedAnnouncement?.user_id.last_name}`
-                : "Admin"}
+                : ""}
             </span>
           </div>
         </div>

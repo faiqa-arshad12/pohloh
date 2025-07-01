@@ -61,6 +61,14 @@ import {Icon} from "@iconify/react";
 
 import LogoutPopup from "../shared/logout-popup";
 
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "../ui/select";
+
 export default function Account() {
   const {signOut} = useClerk();
   const {roleAccess} = useRole();
@@ -696,25 +704,25 @@ export default function Account() {
                             Select the number of tutor questions to be asked
                             daily:
                           </label>
-                          <select
+                          <Select
                             value={dailyQuestions}
-                            onChange={(e) => setDailyQuestions(e.target.value)}
-                            className="w-full max-w-xs bg-[#FFFFFF14] text-white rounded-md px-3 py-3 text-sm border-none appearance-none bg-no-repeat bg-[right_12px_center] focus:outline-none cursor-pointer"
-                            style={{
-                              backgroundImage:
-                                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
-                            }}
+                            onValueChange={setDailyQuestions}
                           >
-                            {[3, 5, 10, 15, 20].map((num) => (
-                              <option
-                                key={num}
-                                value={num.toString()}
-                                className="bg-[#2a2a2a] text-white"
-                              >
-                                {num}
-                              </option>
-                            ))}
-                          </select>
+                            <SelectTrigger className="w-[90%] !bg-[#FFFFFF14] text-white rounded-md px-3 py-3 text-sm border-none appearance-none bg-no-repeat bg-[right_12px_center] focus:outline-none cursor-pointer">
+                              <SelectValue placeholder="Select number" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#2a2a2a] text-white">
+                              {[3, 5, 10, 15, 20].map((num) => (
+                                <SelectItem
+                                  key={num}
+                                  value={num.toString()}
+                                  className="bg-[#2a2a2a] text-white"
+                                >
+                                  {num}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
 
                         {/* Weekly Cards */}
@@ -726,25 +734,25 @@ export default function Account() {
                             We will send a reminder at the end of each week to
                             help meet this goal
                           </p>
-                          <select
+                          <Select
                             value={weeklyCards}
-                            onChange={(e) => setWeeklyCards(e.target.value)}
-                            className="w-full max-w-xs bg-[#FFFFFF14] text-white rounded-md px-3 py-3 text-sm border-none appearance-none bg-no-repeat bg-[right_12px_center] focus:outline-none cursor-pointer"
-                            style={{
-                              backgroundImage:
-                                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
-                            }}
+                            onValueChange={setWeeklyCards}
                           >
-                            {[5, 10, 15, 20, 25].map((num) => (
-                              <option
-                                key={num}
-                                value={num.toString()}
-                                className="bg-[#2a2a2a] text-white"
-                              >
-                                {num}
-                              </option>
-                            ))}
-                          </select>
+                            <SelectTrigger className="w-[90%] !bg-[#FFFFFF14] text-white rounded-md px-3 py-3 text-sm border-none appearance-none bg-no-repeat bg-[right_12px_center] focus:outline-none cursor-pointer">
+                              <SelectValue placeholder="Select number" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#2a2a2a] text-white">
+                              {[5, 10, 15, 20, 25].map((num) => (
+                                <SelectItem
+                                  key={num}
+                                  value={num.toString()}
+                                  className="bg-[#2a2a2a] text-white"
+                                >
+                                  {num}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     </div>
