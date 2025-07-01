@@ -663,7 +663,10 @@ export default function CreateCard({cardId}: {cardId?: string}) {
         throw new Error(errorData.message || "Failed to save draft");
       }
 
-      ShowToast("Draft saved successfully", "success");
+      ShowToast(
+        "Your draft has been saved! You can continue editing it later.",
+        "success"
+      );
       router.push("cards?status=draft");
     } catch (error) {
       console.error("Error saving draft:", error);

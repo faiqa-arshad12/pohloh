@@ -85,7 +85,7 @@ export default function Account() {
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [isInviteLoading, setIsInviteLoading] = useState(false);
   const [isLoadeding, setIsLoading] = useState(false);
-  const [userDataLoading, setUserDataLoading] = useState(true);
+  const [userDataLoading, setUserDataLoading] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const router = useRouter();
   const [selectedRow, setSelectedRow] = useState<any>();
