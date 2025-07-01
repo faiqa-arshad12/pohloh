@@ -110,7 +110,7 @@ const NotificationsPage = () => {
                 <img
                   alt="notification"
                   src="/logo/pohloh.svg"
-                  className="h-[60px] w-[60px] flex-shrink-0"
+                  className="h-[60px] w-[60px]"
                 />
                 <div className="flex-grow">
                   <p className="text-white text-[20px] font-medium">
@@ -122,7 +122,7 @@ const NotificationsPage = () => {
                     </p>
                   )}
                 </div>
-                <div className="flex-shrink-0 text-xs text-[#A2A2A2] ml-auto">
+                <div className="flex-shrink-0 text-[20px] text-[white] ml-auto">
                   {formatDistanceToNow(new Date(notification.created_at), {
                     addSuffix: true,
                   })}

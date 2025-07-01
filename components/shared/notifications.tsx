@@ -110,7 +110,7 @@ export const Notifications = ({
             {notifications.slice(0, 3).map((notification) => (
               <div
                 key={notification.id}
-                className="flex items-start gap-3 p-3 border-b border-zinc-800"
+                className="flex items-center gap-3 p-3 border-b border-zinc-800"
                 onClick={() => handleMarkAsRead(notification)}
               >
                 <div className="flex-shrink-0 mt-1">
@@ -132,7 +132,7 @@ export const Notifications = ({
                     </p>
                   )} */}
                 </div>
-                <div className="flex-shrink-0 text-xs text-gray-400">
+                <div className="flex-shrink-0 text-[20px] text-white self-center">
                   {formatDistanceToNow(new Date(notification.created_at), {
                     addSuffix: true,
                   })}
@@ -157,7 +157,7 @@ export const Notifications = ({
   return (
     <div
       className={cn(
-        "absolute right-0 mt-2 w-[700px] bg-[#1a1a1a] rounded-lg shadow-lg border border-zinc-800 overflow-hidden z-50",
+        "absolute right-0 mt-2 w-[836px] bg-[#1a1a1a] rounded-lg shadow-lg border border-zinc-800 overflow-hidden z-50",
         {"w-full": isMobile}
       )}
     >
@@ -166,7 +166,7 @@ export const Notifications = ({
           <span className="text-white text-[32px] font-semibold font-urbanist">
             Notifications
           </span>
-          <div className="bg-[#F9DB6F] text-black text-[16px] font-bold h-6 w-6 rounded-full flex items-center justify-center">
+          <div className="bg-[#F9DB6F] text-black text-[20px] font-bold h-6 w-6 rounded-full flex items-center justify-center">
             {displayCount}
           </div>
         </div>
@@ -203,34 +203,36 @@ export const Notifications = ({
           notifications?.map((notification, index) => (
             <React.Fragment key={notification.id}>
               <div
-                className="flex items-start gap-3 p-4 hover:bg-zinc-800 transition-colors cursor-pointer bg-zinc-800/50"
+                className="flex items-center gap-3 p-4 hover:bg-zinc-800 transition-colors cursor-pointer bg-zinc-800/50"
                 onClick={() => handleMarkAsRead(notification)}
               >
                 <div className="flex-shrink-0 mt-1">
-                  <div className="w-8 h-8 bg-[#F9DB6F] rounded-full flex items-center justify-center text-black">
+                  <div className="bg-[#F9DB6F] rounded-full flex items-center justify-center text-black">
                     <img
                       alt="notification"
                       src="/logo/pohloh.svg"
-                      height={16}
+                      className="h-[60px] w-[60px]"
                     />
                   </div>
                 </div>
                 <div className="flex-grow">
-                  <p className="text-white text-sm">{notification.message}</p>
+                  <p className="text-white text-[20px]">
+                    {notification.message}
+                  </p>
                   {notification.subtext && (
-                    <p className="text-[#F9DB6F] text-xs mt-1">
+                    <p className="text-[#F9DB6F] text-[20px] mt-1 line-clamp-2">
                       {notification.subtext}
                     </p>
                   )}
                 </div>
-                <div className="flex-shrink-0 text-xs text-gray-400">
+                <div className="flex-shrink-0 text-[20px] text-white font-urbanist self-center">
                   {formatDistanceToNow(new Date(notification.created_at), {
                     addSuffix: true,
                   })}
                 </div>
               </div>
               {index !== notifications.length - 1 && (
-                <div className="h-px bg-[#CDCDCD] w-full" />
+                <div className="h-px bg-[#CDCDCD] w-auto mx-4" />
               )}
             </React.Fragment>
           ))
