@@ -99,6 +99,7 @@ export default function AIChat({onClose}: AIChatProps) {
             user_query: input,
             user_id: userData.id,
             limit: 30,
+            organization_id: userData.org_id,
           }),
         });
 

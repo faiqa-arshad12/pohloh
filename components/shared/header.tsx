@@ -90,6 +90,7 @@ function useSearch(
             query: input,
             user_id: userData?.id,
             limit: 20,
+            organization_id:userData.org_id,
           }),
         });
 
