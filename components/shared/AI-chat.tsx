@@ -1,7 +1,7 @@
 "use client";
 
 import {useState, useRef, useEffect} from "react";
-import {X, Send, Plus, Loader2} from "lucide-react";
+import {X, Send} from "lucide-react";
 import {Input} from "../ui/input";
 import {Button} from "../ui/button";
 import Image from "next/image";
@@ -97,7 +97,7 @@ export default function AIChat({onClose}: AIChatProps) {
           },
           body: JSON.stringify({
             user_query: input,
-            user_id: "ad2c8be5-b36a-44a2-8942-25f268ddc479",
+            user_id: userData.id,
             limit: 30,
           }),
         });
@@ -267,11 +267,7 @@ export default function AIChat({onClose}: AIChatProps) {
                     onClick={handleSend}
                     // disabled={isLoading}
                   >
-                    {isLoading ? (
-                      <Loader />
-                    ) : (
-                      <Send size={15} />
-                    )}
+                    {isLoading ? <Loader /> : <Send size={15} />}
                   </div>
                 </div>
               </div>
