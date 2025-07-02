@@ -166,7 +166,7 @@ export const Notifications = ({
           <span className="text-white text-[32px] font-semibold font-urbanist">
             Notifications
           </span>
-          <div className="bg-[#F9DB6F] text-black text-[20px] font-bold h-6 w-6 rounded-full flex items-center justify-center">
+          <div className="bg-[#F9DB6F] text-black text-[20px] font-bold h-[40px] w-[40px] rounded-full flex items-center justify-center">
             {displayCount}
           </div>
         </div>
