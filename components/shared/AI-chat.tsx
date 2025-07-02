@@ -172,19 +172,19 @@ export default function AIChat({onClose}: AIChatProps) {
 
   return (
     <div
-      className="h-[594px] w-[441px] flex items-center justify-center p-4 mb-4"
+      className="h-[685px] w-[470.42px] flex items-center justify-center p-4 mb-4"
       onClick={handleClick}
     >
       <div className="w-full h-[594px] max-w-md bg-[#404040] rounded-lg shadow-lg overflow-hidden flex flex-col">
         {/* Header */}
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-[#F9DB6F] flex items-center justify-center mr-2 relative overflow-hidden">
+            <div className="w-[38.94px] h-[38.94px] rounded-full bg-[#F9DB6F] flex items-center justify-center mr-2 relative overflow-hidden">
               <Image
                 src="/file.png"
                 alt="Pohloh Avatar"
                 fill
-                className="object-cover rounded-full"
+                className="object-cover rounded-full w-[38.94px] h-[38.94px]"
               />
             </div>
             <span className="font-medium text-white">Pohloh</span>
@@ -194,7 +194,7 @@ export default function AIChat({onClose}: AIChatProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="text-gray-400 hover:bg-transparent hover:text-white"
+              className="text-gray-400 hover:bg-transparent hover:text-white cursor-pointer"
               onClick={handleClose}
             >
               <X size={16} />
@@ -259,20 +259,20 @@ export default function AIChat({onClose}: AIChatProps) {
                 autoFocus
                 disabled={isLoading}
               />
-              <div className="flex w-full justify-end mt-2">
+              <div className="flex w-full justify-end">
                 <div className="flex items-center space-x-2">
-                  <Button
-                    size="sm"
-                    className="w-10 h-10 p-2 bg-[#F9DB6F] text-black hover:bg-[#F9DB6F]/90"
+                  <div
+                    // size="sm"
+                    className="w-[33.01px] h-[33.01px] bg-[#F9DB6F] text-black hover:bg-[#F9DB6F]/90 cursor-pointer rounded-[9.43px] text-center justify-center items-center flex"
                     onClick={handleSend}
-                    disabled={isLoading}
+                    // disabled={isLoading}
                   >
                     {isLoading ? (
                       <Loader />
                     ) : (
-                      <Send size={20} />
+                      <Send size={15} />
                     )}
-                  </Button>
+                  </div>
                 </div>
               </div>
             </div>
