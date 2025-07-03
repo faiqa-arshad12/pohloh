@@ -57,7 +57,13 @@ export default function Card() {
           loading={loading}
         />
         <MetricCard
-          value={stats?.rank?.user_rank_in_team || "N/A"}
+          value={
+            roleAccess === "user"
+              ? stats?.rank?.user_rank_in_team
+              : roleAccess === "admin"
+              ? stats?.rank?.team_rank_in_org || "0"
+              : "0"
+          }
           label="Team Rank"
           icon={
             <div className=" p-2 rounded-full  flex items-center justify-center">
