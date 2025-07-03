@@ -573,13 +573,13 @@ export default function Account() {
                           )}
                         </div>
                       </div>
-                      <Button className="self-end md:self-auto bg-[#F9E36C] text-black rounded-lg  flex items-center justify-center cursor-pointer">
-                        <div
-                          onClick={() => {
-                            setIsEditProfileModalOpen(true);
-                          }}
-                          className="p-2 text-black rounded-md flex items-center justify-center "
-                        >
+                      <Button
+                        className="self-end md:self-auto bg-[#F9E36C] text-black rounded-lg  flex items-center justify-center cursor-pointer"
+                        onClick={() => {
+                          setIsEditProfileModalOpen(true);
+                        }}
+                      >
+                        <div className="p-2 text-black rounded-md flex items-center justify-center ">
                           {/* <Edit className="w-4 h-4 cursor-pointer" /> */}
                           <Image
                             src="/editIcon.png"

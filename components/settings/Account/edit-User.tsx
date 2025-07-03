@@ -619,7 +619,7 @@ export function EditUserModal({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-[#2A2A2C] text-white border border-gray-700 z-[1001]">
-                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="admin">Lead</SelectItem>
                         <SelectItem value="user">User</SelectItem>
                       </SelectContent>
                     </Select>
