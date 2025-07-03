@@ -980,7 +980,7 @@ export default function LearningPathPage() {
           {pathGenerated && (
             <Button
               variant="outline"
-              className="h-[41px] w-[242px] border border-[#F9DB6F] text-black bg-[#F9DB6F] hover:bg-[#F9DB6F] hover:text-black rounded-md font-medium transition-colors duration-200 cursor-pointer"
+              className="h-[38px] w-[242px] border border-[#F9DB6F] text-black bg-[#F9DB6F] hover:bg-[#F9DB6F] hover:text-black rounded-md font-medium transition-colors duration-200 cursor-pointer"
               onClick={handlePublish}
               disabled={
                 loading || isGenerating || isDrafting || needsRegeneration
@@ -1173,7 +1173,7 @@ export default function LearningPathPage() {
               <div className="flex gap-4 pt-4">
                 <button
                   type="button"
-                  className={`w-full h-[48px] rounded-md  text-white font-urbanist font-normal bg-[#333435]  transition cursor-pointer ${
+                  className={`w-full h-[44px] rounded-md  text-white font-urbanist font-normal bg-[#333435]  transition cursor-pointer ${
                     formData.question_type === "multiple"
                       ? "border border-[#F9DB6F] bg-[#f0d568]/10 text-[#f0d568] hover:bg-[#f0d568]/10"
                       : "border-0 bg-[#333435] "
@@ -1184,7 +1184,7 @@ export default function LearningPathPage() {
                 </button>
                 <button
                   type="submit"
-                  className={`w-full h-[48px] rounded-md  text-whitebg-[#333435]  font-urbanist font-normal  transition cursor-pointer ${
+                  className={`w-full h-[44px] rounded-md  text-whitebg-[#333435]  font-urbanist font-normal  transition cursor-pointer ${
                     formData.question_type === "short"
                       ? "border border-[#F9DB6F] bg-[#f0d568]/10 text-[#f0d568] hover:bg-[#f0d568]/10"
                       : "border-0 bg-[#333435] "
@@ -1271,7 +1271,7 @@ export default function LearningPathPage() {
                     <div className="flex justify-end">
                       <Button
                         variant="outline"
-                        className="border border-white bg-[#333435] text-white hover:text-white hover:bg-[#333435] hover:opacity-90 h-10 rounded-md flex items-center gap-2 cursor-pointer !px-8"
+                        className="border border-white bg-[#333435] text-white hover:text-white hover:bg-[#333435] hover:opacity-90 rounded-md flex items-center gap-2 cursor-pointer min-w-[214px]"
                         onClick={openQuestionModal}
                       >
                         <PlusIcon size={16} /> Add Questions

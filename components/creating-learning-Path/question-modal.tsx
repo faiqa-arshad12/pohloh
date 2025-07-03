@@ -166,10 +166,14 @@ export default function QuestionModal({
 
     if (!currentQuestion.question.trim()) {
       errors.question = "Question text is required";
+    } else if (currentQuestion.question.length > 500) {
+      errors.question = "Question cannot exceed 500 characters";
     }
 
     if (!currentQuestion.answer.trim()) {
       errors.answer = "Answer is required";
+    } else if (currentQuestion.answer.length > 500) {
+      errors.answer = "Answer cannot exceed 500 characters";
     }
 
     if (currentQuestion.type === "multiple") {
@@ -178,6 +182,8 @@ export default function QuestionModal({
         currentQuestion.options.filter((o) => o.trim()).length < 2
       ) {
         errors.options = "At least two options are required";
+      } else if (currentQuestion.options.some((o) => o.length > 500)) {
+        errors.options = "Each option cannot exceed 500 characters";
       }
     }
 
@@ -204,7 +210,9 @@ export default function QuestionModal({
           {/* Question Type Selection - Only show for new questions */}
           {!isEditing && (
             <div className="space-y-2">
-              <label className="block text-sm mb-1 text-white">Question Type</label>
+              <label className="block text-sm mb-1 text-white">
+                Question Type
+              </label>
               <div className="flex gap-4">
                 <button
                   type="button"
@@ -281,11 +289,17 @@ export default function QuestionModal({
               name="question"
               value={currentQuestion.question}
               onChange={handleInputChangeAndClearError}
+              maxLength={500}
               className={`w-full bg-[#2a2a2a] border rounded-md p-2 min-h-[100px] text-white ${
                 modalErrors.question ? "border-red-500" : "border-0"
               }`}
               placeholder="Enter your question here"
             />
+            <div className="flex justify-between">
+              <span className="text-xs text-gray-400">
+                {currentQuestion.question.length}/500
+              </span>
+            </div>
             {modalErrors.question && (
               <p className="text-red-500 text-xs mt-1">
                 {modalErrors.question}
@@ -299,17 +313,24 @@ export default function QuestionModal({
               <label className="block text-sm mb-1 text-white">Options</label>
               <div className="space-y-2">
                 {currentQuestion.options?.map((option, index) => (
-                  <Input
-                    key={index}
-                    value={option}
-                    onChange={(e) =>
-                      handleOptionChangeAndClearError(index, e.target.value)
-                    }
-                    className={`bg-[#2a2a2a] h-[44px] border text-white rounded-md  border-transparent focus:border-[#F9DB6F]  focus:outline-none focus:!border-[#F9DB6F] ${
-                      modalErrors.options ? "border-red-500" : "border-0"
-                    }`}
-                    placeholder={`Option ${index + 1}`}
-                  />
+                  <div key={index}>
+                    <Input
+                      value={option}
+                      onChange={(e) =>
+                        handleOptionChangeAndClearError(index, e.target.value)
+                      }
+                      maxLength={500}
+                      className={`bg-[#2a2a2a] h-[44px] border text-white rounded-md  border-transparent focus:border-[#F9DB6F]  focus:outline-none focus:!border-[#F9DB6F] ${
+                        modalErrors.options ? "border-red-500" : "border-0"
+                      }`}
+                      placeholder={`Option ${index + 1}`}
+                    />
+                    <div className="flex justify-between">
+                      <span className="text-xs text-gray-400">
+                        {option.length}/500
+                      </span>
+                    </div>
+                  </div>
                 ))}
               </div>
               {modalErrors.options && (
@@ -329,11 +350,17 @@ export default function QuestionModal({
               name="answer"
               value={currentQuestion.answer}
               onChange={handleInputChangeAndClearError}
+              maxLength={500}
               className={` bg-[#2a2a2a] h-[44px] border rounded-md text-white ${
                 modalErrors.answer ? "border-red-500" : "border-0 "
               }`}
               placeholder="Enter the correct answer"
             />
+            <div className="flex justify-between">
+              <span className="text-xs text-gray-400">
+                {currentQuestion.answer.length}/500
+              </span>
+            </div>
             {modalErrors.answer && (
               <p className="text-red-500 text-xs mt-1">{modalErrors.answer}</p>
             )}
