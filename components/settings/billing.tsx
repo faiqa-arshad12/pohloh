@@ -183,7 +183,6 @@ export default function Billing() {
       setIsUserLoading(false);
     }
   }, [user?.id]);
-
   const getSubscriptionData = useCallback(async () => {
     if (!userData?.organizations?.subscriptions?.[0]?.subscription_id) return;
 
@@ -454,7 +453,7 @@ export default function Billing() {
                   const isCurrent =
                     subscription?.plan?.id === price.id &&
                     userData?.organizations?.subscriptions[0]?.is_subscribed &&
-                    !isSubscriptionCanceled;
+                    !isSubscriptionCanceled && subscription?.status==='active';
 
                   // Determine if this is the selected plan (but not current)
                   const isSelected = selectedPriceId === price.id && !isCurrent;

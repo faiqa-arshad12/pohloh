@@ -201,7 +201,7 @@ const OnboardingPage = () => {
       const data = await response.json();
 
       if (!data.customerId || !data.subscriptionId || !data.clientSecret) {
-        throw new Error("Invalid payment response data");
+        throw new Error(data.message||"Invalid payment response data");
       }
 
       const subscriptionData = {
@@ -624,7 +624,7 @@ const OnboardingPage = () => {
       <footer className="flex justify-between items-center px-16 pb-8 mt-auto">
         <Button
           onClick={handleBack}
-          disabled={currentStep === 0 || isloading}
+          disabled={currentStep === 0 || isloading || onboardingData.subscription?.is_subscribed || !onboardingData}
           className="w-[185px] h-[48px] rounded-[8px] border border-gray-300 px-3 py-[12px] gap-4 bg-[#2C2D2E] hover:bg-[#2C2D2E] disabled:opacity-50 cursor-pointer"
         >
           Back

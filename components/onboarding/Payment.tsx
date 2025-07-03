@@ -36,10 +36,8 @@ export default function PaymentForm({
 
           if (savedData) {
             const parsedData = JSON.parse(savedData);
-            console.log(parsedData, "data");
 
             if (parsedData.subscription) {
-              console.log(parsedData.subscription, "sub");
               setPaymentData(parsedData.subscription);
 
               // Check if plan_type exists before splitting
@@ -126,8 +124,16 @@ export default function PaymentForm({
                 </div>
               </div>
               <div
-                className="text-[#F9DB6F] font-urbanist font-semibold text-lg leading-[22px] tracking-[0%] cursor-pointer"
-                onClick={onPrevious}
+                className={`text-[#F9DB6F] font-urbanist font-semibold text-lg leading-[22px] tracking-[0%] ${
+                  parsedData?.subscription?.is_subscribed
+                    ? "pointer-events-none opacity-50 cursor-not-allowed"
+                    : "cursor-pointer"
+                }`}
+                onClick={() => {
+                  if (parsedData?.subscription?.is_subscribed && onPrevious) {
+                    onPrevious();
+                  }
+                }}
               >
                 Choose Plan
               </div>
