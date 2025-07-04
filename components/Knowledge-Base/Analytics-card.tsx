@@ -718,16 +718,22 @@ export default function AnalyticsCard({cardId}: AnalyticsCardProps) {
             {selectedCards.length > 0 && (
               <Button
                 onClick={() => {
-                  // Save selected cards to localStorage or process them
                   localStorage.setItem(
                     "selectedLearningPathCards",
                     JSON.stringify(selectedCards)
                   );
+                  const params = new URLSearchParams(window.location.search);
+                  params.delete("selectForLearningPath");
                   if (pathId) {
-                    // ShowToast(`${selectedCards.length} cards saved to learning path`, "success")
-                    router.push(`/tutor/creating-learning-path?id=${pathId}`);
+                    // Always preserve all other params
+                    params.set("id", pathId);
+                    router.push(
+                      `/tutor/creating-learning-path?${params.toString()}`
+                    );
                   } else {
-                    router.push(`/tutor/creating-learning-path`);
+                    router.push(
+                      `/tutor/creating-learning-path?${params.toString()}`
+                    );
                   }
                 }}
                 className="bg-[#F9DB6F] hover:bg-[#F9DB6F]/90 text-black cursor-pointer !h-[40px]"

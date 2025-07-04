@@ -22,7 +22,7 @@ import QuestionPreview from "./questions-preview";
 import Loader from "../shared/loader";
 import {Skeleton} from "@/components/ui/skeleton";
 import {createNotification} from "@/services/notification.service";
-import { useUserHook } from "@/hooks/useUser";
+import {useUserHook} from "@/hooks/useUser";
 
 // Types
 type Question = {
@@ -56,6 +56,24 @@ type GenerationParams = {
   cardsSelected: number;
   selectedCardIds: string[];
 };
+
+// Add this helper at the top-level (after imports, before component):
+function serializeFormDataToQuery(formData: PathFormData) {
+  const params = new URLSearchParams();
+  if (formData.title) params.set("title", formData.title);
+  if (formData.path_owner) params.set("path_owner", formData.path_owner);
+  if (formData.category) params.set("category", formData.category);
+  if (formData.category_id) params.set("category_id", formData.category_id);
+  if (formData.num_of_questions)
+    params.set("num_of_questions", String(formData.num_of_questions));
+  if (formData.question_type)
+    params.set("question_type", formData.question_type);
+  if (formData.verification_period)
+    params.set("verification_period", formData.verification_period);
+  if (formData.customDate)
+    params.set("customDate", formData.customDate.toISOString());
+  return params.toString();
+}
 
 export default function LearningPathPage() {
   const router = useRouter();
@@ -99,7 +117,7 @@ export default function LearningPathPage() {
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [questions, setQuestions] = useState<Question[]>([]);
-  const {userData} = useUserHook()
+  const {userData} = useUserHook();
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<Question>({
     id: "",
@@ -679,7 +697,7 @@ export default function LearningPathPage() {
       // Notification logic for team
       if (formData.category_id) {
         await createNotification({
-          user_id:userData?.id || "",
+          user_id: userData?.id || "",
           org_id: orgId,
           message: `A new learning path '${formData.title}' was ${
             pathId ? "updated" : "created"
@@ -921,6 +939,53 @@ export default function LearningPathPage() {
     return type === "multiple" ? "Multiple Choice" : "Short Answer";
   };
 
+  // Add this helper at the top-level (after imports, before component):
+  function serializeFormDataToQuery(formData: PathFormData) {
+    const params = new URLSearchParams();
+    if (formData.title) params.set("title", formData.title);
+    if (formData.path_owner) params.set("path_owner", formData.path_owner);
+    if (formData.category) params.set("category", formData.category);
+    if (formData.category_id) params.set("category_id", formData.category_id);
+    if (formData.num_of_questions)
+      params.set("num_of_questions", String(formData.num_of_questions));
+    if (formData.question_type)
+      params.set("question_type", formData.question_type);
+    if (formData.verification_period)
+      params.set("verification_period", formData.verification_period);
+    if (formData.customDate)
+      params.set("customDate", formData.customDate.toISOString());
+    return params.toString();
+  }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setFormData((prev) => {
+      const questionTypeParam = params.get("question_type");
+      let question_type: "multiple" | "short" = prev.question_type;
+      if (questionTypeParam === "multiple" || questionTypeParam === "short") {
+        question_type = questionTypeParam;
+      }
+      return {
+        ...prev,
+        title: params.get("title") || prev.title,
+        path_owner: params.get("path_owner") || prev.path_owner,
+        category: params.get("category") || prev.category,
+        category_id: params.get("category_id") || prev.category_id,
+        num_of_questions: params.get("num_of_questions")
+          ? Number(params.get("num_of_questions"))
+          : prev.num_of_questions,
+        question_type,
+        verification_period:
+          params.get("verification_period") || prev.verification_period,
+        customDate: params.get("customDate")
+          ? new Date(params.get("customDate") as string)
+          : prev.customDate,
+        cardsSelected: prev.cardsSelected,
+        totalQuestions: prev.totalQuestions,
+      };
+    });
+  }, [pathId]);
+
   if (loading) {
     return (
       <div className="min-h-screen text-white">
@@ -1008,7 +1073,7 @@ export default function LearningPathPage() {
                 placeholder="Insert Title"
                 value={formData.title}
                 onChange={handleInputChange}
-                className="h-[44px] bg-[#2a2a2a] text-white rounded-md border border-transparent focus:border-[#F9DB6F]  focus:outline-none focus:!border-[#F9DB6F]"
+                className="h-[44px] bg-[#2a2a2a] text-[#FFFFFF52] rounded-md border border-transparent focus:border-[#F9DB6F]  focus:outline-none focus:!border-[#F9DB6F]"
               />
 
               {formErrors.title && (
@@ -1110,10 +1175,10 @@ export default function LearningPathPage() {
                 variant="outline"
                 className="border bg-[#FFFFFF14] h-[44px] border-[#f0d568] text-[#f0d568] hover:text-[#f0d568] hover:bg-[#F9DB6F]/10 h-10 rounded-md cursor-pointer"
                 onClick={() => {
-                  // Pass the current path ID if editing
+                  const query = serializeFormDataToQuery(formData);
                   const url = pathId
-                    ? `/knowledge-base?selectForLearningPath=true&id=${pathId}`
-                    : "/knowledge-base?selectForLearningPath=true";
+                    ? `/knowledge-base?selectForLearningPath=true&id=${pathId}&${query}`
+                    : `/knowledge-base?selectForLearningPath=true&${query}`;
                   router.push(url);
                 }}
               >
