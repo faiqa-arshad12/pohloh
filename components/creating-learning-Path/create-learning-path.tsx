@@ -75,6 +75,20 @@ function serializeFormDataToQuery(formData: PathFormData) {
   return params.toString();
 }
 
+// Helper to check if any form-related query param exists
+function hasFormQueryParams(params: URLSearchParams) {
+  return (
+    params.get("title") ||
+    params.get("path_owner") ||
+    params.get("category") ||
+    params.get("category_id") ||
+    params.get("num_of_questions") ||
+    params.get("question_type") ||
+    params.get("verification_period") ||
+    params.get("customDate")
+  );
+}
+
 export default function LearningPathPage() {
   const router = useRouter();
 
@@ -183,6 +197,9 @@ export default function LearningPathPage() {
   };
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const hasParams = hasFormQueryParams(params);
+
     const fetchData = async () => {
       if (!user) return;
 
@@ -193,7 +210,6 @@ export default function LearningPathPage() {
         const userResponse = await fetch(`${apiUrl}/users/${user.id}`, {
           method: "GET",
           headers: {"Content-Type": "application/json"},
-          // credentials: "include",
         });
 
         if (!userResponse.ok) {
@@ -215,12 +231,10 @@ export default function LearningPathPage() {
           fetch(`${apiUrl}/users/organizations/${userOrgId}`, {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-            // credentials: "include",
           }),
           fetch(`${apiUrl}/teams/organizations/${userOrgId}`, {
             method: "GET",
             headers: {"Content-Type": "application/json"},
-            // credentials: "include",
           }),
         ]);
 
@@ -234,11 +248,11 @@ export default function LearningPathPage() {
         setUsers(usersData.data);
         setTeams(teamsData.teams);
 
-        // If editing, fetch the learning path data
-        if (pathId) {
+        // Only fetch and set form data from API if NO query params
+        if (pathId && !hasParams) {
           await fetchLearningPath(pathId);
-        } else {
-          // Check for selected cards in localStorage for new paths
+        } else if (!pathId) {
+          // For new paths, restore selected cards from localStorage
           const savedCards = localStorage.getItem("selectedLearningPathCards");
           if (savedCards) {
             setSelectedCards(JSON.parse(savedCards));
@@ -265,7 +279,6 @@ export default function LearningPathPage() {
       const pathResponse = await fetch(`${apiUrl}/learning-paths/${id}`, {
         method: "GET",
         headers: {"Content-Type": "application/json"},
-        // credentials: "include",
       });
 
       if (!pathResponse.ok) {
@@ -323,12 +336,6 @@ export default function LearningPathPage() {
       );
     }
   };
-  useEffect(() => {
-    const savedCards = localStorage.getItem("selectedLearningPathCards");
-    if (savedCards) {
-      setSelectedCards(JSON.parse(savedCards));
-    }
-  }, []);
 
   // Update total questions when relevant values change
   useEffect(() => {
@@ -938,24 +945,6 @@ export default function LearningPathPage() {
   const displayQuestionType = (type: "multiple" | "short") => {
     return type === "multiple" ? "Multiple Choice" : "Short Answer";
   };
-
-  // Add this helper at the top-level (after imports, before component):
-  function serializeFormDataToQuery(formData: PathFormData) {
-    const params = new URLSearchParams();
-    if (formData.title) params.set("title", formData.title);
-    if (formData.path_owner) params.set("path_owner", formData.path_owner);
-    if (formData.category) params.set("category", formData.category);
-    if (formData.category_id) params.set("category_id", formData.category_id);
-    if (formData.num_of_questions)
-      params.set("num_of_questions", String(formData.num_of_questions));
-    if (formData.question_type)
-      params.set("question_type", formData.question_type);
-    if (formData.verification_period)
-      params.set("verification_period", formData.verification_period);
-    if (formData.customDate)
-      params.set("customDate", formData.customDate.toISOString());
-    return params.toString();
-  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

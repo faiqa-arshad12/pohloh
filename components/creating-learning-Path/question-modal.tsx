@@ -287,7 +287,7 @@ export default function QuestionModal({
             <textarea
               id="question"
               name="question"
-              value={currentQuestion.question}
+              value={currentQuestion?.question}
               onChange={handleInputChangeAndClearError}
               maxLength={500}
               className={`w-full bg-[#2a2a2a] border rounded-md p-2 min-h-[100px] text-white ${
@@ -297,7 +297,7 @@ export default function QuestionModal({
             />
             <div className="flex justify-between">
               <span className="text-xs text-gray-400">
-                {currentQuestion.question.length}/500
+                {currentQuestion?.question?.length}/500
               </span>
             </div>
             {modalErrors.question && (
@@ -325,9 +325,9 @@ export default function QuestionModal({
                       }`}
                       placeholder={`Option ${index + 1}`}
                     />
-                    <div className="flex justify-between">
+                    <div className="flex justify-between mt-2">
                       <span className="text-xs text-gray-400">
-                        {option.length}/500
+                        {option?.length}/500
                       </span>
                     </div>
                   </div>
@@ -357,8 +357,8 @@ export default function QuestionModal({
               placeholder="Enter the correct answer"
             />
             <div className="flex justify-between">
-              <span className="text-xs text-gray-400">
-                {currentQuestion.answer.length}/500
+              <span className="text-xs text-gray-400 mt-2">
+                {currentQuestion?.answer?.length}/500
               </span>
             </div>
             {modalErrors.answer && (
