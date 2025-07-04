@@ -24,7 +24,13 @@ import {useSignUp, useUser} from "@clerk/nextjs";
 import {ShowToast} from "../shared/show-toast";
 import Loader from "../shared/loader";
 import {Role} from "@/types/types";
-import {apiUrl, frontend_url, nameRegex, usernameRegex, users} from "@/utils/constant";
+import {
+  apiUrl,
+  frontend_url,
+  nameRegex,
+  usernameRegex,
+  users,
+} from "@/utils/constant";
 import {UserStatus} from "@/types/enum";
 
 // const formSchema = z.object({
@@ -50,9 +56,13 @@ const formSchema = z.object({
 
   email: z
     .string()
-    .email("Please enter a valid email address")
-    .max(256, "Email must not exceed 256 characters"),
-
+    .transform((val) => val.trim()) // Automatically trim whitespace
+    .pipe(
+      z
+        .string()
+        .email("Please enter a valid email address")
+        .max(256, "Email must not exceed 256 characters")
+    ),
   password: z
     .string()
     .min(8, "Minimum length is 8 characters")

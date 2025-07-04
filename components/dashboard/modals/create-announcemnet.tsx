@@ -1,5 +1,4 @@
 "use client";
-
 import {useEffect, useRef, useState} from "react";
 import {useForm} from "react-hook-form";
 import {useRouter} from "next/navigation";
@@ -122,11 +121,9 @@ function CreateAnnouncement({
             "Content-Type": "application/json",
           },
         });
-
         if (!userResponse.ok) {
           throw new Error("Failed to fetch user details");
         }
-
         const userDataa = await userResponse.json();
         const orgId = userDataa.user.organizations?.id;
         setUserData(userDataa.user);
@@ -216,6 +213,7 @@ function CreateAnnouncement({
       const selectedDate = new Date(data.expiry_date);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+
       if (selectedDate < today) {
         throw new Error("Expiry date must be today or in the future");
       }
@@ -258,7 +256,6 @@ function CreateAnnouncement({
       }
 
       const result = await response.json();
-
       ShowToast("Announcement created successfully", "success");
 
       await createNotification({
@@ -324,7 +321,6 @@ function CreateAnnouncement({
         <DialogHeader>
           <DialogTitle className="text-[32px]">Create Announcement</DialogTitle>
         </DialogHeader>
-
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
@@ -488,7 +484,8 @@ function CreateAnnouncement({
                         ref={inputRef}
                         type="date"
                         min={new Date().toISOString().split("T")[0]}
-                        className="w-full h-[44px] pr-10 px-3 rounded-md border border-[#FFFFFF14] bg-[#FFFFFF14] text-white font-urbanist font-semibold appearance-none
+                        onClick={handleIconClick}
+                        className="w-full h-[44px] pr-10 px-3 rounded-md border border-[#FFFFFF14] bg-[#FFFFFF14] text-white font-urbanist font-semibold appearance-none cursor-pointer
                           [&::-webkit-calendar-picker-indicator]:appearance-none
                           [&::-webkit-calendar-picker-indicator]:invisible
                           [&::-webkit-calendar-picker-indicator]:w-0
@@ -498,7 +495,7 @@ function CreateAnnouncement({
                       <Calendar
                         size={18}
                         onClick={handleIconClick}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white cursor-pointer"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white cursor-pointer pointer-events-none"
                       />
                     </div>
                   </FormControl>

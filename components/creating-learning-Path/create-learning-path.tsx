@@ -980,7 +980,7 @@ export default function LearningPathPage() {
           {pathGenerated && (
             <Button
               variant="outline"
-              className="h-[38px] w-[242px] border border-[#F9DB6F] text-black bg-[#F9DB6F] hover:bg-[#F9DB6F] hover:text-black rounded-md font-medium transition-colors duration-200 cursor-pointer"
+              className="h-[41px] w-[232px] border border-[#F9DB6F] text-black bg-[#F9DB6F] hover:bg-[#F9DB6F] hover:text-black rounded-md font-medium transition-colors duration-200 cursor-pointer"
               onClick={handlePublish}
               disabled={
                 loading || isGenerating || isDrafting || needsRegeneration

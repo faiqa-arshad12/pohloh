@@ -469,7 +469,7 @@ export default function Account() {
                 onClick={() => setStep(2)}
                 className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm  cursor-pointer ${
                   steps === 2
-                    ? "bg-[#F9E36C] text-black"
+                    ? "bg-[#F9DB6F] text-black"
                     : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
                 }`}
               >
@@ -483,7 +483,7 @@ export default function Account() {
               onClick={() => setStep(4)}
               className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm  cursor-pointer ${
                 steps === 4
-                  ? "bg-[#F9E36C] text-black"
+                  ? "bg-[#F9DB6F] text-black"
                   : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
               }`}
             >
@@ -496,7 +496,7 @@ export default function Account() {
               onClick={() => setLogoutModalOpen(true)}
               className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm cursor-pointer  cursor-pointer ${
                 steps === 5
-                  ? "bg-[#F9E36C] text-black"
+                  ? "bg-[#F9DB6F] text-black"
                   : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
               }`}
             >

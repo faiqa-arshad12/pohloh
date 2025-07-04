@@ -35,8 +35,13 @@ const formSchema = z.object({
   seatType: z.enum(["admin", "user"]),
   email: z
     .string()
-    .email("Please enter a valid email address")
-    .max(256, "Email must not exceed 256 characters"),
+    .transform((val) => val.trim()) // Automatically trim whitespace
+    .pipe(
+      z
+        .string()
+        .email("Please enter a valid email address")
+        .max(256, "Email must not exceed 256 characters")
+    ),
 });
 
 interface InviteUserModalProps {

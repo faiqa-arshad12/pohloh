@@ -33,8 +33,13 @@ import Loader from "../shared/loader";
 const formSchema = z.object({
   email: z
     .string()
-    .email("Please enter a valid email address")
-    .max(256, "Email must not exceed 256 characters"),
+    .transform((val) => val.trim()) // Automatically trim whitespace
+    .pipe(
+      z
+        .string()
+        .email("Please enter a valid email address")
+        .max(256, "Email must not exceed 256 characters")
+    ),
   password: z
     .string()
     .min(6, "Password must be at least 6 characters")
