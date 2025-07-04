@@ -1,6 +1,6 @@
 "use client";
 
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import {useForm} from "react-hook-form";
 import {Button} from "@/components/ui/button";
 import {Textarea} from "@/components/ui/textarea";
@@ -65,7 +65,10 @@ const CustomTagList = ({tags, onRemoveTag}: CustomTagListProps) => {
 };
 
 const feedbackSchema = z.object({
-  comments: z.string().max(500, "Comments cannot exceed 500 characters"),
+  comments: z
+    .string()
+    .min(1, "Please enter a description")
+    .max(500, "Comments cannot exceed 500 characters"),
   tags: z.array(z.string()).min(1, "Please select at least one tag"),
 });
 
@@ -85,6 +88,19 @@ export default function FeedbackForm({
     mode: "onChange",
     resolver: zodResolver(feedbackSchema),
   });
+
+  // Add a key to force remount, and reset form on close
+  // const dialogKey = isOpen ? `open-${learningPathId}` : "closed";
+
+  // // Reset form on close
+  // useEffect(() => {
+  //   if (!isOpen) {
+  //     form.reset({
+  //       comments: "",
+  //       tags: ["Incorrect Information", "Outdated Content", "Uncleared Output"],
+  //     });
+  //   }
+  // }, [isOpen]);
 
   const handleSubmit = async (data: FeedbackFormValues) => {
     setIsSubmitting(true);
@@ -109,7 +125,10 @@ export default function FeedbackForm({
         throw new Error(response.statusText);
       }
 
-      console.log("Feedback submitted successfully!");
+      // FIX: Close modal immediately after successful submit
+      // onClose();
+
+      // Now do any further async work (notification, etc)
       try {
         const pathResponse = await fetch(
           `${apiUrl}/learning-paths/${learningPathId}`,
@@ -168,7 +187,7 @@ export default function FeedbackForm({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog  open={isOpen} onOpenChange={onClose}>
       <DialogContent
         className="bg-[#1a1a1a] border-none rounded-lg w-full max-w-2xl h-[auto]"
         style={{borderRadius: "30px"}}
@@ -202,7 +221,7 @@ export default function FeedbackForm({
               render={({field}) => (
                 <FormItem>
                   <FormLabel className="text-white font-urbanist font-normal text-[18px] leading-[24px] tracking-[0px] align-middle">
-                    Tell Us More (Optional)
+                    Tell Us More
                   </FormLabel>
                   <FormControl>
                     <Textarea
