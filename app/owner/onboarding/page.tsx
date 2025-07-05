@@ -354,10 +354,11 @@ const OnboardingPage = () => {
       }
 
       // Clear onboarding data before redirecting
+      router.replace("/dashboard");
+
       clearOnboardingData(user.id);
 
       ShowToast("Onboarding completed successfully!");
-      router.push("/dashboard");
     } catch (error) {
       handleError(
         "Onboarding completion failed: " +

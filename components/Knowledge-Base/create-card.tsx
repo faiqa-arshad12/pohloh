@@ -295,6 +295,10 @@ export default function CreateCard({cardId}: {cardId?: string}) {
           verificationperiod: extractedData.verificationperiod,
           verificationPeriodType: periodType,
           visibility: extractedData.visibility,
+          category_id: extractedData.category_id,
+          folder_id: extractedData.folder_id,
+          card_owner_id: extractedData.card_owner_id,
+          team_to_announce_id: extractedData.team_to_announce_id,
         });
 
         setEditorContent(extractedData.content);
@@ -403,6 +407,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
     const fetchSubcategories = async () => {
       if (!selectedCategory) {
         setSubcategories([]);
+        form.setValue("folder_id", ""); // Clear folder when no category
         return;
       }
 
@@ -429,7 +434,10 @@ export default function CreateCard({cardId}: {cardId?: string}) {
               (sub: Subcategory) => sub.id === originalCardData.folder_id
             );
             if (folderExists) {
-              form.setValue("folder_id", originalCardData.folder_id);
+              // Use setTimeout to ensure the form is ready
+              setTimeout(() => {
+                form.setValue("folder_id", originalCardData.folder_id);
+              }, 100);
             } else {
               form.setValue("folder_id", "");
             }
@@ -445,10 +453,10 @@ export default function CreateCard({cardId}: {cardId?: string}) {
       }
     };
 
-    if (selectedCategory && (dataLoaded || isEditMode)) {
+    if (selectedCategory) {
       fetchSubcategories();
     }
-  }, [selectedCategory, form, isEditMode, originalCardData, dataLoaded]);
+  }, [selectedCategory, form, isEditMode, originalCardData]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!user || !org_id) {
@@ -593,11 +601,38 @@ export default function CreateCard({cardId}: {cardId?: string}) {
       return;
     }
 
-    // Validate required fields for draft
-    const isValid = await form.trigger(["title", "content"]);
+    // Validate required fields for draft - including category and folder
+    // Replace this line:
+    // const requiredFields = ["title", "content", "category_id", "folder_id"]
+    // With this properly typed version:
+    const requiredFields: (keyof z.infer<typeof formSchema>)[] = [
+      "title",
+      "content",
+      "category_id",
+      "folder_id",
+    ];
+    const isValid = await form.trigger(requiredFields);
+
     if (!isValid) {
+      const errors = form.formState.errors;
+      const errorMessages = Object.entries(errors)
+        .filter(([field, error]) =>
+          requiredFields.includes(field as keyof z.infer<typeof formSchema>)
+        )
+        .map(([field, error]) => {
+          const fieldName =
+            field === "category_id"
+              ? "Category"
+              : field === "folder_id"
+              ? "Folder"
+              : field.charAt(0).toUpperCase() + field.slice(1);
+          return `${fieldName}: ${error?.message || "Invalid value"}`;
+        })
+        .join("\n");
+
       ShowToast(
-        "Please fix the validation errors before saving draft",
+        "Please fix the following errors before saving draft:\n" +
+          errorMessages,
         "error"
       );
       return;
@@ -614,10 +649,8 @@ export default function CreateCard({cardId}: {cardId?: string}) {
 
     setLoading("submitting", true);
     setError("form", null);
-
     try {
       setIsDrafting(true);
-
       const values = form.getValues();
       const cardData = {
         ...values,
@@ -1013,7 +1046,13 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                             }
                           >
                             <FormControl>
-                              <SelectTrigger className="w-full h-[44px] bg-[#2C2D2E]  border border-white/10 rounded-[6px] mt-2 justify-between">
+                              <SelectTrigger
+                                className={cn(
+                                  "w-full h-[44px] bg-[#2C2D2E]  border border-white/10 rounded-[6px] mt-2 justify-between",
+                                  form.formState.errors.folder_id &&
+                                    "border-red-500"
+                                )}
+                              >
                                 {loadingStates.subcategories ? (
                                   "Loading folders..."
                                 ) : !selectedCategory ? (
@@ -1045,7 +1084,7 @@ export default function CreateCard({cardId}: {cardId?: string}) {
                               ))}
                             </SelectContent>
                           </Select>
-                          <FormMessage />
+                          <FormMessage className="text-red-400 text-sm mt-1" />
                         </FormItem>
                       )}
                     />
