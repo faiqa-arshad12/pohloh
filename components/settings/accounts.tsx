@@ -455,7 +455,7 @@ export default function Account() {
               onClick={() => setStep(1)}
               className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm cursor-pointer ${
                 steps === 1
-                  ? "bg-[#F9E36C] text-black"
+                  ? "bg-[#F9DB6F] text-black"
                   : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
               }`}
             >
@@ -567,7 +567,7 @@ export default function Account() {
                         </div>
                       </div>
                       <Button
-                        className="self-end md:self-auto bg-[#F9E36C] text-black rounded-lg  flex items-center justify-center cursor-pointer"
+                        className="self-end md:self-auto bg-[#F9DB6F] text-black rounded-lg  flex items-center justify-center cursor-pointer"
                         onClick={() => {
                           setIsEditProfileModalOpen(true);
                         }}
@@ -592,7 +592,7 @@ export default function Account() {
                             User Management
                           </h1>
                           <button
-                            className="bg-[#F9E36C] h-[40px] text-black px-4 py-2 rounded-md hover:bg-[#F9E36C] transition-colors font-urbanist font-medium text-[14px] leading-[100%] tracking-[0] cursor-pointer opacity-100 hover:opacity-80"
+                            className="bg-[#F9DB6F] h-[40px] text-black px-4 py-2 rounded-md hover:bg-[#F9DB6F] transition-colors font-urbanist font-medium text-[14px] leading-[100%] tracking-[0] cursor-pointer opacity-100 hover:opacity-80"
                             onClick={() => handleInvitingNewUser()}
                           >
                             {isInviteLoading ? <Loader /> : "Invite User"}
@@ -672,10 +672,10 @@ export default function Account() {
                                     onChange={() =>
                                       handleCheckboxChange(day as Weekday)
                                     }
-                                    className="peer h-full w-full appearance-none border border-[#F9E36C] bg-transparent cursor-pointer"
+                                    className="peer h-full w-full appearance-none border border-[#F9DB6F] bg-transparent cursor-pointer"
                                   />
                                   {checked && (
-                                    <Check className="absolute top-0 left-0 h-full w-full text-[#F9E36C] p-[6px] pointer-events-none cursor-pointer" />
+                                    <Check className="absolute top-0 left-0 h-full w-full text-[#F9DB6F] p-[6px] pointer-events-none cursor-pointer" />
                                   )}
                                 </div>
                                 <label
