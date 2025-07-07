@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {useEffect, useState, useCallback} from "react";
 import {MoreVertical, Eye, Trash2, FileBadge, Pen} from "lucide-react";
 import {
   DropdownMenu,
@@ -17,18 +17,17 @@ import type {
   EnrolledPathsApiResponse,
 } from "@/types/types";
 import Leavefeedback from "./session-summary/leave-feedback";
-
 import {apiUrl} from "@/utils/constant";
 import {useUserHook} from "@/hooks/useUser";
 import {Icon} from "@iconify/react/dist/iconify.js";
 import {ShowToast} from "../shared/show-toast";
 import DeleteConfirmationModal from "./delete-modal";
+import Loader from "../shared/loader";
 
 export default function LearningPaths() {
   const router = useRouter();
   const [showLeaveFeedback, setShowLeaveFeedback] = useState(false);
   const [isOpen, setIsopen] = useState(false);
-
   const [enrolledPaths, setEnrolledPaths] = useState<EnrolledPath[]>([]);
   const [id, setId] = useState("");
   const [selectedLearningPath, setSelectedLearningPath] = useState<{
@@ -47,28 +46,26 @@ export default function LearningPaths() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [refresh, setRefresh] = useState(0);
 
   useEffect(() => {
     if (userData?.id) {
       fetchEnrolledPaths();
     }
-  }, [userData]);
+  }, [userData, refresh]);
 
-  const fetchEnrolledPaths = async () => {
+  const fetchEnrolledPaths = async (id?: string) => {
     try {
       setIsLoading(true);
       setError(null);
-
       const response = await fetch(
-        `${apiUrl}/learning-paths/enrolled-paths/${userData?.id}`
+        `${apiUrl}/learning-paths/enrolled-paths/${id || userData?.id}`
       );
-
       if (!response.ok) {
         throw new Error(`Failed to fetch data: ${response.status}`);
       }
-
       const data: EnrolledPathsApiResponse = await response.json();
-
       if (data.success) {
         setEnrolledPaths(data.paths);
       } else {
@@ -84,36 +81,41 @@ export default function LearningPaths() {
     }
   };
 
-  const handlePathSelect = (path: EnrolledPath) => {
-    const questions: Question[] = path.learning_path_id.questions || [];
-    setId(path.learning_path_id.id);
-    setSelectedLearningPath({
-      id: path.id,
-      title: path.learning_path_id.title,
-      questions: questions,
-      question_completed: path.question_completed,
-      questions_answered: path.questions_answered,
-    });
-  };
+  const handlePathSelect = useCallback(
+    (path: EnrolledPath) => {
+      setId(path.learning_path_id.id);
 
-  const handleClearSelectedPath = () => {
+      // Ensure no modals are open when selecting a path
+      if (deleteModalOpen || isOpen || showLeaveFeedback || isNavigating) {
+        return;
+      }
+
+      const questions: Question[] = path.learning_path_id.questions || [];
+      setSelectedLearningPath({
+        id: path.id,
+        title: path.learning_path_id.title,
+        questions: questions,
+        question_completed: path.question_completed,
+        questions_answered: path.questions_answered,
+      });
+    },
+    [deleteModalOpen, isOpen, showLeaveFeedback, isNavigating]
+  );
+
+  const handleClearSelectedPath = useCallback(() => {
     setSelectedLearningPath(null);
-    fetchEnrolledPaths();
-  };
+    if (userData.id) fetchEnrolledPaths();
+  }, [userData]);
 
   const handleQuestionUpdate = async () => {
     try {
-      // Fetch fresh data without showing loading state
       const response = await fetch(
         `${apiUrl}/learning-paths/enrolled-paths/${userData?.id}`
       );
-
       if (!response.ok) {
         throw new Error(`Failed to fetch data: ${response.status}`);
       }
-
       const data: EnrolledPathsApiResponse = await response.json();
-
       if (data.success) {
         setEnrolledPaths(data.paths);
       }
@@ -133,12 +135,9 @@ export default function LearningPaths() {
           stared: !currentStarred,
         }),
       });
-
       if (!response.ok) {
         throw new Error("Failed to toggle star status");
       }
-
-      // Update the local state after successful API call
       setEnrolledPaths((prevPaths) =>
         prevPaths.map((path) =>
           path.id === pathId ? {...path, stared: !currentStarred} : path
@@ -148,50 +147,152 @@ export default function LearningPaths() {
       console.error("Error toggling star status:", error);
     }
   };
-  const handleEdit = (row: string) => {
-    router.push(`/tutor/creating-learning-path?id=${row}`);
-    // Add your edit logic here
-    // router.push(`/edit-learning-path/${row.id}`);
-  };
 
-  // Function to handle deleting a learning path
-  const openDeleteModal = (id: string) => {
+  // Fixed navigation handler with proper error handling
+  const handleEdit = useCallback(
+    async (pathId: string) => {
+      if (isNavigating) {
+        console.log("Already navigating, ignoring click");
+        return;
+      }
+
+      try {
+        console.log("Starting navigation to:", pathId);
+        setIsNavigating(true);
+
+        // Add a small delay to ensure state is set
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        const url = `/tutor/creating-learning-path?id=${pathId}`;
+        console.log("Navigating to:", url);
+
+        await router.push(url);
+        console.log("Navigation completed");
+      } catch (error) {
+        console.error("Navigation error:", error);
+        ShowToast("Failed to navigate. Please try again.", "error");
+        setIsNavigating(false);
+      }
+    },
+    [router, isNavigating]
+  );
+
+  // Completely reset all modal states
+  const resetAllModals = useCallback(() => {
+    console.log("Resetting all modals");
+    setDeleteModalOpen(false);
+    setItemToDelete(null);
+    setIsDeleting(false);
+    setIsopen(false);
+    setShowLeaveFeedback(false);
+    setIsNavigating(false);
+
+    // Force remove any lingering modal backdrops
+    setTimeout(() => {
+      const backdrops = document.querySelectorAll(
+        "[data-radix-popper-content-wrapper]"
+      );
+      backdrops.forEach((backdrop) => backdrop.remove());
+
+      const overlays = document.querySelectorAll('[data-state="open"]');
+      overlays.forEach((overlay) => {
+        if (overlay.getAttribute("role") === "dialog") {
+          overlay.remove();
+        }
+      });
+
+      // Reset body styles that might be set by modals
+      document.body.style.pointerEvents = "auto";
+      document.body.style.overflow = "auto";
+    }, 100);
+  }, []);
+
+  // Delete modal handlers
+  const openDeleteModal = useCallback((id: string) => {
+    console.log("Opening delete modal for:", id);
     setItemToDelete(id);
     setDeleteModalOpen(true);
-  };
+  }, []);
 
-  // Function to handle confirming deletion
-  const confirmDelete = async (id: string) => {
-    try {
-      console.log(id, "string");
-      setIsDeleting(true);
+  const closeDeleteModal = useCallback(() => {
+    console.log("Closing delete modal");
+    setDeleteModalOpen(false);
+    setItemToDelete(null);
+    setIsDeleting(false);
+  }, []);
 
-      if (itemToDelete !== null) {
-        const response = await fetch(`${apiUrl}/learning-paths/${id}`, {
-          method: "delete",
-          headers: {"Content-Type": "application/json"},
-        });
-        ShowToast(`Successfully deleted!`);
-        fetchEnrolledPaths();
-
-        if (!response.ok) throw new Error("Failed to delete learning path");
+  const confirmDelete = useCallback(
+    async (id: string) => {
+      if (!id) {
+        return;
       }
-    } catch (err) {
-      console.error(`Error deleting learningpath :`, err);
-      ShowToast(`Error occured while deleting learning path: ${err}`, "error");
-    } finally {
-      setIsDeleting(false);
-      setItemToDelete(null);
-      setDeleteModalOpen(false);
+
+      try {
+        setIsDeleting(true);
+
+        const response = await fetch(
+          `${apiUrl}/learning-paths/user-path/${id}`,
+          {
+            method: "DELETE",
+            headers: {"Content-Type": "application/json"},
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to delete learning path");
+        }
+
+        ShowToast("Successfully deleted!");
+        setRefresh((r) => r + 1);
+      } catch (err) {
+        console.error("Error deleting learning path:", err);
+        ShowToast(
+          `Error occurred while deleting learning path: ${err}`,
+          "error"
+        );
+      } finally {
+        resetAllModals();
+      }
+    },
+    [resetAllModals]
+  );
+
+  // Feedback modal handlers
+  const openFeedbackModal = useCallback(() => {
+    setIsopen(true);
+  }, []);
+
+  const closeFeedbackModal = useCallback(() => {
+    setIsopen(false);
+  }, []);
+
+  // Handle explore button click with proper navigation
+  const handleExploreClick = useCallback(async () => {
+    if (isNavigating) return;
+
+    try {
+      setIsNavigating(true);
+      await router.push("/tutor/explore-learning-paths");
+    } catch (error) {
+      console.error("Explore navigation error:", error);
+      ShowToast("Failed to navigate. Please try again.", "error");
+      setIsNavigating(false);
     }
-  };
+  }, [router, isNavigating]);
+
   return (
-    <div className="flex text-white">
+    <div className="flex text-white relative">
+      {/* Debug panel - remove in production */}
+
+      {/* Loading overlay when navigating */}
+      {isNavigating && (
+        <div className="fixed inset-0 z-[9998] bg-black/50 flex items-center justify-center"></div>
+      )}
+
       <div className="flex flex-col w-full overflow-auto">
         <h1 className="font-urbanist font-medium text-[32px] leading-[100%] tracking-[0] py-4">
           Learning Paths
         </h1>
-
         <div className="flex flex-1 flex-col md:flex-row gap-4 just sm:flex-row pt-4 min-h-[90vh]">
           {/* Left sidebar */}
           <div className="relative w-fit pb-8 h-[90vh]">
@@ -208,14 +309,12 @@ export default function LearningPaths() {
                 fill="#191919"
               />
             </svg>
-
             {/* Main card content */}
             <div className="relative z-10 w-80 mb-5 rounded-lg flex flex-col h-full">
               <div className="space-y-4 px-4 py-4 flex-grow overflow-y-auto no-scrollbar text-white">
                 <div className="p-4 font-urbanist font-[600] text-[20px] leading-[100%] tracking-[0] text-white pt-8">
                   Enrolled Learning Paths
                 </div>
-
                 {isLoading ? (
                   <div className="flex justify-center items-center h-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#F9DB6F]"></div>
@@ -230,9 +329,7 @@ export default function LearningPaths() {
                   <div className="font-urbanist font-[600] text-[20px] leading-[100%] tracking-[0] text-white py-4 h-[68vh] overflow-auto gap-4 space-y-2">
                     {enrolledPaths.map((path) => {
                       const sessionCompleted = path.completed;
-
                       const isSelected = selectedLearningPath?.id === path.id;
-
                       return (
                         <div
                           key={path.id}
@@ -240,15 +337,21 @@ export default function LearningPaths() {
                             isSelected
                               ? "bg-[#0E0F11] opacity-80 border-0 border-[#F9DB6F] shadow-lg"
                               : "bg-[#0E0F11] opacity-100 hover:opacity-80 hover:bg-[#1A1B1D]"
+                          } ${
+                            isNavigating ? "pointer-events-none opacity-50" : ""
                           }`}
-                          onClick={() => handlePathSelect(path)}
+                          onClick={() =>
+                            !isNavigating && handlePathSelect(path)
+                          }
+                          style={{
+                            pointerEvents: isNavigating ? "none" : "auto",
+                          }}
                         >
                           <div
                             className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-medium ${"bg-[#F9DB6F] text-black"}`}
                           >
                             <FileBadge className="h-4 w-4" />
                           </div>
-
                           <div className="flex-1">
                             <div
                               className={`font-urbanist font-medium text-[16px] leading-[100%] ${"text-white"}`}
@@ -273,30 +376,37 @@ export default function LearningPaths() {
                               </div>
                             </div>
                           </div>
-
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <button
                                 className={`p-1 ${
                                   isSelected ? "text-[#F9DB6F]" : "text-white"
                                 }`}
-                                onClick={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  console.log("Dropdown clicked");
+                                }}
+                                disabled={isNavigating}
+                                style={{
+                                  pointerEvents: isNavigating ? "none" : "auto",
+                                }}
                               >
                                 <MoreVertical className="h-4 w-4 cursor-pointer" />
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className="bg-[#222222] text-white border border-[#222222] rounded-md p-1"
+                              className="bg-[#222222] text-white border border-[#222222] rounded-md p-1 z-50"
                             >
                               {sessionCompleted ? (
-                                // Show Leave Feedback for completed paths
                                 <DropdownMenuItem
                                   className="group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-white hover:bg-[#F9DB6F33] focus:bg-[#F9DB6F33]"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setIsopen(true);
+                                    console.log("Leave feedback clicked");
+                                    openFeedbackModal();
                                   }}
+                                  disabled={isNavigating}
                                 >
                                   <Pen className="h-4 w-4 text-white group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F]" />
                                   <span className="group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F] font-urbanist font-normal text-[14px] leading-[24px]">
@@ -305,24 +415,35 @@ export default function LearningPaths() {
                                 </DropdownMenuItem>
                               ) : path.learning_path_id.path_owner ===
                                   userData?.id || userData?.role === "owner" ? (
-                                // Show Edit, Delete, View for path owner
                                 <>
                                   <DropdownMenuItem
                                     className="group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-white hover:bg-[#F9DB6F33] focus:bg-[#F9DB6F33]"
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      console.log(
+                                        "View clicked for:",
+                                        path.learning_path_id.id
+                                      );
                                       handleEdit(path.learning_path_id.id);
                                     }}
+                                    disabled={isNavigating}
                                   >
                                     <Eye className="h-4 w-4 text-white group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F]" />
                                     <span className="group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F] font-urbanist font-normal text-[14px] leading-[24px]">
-                                      View
+                                      {isNavigating ? "Loading..." : "View"}
                                     </span>
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     className="group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-white hover:bg-[#F9DB6F33] focus:bg-[#F9DB6F33]"
-                                    onClick={() => {
-                                      openDeleteModal(path.learning_path_id.id);
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      console.log(
+                                        "Delete clicked for:",
+                                        path.learning_path_id.id
+                                      );
+                                      openDeleteModal(path.id);
                                     }}
+                                    disabled={isNavigating}
                                   >
                                     <Trash2 className="h-4 w-4 text-white group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F]" />
                                     <span className="group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F] font-urbanist font-normal text-[14px] leading-[24px]">
@@ -331,9 +452,15 @@ export default function LearningPaths() {
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     className="group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-white hover:bg-[#F9DB6F33] focus:bg-[#F9DB6F33]"
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      console.log(
+                                        "Edit clicked for:",
+                                        path.learning_path_id.id
+                                      );
                                       handleEdit(path.learning_path_id.id);
                                     }}
+                                    disabled={isNavigating}
                                   >
                                     <Icon
                                       icon="iconamoon:edit-light"
@@ -341,18 +468,19 @@ export default function LearningPaths() {
                                       height="24"
                                     />
                                     <span className="group-hover:text-[#F9DB6F]">
-                                      Edit
+                                      {isNavigating ? "Loading..." : "Edit"}
                                     </span>
                                   </DropdownMenuItem>
                                 </>
                               ) : (
-                                // Show Star option for other users
                                 <DropdownMenuItem
                                   className="group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-white hover:bg-[#F9DB6F33] focus:bg-[#F9DB6F33]"
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    console.log("Star clicked");
                                     handleStarToggle(path.id, path.stared);
                                   }}
+                                  disabled={isNavigating}
                                 >
                                   {path.stared ? (
                                     <Icon
@@ -366,7 +494,7 @@ export default function LearningPaths() {
                                     />
                                   )}
                                   <span className="group-hover:text-[#F9DB6F] group-focus:text-[#F9DB6F] font-urbanist font-normal text-[14px] leading-[24px]">
-                                    {"Star"}
+                                    Star
                                   </span>
                                 </DropdownMenuItem>
                               )}
@@ -378,20 +506,18 @@ export default function LearningPaths() {
                   </div>
                 )}
               </div>
-
-              {/* Button section - fixed at bottom */}
               <div className="sticky bottom-0 w-full mt-auto justify-center items-center flex flex-row bg-[#191919] py-4">
                 <Button
-                  className="w-full max-w-[232px] h-[48px] bg-[#F9DB6F] rounded-md text-sm text-black font-urbanist font-medium text-[14px] leading-[100%] cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => router.push("/tutor/explore-learning-paths")}
+                  className="w-full max-w-[232px] h-[48px] bg-[#F9DB6F] rounded-md text-sm text-black font-urbanist font-medium text-[14px] leading-[100%] cursor-pointer hover:opacity-80 transition-opacity disabled:opacity-50"
+                  onClick={handleExploreClick}
+                  disabled={isNavigating}
+                  style={{pointerEvents: isNavigating ? "none" : "auto"}}
                 >
-                  Explore more learning paths
+                  {isNavigating ? "Loading..." : "Explore more learning paths"}
                 </Button>
               </div>
             </div>
           </div>
-
-          {/* Main content */}
           <Welcome
             userName={userData?.first_name || ""}
             selectedLearningPath={selectedLearningPath}
@@ -400,37 +526,27 @@ export default function LearningPaths() {
             onQuestionUpdate={handleQuestionUpdate}
           />
         </div>
-
-        {showLeaveFeedback && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-[#222222] p-6 rounded-lg max-w-md w-full mx-4">
-              <h3 className="text-xl font-bold mb-4">Leave Feedback</h3>
-              <p className="text-gray-300 mb-4">
-                Feedback form would go here...
-              </p>
-              <button
-                onClick={() => setShowLeaveFeedback(false)}
-                className="bg-[#F9DB6F] text-black px-4 py-2 rounded hover:opacity-80"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        )}
       </div>
-      <DeleteConfirmationModal
-        isOpen={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        onConfirm={confirmDelete}
-        id={itemToDelete}
-        title="Enrolled Learning Path"
-        isLoading={isDeleting}
-      />
-      <Leavefeedback
-        isOpen={isOpen}
-        onClose={() => setIsopen(false)}
-        learningPathId={id}
-      />
+
+      {/* Render modals only when needed */}
+      {deleteModalOpen && itemToDelete && (
+        <DeleteConfirmationModal
+          isOpen={deleteModalOpen}
+          onClose={closeDeleteModal}
+          onConfirm={confirmDelete}
+          id={itemToDelete}
+          title="Enrolled Learning Path"
+          isLoading={isDeleting}
+        />
+      )}
+
+      {isOpen && (
+        <Leavefeedback
+          isOpen={isOpen}
+          onClose={closeFeedbackModal}
+          learningPathId={id}
+        />
+      )}
     </div>
   );
 }

@@ -193,7 +193,7 @@ export function SignupForm() {
 
             <Button
               type="submit"
-              className="w-full text-black"
+              className="w-full text-black cursor-pointer"
               disabled={isLoading}
             >
               {isLoading ? <Loader /> : "Set Password"}
