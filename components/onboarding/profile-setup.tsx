@@ -163,7 +163,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
     resolver: zodResolver(formSchema(role)),
     defaultValues: {
       profilePicture: initialData.profile_picture || "",
-      user_role: initialData.user_role || "Software Engineer",
+      user_role: initialData.user_role || "",
       custom_role: "",
       location: initialData.location || "",
       first_name: initialData.first_name || user?.firstName || "",
@@ -574,8 +574,14 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                         }}
                         defaultValue={field.value}
                       >
-                        <FormControl className="w-full !h-[44px] py-3 rounded-[6px] border border-[#FFFFFF0F] text-white bg-[#FFFFFF14] placeholder:text-sm placeholder:text-gray-400">
-                          <SelectTrigger className="w-full placeholder:text-[14px] placeholder:text-[#FFFFFF52] ">
+                        <FormControl className="w-full !h-[44px] py-3 rounded-[6px] border border-[#FFFFFF0F] text-white bg-[#FFFFFF14] !placeholder:text-sm placeholder:text-gray-400">
+                          <SelectTrigger
+                            className={`w-full placeholder:text-[14px] ${
+                              !form.watch("user_role")
+                                ? "text-[#FFFFFF52]"
+                                : "text-white"
+                            }`}
+                          >
                             <SelectValue placeholder="Select your role" />
                           </SelectTrigger>
                         </FormControl>

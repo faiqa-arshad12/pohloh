@@ -46,7 +46,9 @@ export const user_roles = [
   // "Other",
 ];
 export const nameRegex = /^[A-Za-z\s]+$/;
-export const usernameRegex = /^[^\s]{1,50}$/;
+// export const usernameRegex = /^[^\s]{1,50}$/;
+export const usernameRegex = /^(?! )[A-Za-z0-9 ]{1,50}(?<! )$/;
+
 export const ONBOARDING_DATA_KEY = "onboarding_data";
 export const CURRENT_STEP_KEY = "onboarding_current_step";
 
@@ -308,10 +310,10 @@ export const getDropdownOptions = () => {
 };
 
 export const frontend_url = `${process.env.NEXT_PUBLIC_SITE_URL}`;
- export const User_columns = [
-    {Header: "Name", accessor: "user_name"},
-    {Header: "Seat Type", accessor: "role"},
-    {Header: "Team", accessor: "users_team.name"},
-    {Header: "Job Role", accessor: "user_role"},
-    {Header: "Action", accessor: "action"},
-  ];
+export const User_columns = [
+  {Header: "Name", accessor: "user_name"},
+  {Header: "Seat Type", accessor: "role"},
+  {Header: "Team", accessor: "users_team.name"},
+  {Header: "Job Role", accessor: "user_role"},
+  {Header: "Action", accessor: "action"},
+];

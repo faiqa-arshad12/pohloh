@@ -100,7 +100,7 @@ export function SignupForm() {
   };
 
   return (
-    <div className="flex flex-col justify-center items-center lg:items-end text-white h-full lg:min-h-screen rounded-2xl">
+    <div className="flex flex-col justify-center items-center lg:items-end text-white h-full rounded-2xl">
       <div className="max-w-2xl w-full px-8 py-8 rounded-2xl shadow-2xl backdrop-invert backdrop-opacity-10 relative z-10">
 
 
@@ -201,7 +201,7 @@ export function SignupForm() {
           </form>
         </Form>
 
-
+        <div className="absolute bottom-0 left-0 -z-10 h-[20%] w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:8px_8px] opacity-10 rounded-b-2xl" />
       </div>
     </div>
   );

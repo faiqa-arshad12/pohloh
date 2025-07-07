@@ -1,7 +1,5 @@
 "use client";
-
-import {useEffect, useState} from "react";
-
+import { useEffect, useState } from "react";
 import {
   LogOut,
   Ellipsis,
@@ -9,58 +7,34 @@ import {
   MessageSquareWarning,
   Check,
 } from "lucide-react";
-
 import EditProfileModal from "./Account/edit-Profile";
-
-import {Button} from "../ui/button";
-
+import { Button } from "../ui/button";
 import Feedback from "./feedback";
-
 import Table from "../ui/table";
-
-import {useClerk, useUser} from "@clerk/nextjs";
-
+import { useClerk, useUser } from "@clerk/nextjs";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-
 import Billing from "./billing";
-
 // import Apps from "./Apps";
-
 import EditLeadModal from "./Account/edit-lead";
-
 import Image from "next/image";
-
-import {InviteUserModal} from "./Account/Invite-User";
-
-import {EditUserModal} from "./Account/edit-User";
-
-import {useRole} from "../ui/Context/UserContext";
-
-import {apiUrl, User_columns} from "@/utils/constant";
-
-import {ShowToast} from "../shared/show-toast";
-
+import { InviteUserModal } from "./Account/Invite-User";
+import { EditUserModal } from "./Account/edit-User";
+import { useRole } from "../ui/Context/UserContext";
+import { apiUrl, User_columns } from "@/utils/constant";
+import { ShowToast } from "../shared/show-toast";
 import Loader from "../shared/loader";
-
 import {
   defaultWorkDays,
   type Weekday,
   type WorkDaysState,
   type User,
 } from "@/types/types";
-
-import {DeleteUserModal} from "./Account/delete-user";
-
-import {useRouter, useSearchParams} from "next/navigation";
-
-import {getSubscriptionDetails} from "@/actions/subscription.action";
-
-import {OrganizationalDetail} from "./Account/organizational-detail";
-
-import {Icon} from "@iconify/react";
-
+import { DeleteUserModal } from "./Account/delete-user";
+import { useRouter, useSearchParams } from "next/navigation";
+import { getSubscriptionDetails } from "@/actions/subscription.action";
+import { OrganizationalDetail } from "./Account/organizational-detail";
+import { Icon } from "@iconify/react";
 import LogoutPopup from "../shared/logout-popup";
-
 import {
   Select,
   SelectTrigger,
@@ -70,9 +44,9 @@ import {
 } from "../ui/select";
 
 export default function Account() {
-  const {signOut} = useClerk();
-  const {roleAccess} = useRole();
-  const {user, isLoaded} = useUser();
+  const { signOut } = useClerk();
+  const { roleAccess } = useRole();
+  const { user, isLoaded } = useUser();
   const searchParams = useSearchParams();
   const page = searchParams?.get("page");
   const [activeTab, setActiveTab] = useState("user");
@@ -86,13 +60,13 @@ export default function Account() {
   const [isInviteLoading, setIsInviteLoading] = useState(false);
   const [isLoadeding, setIsLoading] = useState(false);
   const [userDataLoading, setUserDataLoading] = useState(false);
+  const [userDetailsLoading, setUserDetailsLoading] = useState(false); // New loading state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const router = useRouter();
   const [selectedRow, setSelectedRow] = useState<any>();
   const [users, setUsers] = useState<any>([]);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const [isLogoutLoading, setIsLogoutLoading] = useState(false);
-
   const [dailyQuestions, setDailyQuestions] = useState<string>("0");
   const [weeklyCards, setWeeklyCards] = useState<string>("0");
   const [workDays, setWorkDays] = useState<WorkDaysState>(defaultWorkDays);
@@ -110,7 +84,6 @@ export default function Account() {
       dailyQuestions !== initialState.dailyQuestions ||
       weeklyCards !== initialState.weeklyCards ||
       JSON.stringify(workDays) !== JSON.stringify(initialState.workDays);
-
     return changes;
   };
 
@@ -142,16 +115,13 @@ export default function Account() {
             // credentials: "include",
           }
         );
-
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(
             `Failed to fetch organization data: ${response.status} - ${errorText}`
           );
         }
-
         const result = await response.json();
-
         if (subscription?.plan?.subscription?.status !== "active") {
           ShowToast("Upgrade your subscription to invite users", "error");
           return;
@@ -185,22 +155,18 @@ export default function Account() {
   const handleSaveChange = async () => {
     try {
       setIsLoading(true);
-
       if (!user) {
         console.error("User not found");
         return;
       }
-
       const selectedDays = Object.entries(workDays)
         .filter(([_, value]) => value)
         .map(([key]) => key);
-
       const updatedUserData = {
         week_days: selectedDays, // Send as array
         num_of_card: weeklyCards,
         num_of_questions: dailyQuestions,
       };
-
       const response = await fetch(`${apiUrl}/users/${user.id}`, {
         method: "PUT",
         headers: {
@@ -209,18 +175,15 @@ export default function Account() {
         body: JSON.stringify(updatedUserData),
         // credentials: "include",
       });
-
       if (!response.ok) {
         throw new Error("Failed to update user in database");
       }
-
       ShowToast("Profile updated successfully");
-
       // Update initial state after successful save
       setInitialState({
         dailyQuestions: dailyQuestions,
         weeklyCards: weeklyCards,
-        workDays: {...workDays},
+        workDays: { ...workDays },
       });
     } catch (error) {
       ShowToast("Failed to update profile", "error");
@@ -232,30 +195,26 @@ export default function Account() {
 
   const fetchUserDetails = async () => {
     try {
+      setUserDetailsLoading(true); // Set loading state
       const res = await fetch(`${apiUrl}/users/${user?.id}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
       });
-
       if (!res.ok) {
         throw new Error("Failed to fetch user details");
       }
-
       const data = await res.json();
       setUserDetails(data.user);
-
       // Use consistent default values - match what the user expects
       const weeklyCardsValue = data.user?.num_of_card?.toString() || "5";
       const dailyQuestionsValue =
         data.user?.num_of_questions?.toString() || "5";
-
       setWeeklyCards(weeklyCardsValue);
       setDailyQuestions(dailyQuestionsValue);
       setProfileImage(data.user?.organizations.org_picture);
-
-      const updatedWorkDays = {...defaultWorkDays};
+      const updatedWorkDays = { ...defaultWorkDays };
       if (data.user?.week_days && Array.isArray(data.user.week_days)) {
         data.user.week_days.forEach((day: any) => {
           if (day in updatedWorkDays) {
@@ -264,7 +223,6 @@ export default function Account() {
         });
       }
       setWorkDays(updatedWorkDays);
-
       // Set initial state for change tracking - only once here
       setInitialState({
         dailyQuestions: dailyQuestionsValue,
@@ -277,17 +235,17 @@ export default function Account() {
       const fallbackWeeklyCards = "5";
       const fallbackDailyQuestions = "5";
       const fallbackWorkDays = defaultWorkDays;
-
       setWeeklyCards(fallbackWeeklyCards);
       setDailyQuestions(fallbackDailyQuestions);
       setWorkDays(fallbackWorkDays);
-
       // Set initial state even for fallback values
       setInitialState({
         dailyQuestions: fallbackDailyQuestions,
         weeklyCards: fallbackWeeklyCards,
         workDays: fallbackWorkDays,
       });
+    } finally {
+      setUserDetailsLoading(false); // Clear loading state
     }
   };
 
@@ -325,7 +283,7 @@ export default function Account() {
           >
             <DropdownMenu.Item
               className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer"
-              style={{borderRadius: "4px"}}
+              style={{ borderRadius: "4px" }}
               onSelect={(event) => {
                 const button = (event.target as HTMLElement)?.closest("button");
                 if (button) {
@@ -343,7 +301,7 @@ export default function Account() {
             </DropdownMenu.Item>
             <DropdownMenu.Item
               className="flex items-center gap-2 px-3 py-2 text-white hover:bg-[#F9DB6F33] hover:text-[#F9DB6F] cursor-pointer"
-              style={{borderRadius: "4px"}}
+              style={{ borderRadius: "4px" }}
               onSelect={(event) => {
                 const button = (event.target as HTMLElement)?.closest("button");
                 if (button) {
@@ -365,7 +323,7 @@ export default function Account() {
   };
 
   const handleCheckboxChange = (day: Weekday) => {
-    setWorkDays((prev) => ({...prev, [day]: !prev[day]}));
+    setWorkDays((prev) => ({ ...prev, [day]: !prev[day] }));
   };
 
   const fetchUsers = async () => {
@@ -380,14 +338,12 @@ export default function Account() {
           },
         }
       );
-
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(
           `Failed to fetch organization data: ${response.status} - ${errorText}`
         );
       }
-
       const result = await response.json();
       setUsers(result.data);
     } catch (err) {
@@ -410,14 +366,12 @@ export default function Account() {
           // credentials: "include",
         }
       );
-
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(
           `Failed to fetch organization data: ${response.status} - ${errorText}`
         );
       }
-
       const result = await response.json();
       setUsers(result.data);
     } catch (err) {
@@ -438,9 +392,13 @@ export default function Account() {
     }, obj);
   };
 
+  // Optimized loading condition - includes all critical loading states
+  const isInitialLoading =
+    !isLoaded || userDetailsLoading || (isLoaded && user?.id && !userDetails);
+
   return (
     <div className="min-h-screen  text-white py-5 ">
-      {!isLoaded || userDataLoading ? (
+      {isInitialLoading ? (
         <div className="flex flex-row justify-center items-center min-h-screen">
           <Loader size={50} />
         </div>
@@ -453,11 +411,10 @@ export default function Account() {
             </div>
             <Button
               onClick={() => setStep(1)}
-              className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm cursor-pointer ${
-                steps === 1
+              className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm cursor-pointer ${steps === 1
                   ? "bg-[#F9DB6F] text-black"
                   : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
-              }`}
+                }`}
             >
               <Icon icon="heroicons:users" width="24" height="24" />
               <span className="text-[20px] text-normal font-urbanist">
@@ -467,11 +424,10 @@ export default function Account() {
             {roleAccess === "owner" && (
               <Button
                 onClick={() => setStep(2)}
-                className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm  cursor-pointer ${
-                  steps === 2
+                className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm  cursor-pointer ${steps === 2
                     ? "bg-[#F9DB6F] text-black"
                     : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
-                }`}
+                  }`}
               >
                 <Icon icon="octicon:credit-card-24" width="24" height="24" />
                 <span className="text-[20px] text-normal font-urbanist">
@@ -481,11 +437,10 @@ export default function Account() {
             )}
             <Button
               onClick={() => setStep(4)}
-              className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm  cursor-pointer ${
-                steps === 4
+              className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm  cursor-pointer ${steps === 4
                   ? "bg-[#F9DB6F] text-black"
                   : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
-              }`}
+                }`}
             >
               <MessageSquareWarning className="w-10 h-10" />
               <span className="text-[20px] text-normal font-urbanist">
@@ -494,17 +449,15 @@ export default function Account() {
             </Button>
             <Button
               onClick={() => setLogoutModalOpen(true)}
-              className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm cursor-pointer  cursor-pointer ${
-                steps === 5
+              className={`flex items-center gap-2 w-full h-[70px] px-4 py-3.5 rounded-lg font-medium text-sm cursor-pointer  cursor-pointer ${steps === 5
                   ? "bg-[#F9DB6F] text-black"
                   : "bg-[#0E0F11] text-white border border-[#828282] hover:bg-[#0E0F11]"
-              }`}
+                }`}
             >
               <LogOut className="w-4.5 h-4.5" />
               <span>Logout</span>
             </Button>
           </div>
-
           {/* Main Content */}
           {steps === 1 && (
             <>
@@ -513,21 +466,19 @@ export default function Account() {
                   <>
                     <div className="flex w-full mb-8 bg-[#191919] p-2">
                       <button
-                        className={`flex-1 p-3 font-urbanist font-medium text-[26px] leading-[100%] tracking-[0] cursor-pointer ${
-                          activeTab === "user"
+                        className={`flex-1 p-3 font-urbanist font-medium text-[26px] leading-[100%] tracking-[0] cursor-pointer ${activeTab === "user"
                             ? "bg-[#F9DB6F] text-black rounded-lg"
                             : "text-gray-400"
-                        }`}
+                          }`}
                         onClick={() => setActiveTab("user")}
                       >
                         User Details
                       </button>
                       <button
-                        className={`flex-1 p-3 font-urbanist font-medium text-[26px] leading-[100%] tracking-[0] cursor-pointer ${
-                          activeTab === "organization"
+                        className={`flex-1 p-3 font-urbanist font-medium text-[26px] leading-[100%] tracking-[0] cursor-pointer ${activeTab === "organization"
                             ? "bg-[#F9DB6F] text-black rounded-lg"
                             : "text-gray-400"
-                        }`}
+                          }`}
                         onClick={() => setActiveTab("organization")}
                       >
                         Organizational Details
@@ -535,21 +486,23 @@ export default function Account() {
                     </div>
                   </>
                 )}
-
                 {activeTab === "user" && (
                   <div
                     className="flex flex-col gap-5 p-5 bg-[#191919]"
-                    style={{borderRadius: "30px"}}
+                    style={{ borderRadius: "30px" }}
                   >
                     {/* Profile Card */}
                     <div className="bg-[#FFFFFF0A] rounded-xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                       <div className="flex items-center gap-4">
                         <div className="w-14 h-14 rounded-full  overflow-hidden">
                           <img
-                            src={userDetails?.profile_picture || '/placeholder-profile.svg'}
+                            src={
+                              userDetails?.profile_picture ||
+                              "/placeholder-profile.svg"
+                            }
                             alt="avatar"
                             className="w-full h-full"
-                            // style={{width:'90px', height:'90px'}}
+                          // style={{width:'90px', height:'90px'}}
                           />
                         </div>
                         <div>
@@ -583,7 +536,6 @@ export default function Account() {
                         </div>
                       </Button>
                     </div>
-
                     {/* User Invite  */}
                     {(roleAccess === "owner" || roleAccess === "admin") && (
                       <div className="bg-[#FFFFFF0A] text-white p-6 rounded-lg ">
@@ -599,49 +551,50 @@ export default function Account() {
                           </button>
                         </div>
                         <div className="overflow-x-auto">
-                          <Table
-                            columns={User_columns.slice(0, -1)}
-                            data={users}
-                            renderActions={(row) =>
-                              renderRowActions(row as User)
-                            }
-                            loggedInUserId={user?.id}
-                            tableClassName="min-w-full text-sm sm:text-base shadow rounded-lg border-collapse"
-                            headerClassName="bg-[#F9DB6F] text-black text-left font-urbanist font-medium text-[16px] leading-[21.9px] tracking-[0]"
-                            bodyClassName="py-3 px-4 font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0] "
-                            cellClassName="border-t border-[#E0EAF5] py-3 px-4 align-middle whitespace-nowrap "
-                            itemsPerPageOptions={[5, 10, 20, 100]}
-                            defaultItemsPerPage={5}
-                            renderCell={(
-                              column: string,
-                              row: {[x: string]: any}
-                            ) => {
-                              // Get the value (this would use getNestedValue internally in the Table component)
-                              const value = column.includes(".")
-                                ? getNestedValue(row, column)
-                                : row[column];
-
-                              if (column === "role") {
-                                return value === "admin"
-                                  ? "Lead"
-                                  : value === "user"
-                                  ? "User"
-                                  : value?.toString();
+                          {userDataLoading ? (
+                            <div className="flex justify-center items-center py-8">
+                              <Loader size={30} />
+                            </div>
+                          ) : (
+                            <Table
+                              columns={User_columns.slice(0, -1)}
+                              data={users}
+                              renderActions={(row) =>
+                                renderRowActions(row as User)
                               }
-
-                              if (value === null || value === undefined)
-                                return "";
-
-                              if (typeof value === "object")
-                                return JSON.stringify(value);
-
-                              return value;
-                            }}
-                          />
+                              loggedInUserId={user?.id}
+                              tableClassName="min-w-full text-sm sm:text-base shadow rounded-lg border-collapse"
+                              headerClassName="bg-[#F9DB6F] text-black text-left font-urbanist font-medium text-[16px] leading-[21.9px] tracking-[0]"
+                              bodyClassName="py-3 px-4 font-urbanist font-medium text-[15.93px] leading-[21.9px] tracking-[0] "
+                              cellClassName="border-t border-[#E0EAF5] py-3 px-4 align-middle whitespace-nowrap "
+                              itemsPerPageOptions={[5, 10, 20, 100]}
+                              defaultItemsPerPage={5}
+                              renderCell={(
+                                column: string,
+                                row: { [x: string]: any }
+                              ) => {
+                                // Get the value (this would use getNestedValue internally in the Table component)
+                                const value = column.includes(".")
+                                  ? getNestedValue(row, column)
+                                  : row[column];
+                                if (column === "role") {
+                                  return value === "admin"
+                                    ? "Lead"
+                                    : value === "user"
+                                      ? "User"
+                                      : value?.toString();
+                                }
+                                if (value === null || value === undefined)
+                                  return "";
+                                if (typeof value === "object")
+                                  return JSON.stringify(value);
+                                return value;
+                              }}
+                            />
+                          )}
                         </div>
                       </div>
                     )}
-
                     {/* Preferences Card */}
                     <div className=" rounded-xl p-6 bg-[#FFFFFF0A] relative">
                       <h3 className="text-base font-semibold">Preferences</h3>
@@ -690,7 +643,6 @@ export default function Account() {
                             ))}
                           </div>
                         </div>
-
                         {/* Daily Questions */}
                         <div className="bg-[#FFFFFF0A] p-5 rounded-[20px]">
                           <label className="block font-urbanist font-semibold text-[18px] leading-[100%] tracking-[0] mb-3">
@@ -717,7 +669,6 @@ export default function Account() {
                             </SelectContent>
                           </Select>
                         </div>
-
                         {/* Weekly Cards */}
                         <div className="bg-[#FFFFFF0A] p-5 rounded-[20px]">
                           <label className="block font-urbanist font-semibold text-[18px] leading-[100%] tracking-[0] mb-3">
@@ -749,10 +700,8 @@ export default function Account() {
                         </div>
                       </div>
                     </div>
-
                     <Button
                       className={`w-[164px] h-12 rounded-[8px] border px-10 py-[10px] cursor-pointer transition-all bg-[#F9DB6F] text-black hover:bg-[#F9DB6F]/90
-
                       `}
                       onClick={() => {
                         if (hasChanges() && !isLoadeding) {
@@ -765,20 +714,17 @@ export default function Account() {
                     </Button>
                   </div>
                 )}
-
                 {activeTab === "organization" && (
                   <OrganizationalDetail organization={userDetails} />
                 )}
               </div>
             </>
           )}
-
           {steps == 2 && <Billing />}
           {/* {steps == 3 && <Apps />} */}
           {steps === 4 && <Feedback />}
         </div>
       )}
-
       <EditLeadModal
         open={openEditlead}
         onClose={setOpenEditlead}
