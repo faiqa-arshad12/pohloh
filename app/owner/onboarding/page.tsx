@@ -282,13 +282,6 @@ const OnboardingPage = () => {
             `Failed to save onboarding data with status ${response.status}`
         );
       }
-      await user.update({
-        unsafeMetadata: {
-          ...user.unsafeMetadata,
-          is_subscribed: true,
-        },
-      });
-      ShowToast("Onboarding data has been saved successfully!");
       return true;
     } catch (error) {
       handleError(
@@ -313,25 +306,25 @@ const OnboardingPage = () => {
         throw new Error("Failed to save onboarding data");
       }
 
-      // Then update user status
+      // Call backend API to update Clerk metadata
+      const response = await fetch(`${window.location.origin}/api/complete-onboarding`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({userId: user.id}),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.error ||
+            "Failed to update user status in authentication provider"
+        );
+      }
+
+      // Update user status in your backend as before
       const userData = {
         status: UserStatus.approved,
       };
-
-      try {
-        await user.update({
-          unsafeMetadata: {
-            ...user.unsafeMetadata,
-            status: UserStatus.approved,
-            isProfileComplete: true,
-          },
-        });
-      } catch (clerkError) {
-        console.error("Failed to update Clerk user metadata:", clerkError);
-        throw new Error(
-          "Failed to update user status in authentication provider"
-        );
-      }
 
       const apiRoute = `${apiUrl}/users/${user.id}`;
 
@@ -339,7 +332,7 @@ const OnboardingPage = () => {
         throw new Error("API URL is not configured");
       }
 
-      const response = await fetch(apiRoute, {
+      const backendResponse = await fetch(apiRoute, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -347,18 +340,17 @@ const OnboardingPage = () => {
         body: JSON.stringify(userData),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+      if (!backendResponse.ok) {
+        const errorData = await backendResponse.json().catch(() => ({}));
         throw new Error(
-          errorData.message || `Request failed with status ${response.status}`
+          errorData.message ||
+            `Request failed with status ${backendResponse.status}`
         );
       }
 
       // Clear onboarding data before redirecting
       router.replace("/dashboard");
-
       clearOnboardingData(user.id);
-
       ShowToast("Onboarding completed successfully!");
     } catch (error) {
       handleError(
