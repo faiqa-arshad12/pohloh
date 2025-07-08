@@ -375,7 +375,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
       }
       setLoading(false);
       ShowToast("User profile has been saved!", "success");
-      router.push("/dashboard");
+      // router.push("/dashboard");
     } catch (error) {
       setLoading(false);
       ShowToast("Failed to update profile", "error");

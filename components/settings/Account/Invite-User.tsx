@@ -125,7 +125,7 @@ export function InviteUserModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="bg-black text-white">
-                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="admin">Lead</SelectItem>
                       {/* <SelectItem value="editor">Editor</SelectItem> */}
                       <SelectItem value="user">User</SelectItem>
                     </SelectContent>

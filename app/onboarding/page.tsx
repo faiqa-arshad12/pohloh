@@ -56,7 +56,7 @@ const OnboardingPage = () => {
     );
   }
   if (userData && userData?.status === "approved") {
-    router.push("/dashboard");
+    router.replace("/dashboard");
   }
   return (
     <div className="w-full relative">
