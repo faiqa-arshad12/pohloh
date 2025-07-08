@@ -24,6 +24,7 @@ import {
 } from "@/utils/constant";
 import {UserStatus} from "@/types/enum";
 import {clearOnboardingData} from "@/lib/local-storage";
+import {useUserHook} from "@/hooks/useUser";
 
 const OnboardingPage = () => {
   // No error state needed for toast-only approach
@@ -201,7 +202,7 @@ const OnboardingPage = () => {
       const data = await response.json();
 
       if (!data.customerId || !data.subscriptionId || !data.clientSecret) {
-        throw new Error(data.message||"Invalid payment response data");
+        throw new Error(data.message || "Invalid payment response data");
       }
 
       const subscriptionData = {
@@ -584,9 +585,12 @@ const OnboardingPage = () => {
 
     loadOnboardingState();
   }, [user, isLoaded]);
+  const {userData} = useUserHook();
 
   // No retry function needed for toast-only approach
-
+  if (userData && userData?.status === "approved") {
+    router.replace("/dashboard");
+  }
   return (
     <div className="flex flex-col min-h-screen">
       <div className="absolute top-0 left-0 z-50 flex flex-col w-full">
@@ -625,7 +629,12 @@ const OnboardingPage = () => {
       <footer className="flex justify-between items-center px-16 pb-8 mt-auto">
         <Button
           onClick={handleBack}
-          disabled={currentStep === 0 || isloading || onboardingData.subscription?.is_subscribed || !onboardingData}
+          disabled={
+            currentStep === 0 ||
+            isloading ||
+            onboardingData.subscription?.is_subscribed ||
+            !onboardingData
+          }
           className="w-[185px] h-[48px] rounded-[8px] border border-gray-300 px-3 py-[12px] gap-4 bg-[#2C2D2E] hover:bg-[#2C2D2E] disabled:opacity-50 cursor-pointer"
         >
           Back
