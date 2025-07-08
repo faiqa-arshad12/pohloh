@@ -594,9 +594,9 @@ const OnboardingPage = () => {
   }, [userData, router]);
 
   // No retry function needed for toast-only approach
-  if (userData && userData?.status === "approved") {
-    router.replace("/dashboard");
-  }
+  // if (userData && userData?.status === "approved") {
+  //   router.replace("/dashboard");
+  // }
   return (
     <div className="flex flex-col min-h-screen">
       <div className="absolute top-0 left-0 z-50 flex flex-col w-full">
