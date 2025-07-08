@@ -587,6 +587,12 @@ const OnboardingPage = () => {
   }, [user, isLoaded]);
   const {userData} = useUserHook();
 
+  useEffect(() => {
+    if (userData && userData?.status === "approved") {
+      router.replace("/dashboard");
+    }
+  }, [userData, router]);
+
   // No retry function needed for toast-only approach
   if (userData && userData?.status === "approved") {
     router.replace("/dashboard");
