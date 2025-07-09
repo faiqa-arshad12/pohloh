@@ -264,7 +264,8 @@ export default function LearningPaths() {
 
   const closeFeedbackModal = useCallback(() => {
     setIsopen(false);
-  }, []);
+    resetAllModals();
+  }, [resetAllModals]);
 
   // Handle explore button click with proper navigation
   const handleExploreClick = useCallback(async () => {
@@ -279,6 +280,14 @@ export default function LearningPaths() {
       setIsNavigating(false);
     }
   }, [router, isNavigating]);
+
+  // --- Defensive: Always reset body styles when all modals are closed ---
+  useEffect(() => {
+    if (!deleteModalOpen && !isOpen && !isNavigating) {
+      document.body.style.pointerEvents = "auto";
+      document.body.style.overflow = "auto";
+    }
+  }, [deleteModalOpen, isOpen, isNavigating]);
 
   return (
     <div className="flex text-white relative">
