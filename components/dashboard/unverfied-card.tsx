@@ -15,6 +15,8 @@ import {useRouter} from "next/navigation";
 import {stripHtml} from "@/lib/stripeHtml";
 import {ShowToast} from "../shared/show-toast";
 import {Icon} from "@iconify/react/dist/iconify.js";
+import {useRole} from "../ui/Context/UserContext";
+import {useUserHook} from "@/hooks/useUser";
 
 type UnverifiedCard = {
   id: string;
@@ -48,6 +50,8 @@ export function UnverifiedCards({cards, isAnalytic}: UnverifiedCardProps) {
   const [hasScrollbar, setHasScrollbar] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [cardId, setCardId] = useState<string | null>(null);
+  const {roleAccess} = useRole();
+  const {userData} = useUserHook();
 
   const router = useRouter();
 
@@ -234,7 +238,13 @@ export function UnverifiedCards({cards, isAnalytic}: UnverifiedCardProps) {
           maxHeight: "380px",
         }}
       >
-        {filteredCards.length > 0 ? (
+        {roleAccess == "admin" &&
+        isAnalytic &&
+        (userData?.team_id === null || !userData?.team_id) ? (
+          <div className="bg-[#2a2a2a] px-4 py-4 rounded-lg text-center text-[#6F767E] h-full flex items-center justify-center">
+            No unverified cards available
+          </div>
+        ) : filteredCards.length > 0 ? (
           filteredCards.map((card) => (
             <div
               key={card.id}

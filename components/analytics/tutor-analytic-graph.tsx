@@ -59,6 +59,11 @@ const AdminTutorAnalyticGraph = ({
   useEffect(() => {
     const fetchData = async () => {
       if (userData?.organizations?.id) {
+        // If admin and no team_id, show empty data
+        if (roleAccess === "admin" && !userData?.team_id) {
+          setChartData(generateChartData([], "average"));
+          return;
+        }
         setIsLoadingData(true);
         try {
           let category = undefined;

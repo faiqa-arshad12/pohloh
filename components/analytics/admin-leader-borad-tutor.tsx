@@ -12,7 +12,7 @@ import {useUserHook} from "@/hooks/useUser";
 import TableLoader from "../shared/table-loader";
 import {exportToPDF} from "@/utils/exportToPDF";
 import Loader from "../shared/loader";
-
+import {useRole} from "../ui/Context/UserContext";
 
 const AdminLeaderBoard = () => {
   interface LeaderboardEntry {
@@ -37,6 +37,8 @@ const AdminLeaderBoard = () => {
   const [teams, setTeams] = useState<{id: string; name: string}[]>([]);
   const [selectedTeam, setSelectedTeam] = useState("all");
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const {roleAccess} = useRole();
+
   const [filteredLeaderboardData, setFilteredLeaderboardData] = useState<
     LeaderboardEntry[]
   >([]);
@@ -174,7 +176,9 @@ const AdminLeaderBoard = () => {
       if (data?.stats) {
         setFilteredLeaderboardData(
           data.stats.map((entry: any, idx: number) => ({
-            name: `${entry?.card_owner?.first_name} ${entry?.card_owner?.last_name}` ||'',
+            name:
+              `${entry?.card_owner?.first_name} ${entry?.card_owner?.last_name}` ||
+              "",
             completion: `${entry.percentage}%`,
             cards: `${entry.total} (${entry.verified} Verified)`,
             engagement: `${entry.total} / ${entry.verified}`,
@@ -210,6 +214,7 @@ const AdminLeaderBoard = () => {
             bg="bg-[black]"
             options={getDropdownOptions()}
           />
+
           <CustomDateFilterModal
             open={showCustomFilterModal}
             onOpenChange={setShowCustomFilterModal}
@@ -217,20 +222,22 @@ const AdminLeaderBoard = () => {
             initialStartDate={startDate}
             initialEndDate={endDate}
           />
-          <DateRangeDropdown
-            selectedRange={selectedTeam}
-            onRangeChange={setSelectedTeam}
-            width="250px"
-            disabled={isLoadingData}
-            bg="bg-[black]"
-            options={[
-              {label: "All Department", value: "all"},
-              ...teams.map((team: any) => ({
-                label: team.name,
-                value: team.id,
-              })),
-            ]}
-          />
+          {roleAccess === "owner" && (
+            <DateRangeDropdown
+              selectedRange={selectedTeam}
+              onRangeChange={setSelectedTeam}
+              width="250px"
+              disabled={isLoadingData}
+              bg="bg-[black]"
+              options={[
+                {label: "All Department", value: "all"},
+                ...teams.map((team: any) => ({
+                  label: team.name,
+                  value: team.id,
+                })),
+              ]}
+            />
+          )}
           <Button
             onClick={exportLeaderboardToPDF}
             disabled={
@@ -241,7 +248,7 @@ const AdminLeaderBoard = () => {
             className="w-[52px] h-[50px] bg-[#333333] hover:bg-[#333333] rounded-lg border px-2 py-[9px] flex items-center justify-center gap-[10px] cursor-pointer"
           >
             {isExportingPDF ? (
-             <Loader/>
+              <Loader />
             ) : (
               <Icon
                 icon="bi:filetype-pdf"

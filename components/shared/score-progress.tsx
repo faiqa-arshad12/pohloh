@@ -1,4 +1,5 @@
 import React from "react";
+import { useRole } from "../ui/Context/UserContext";
 
 type ScoreProgressProps = {
   score?: number;
@@ -15,7 +16,7 @@ const ScoreProgress = ({score = 0}: ScoreProgressProps) => {
           minWidth: score > 0 ? "60px" : "0px",
         }}
       >
-        {score || 88}%
+        {score || 0}%
       </div>
 
       {/* Unfilled portion with diagonal stripes */}

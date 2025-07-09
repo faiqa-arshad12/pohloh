@@ -16,6 +16,7 @@ import Loader from "../shared/loader";
 import {useRouter} from "next/navigation";
 import DeleteConfirmationModal from "../tutor/delete-modal";
 import {ShowToast} from "../shared/show-toast";
+import {useRole} from "../ui/Context/UserContext";
 
 interface UnverifiedCard {
   id: string;
@@ -41,6 +42,7 @@ const AdminUnverifiedCard = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [isCardDeleteLoading, setIsCardDeleteLoading] = useState(false);
+  const {roleAccess} = useRole();
 
   const router = useRouter();
 
@@ -48,18 +50,26 @@ const AdminUnverifiedCard = () => {
     const getUnverifiedCards = async () => {
       try {
         setIsLoading(true);
+
         if (userData?.organizations.id && userData?.id && userData?.role) {
-          const cards = await fetchCards(
-            userData.organizations.id,
-            userData.role,
-            userData.id
-          );
-          if (cards) {
-            console.log(cards, "card");
-            const unverifiedCards = cards.filter(
-              (card: any) => card.is_verified === false
+          if (
+            userData.role === "admin" ||
+            (roleAccess === "admin" &&
+              (userData.team_id == null || !userData.team_id))
+          ) {
+            setFilteredUnverifiedCards([]);
+          } else {
+            const cards = await fetchCards(
+              userData.organizations.id,
+              userData.role,
+              userData.id
             );
-            setFilteredUnverifiedCards(unverifiedCards);
+            if (cards) {
+              const unverifiedCards = cards.filter(
+                (card: any) => card.is_verified === false
+              );
+              setFilteredUnverifiedCards(unverifiedCards);
+            }
           }
         }
       } catch (error) {

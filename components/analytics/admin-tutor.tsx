@@ -50,7 +50,16 @@ const AdminAanalytic = ({
       }
     };
 
-    if (userData) fetchStats();
+    if (userData) {
+      if (
+        (!userData?.team_id || userData.team_id === null) &&
+        roleAccess === "admin"
+      ) {
+        setStats(null);
+      } else {
+        fetchStats();
+      }
+    }
   }, [userData, startDate, endDate, team]);
   useEffect(() => {
     if (userData) {

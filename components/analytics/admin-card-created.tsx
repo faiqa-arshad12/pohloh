@@ -46,14 +46,21 @@ const AdminCardCreated = () => {
       try {
         setIsLoadingData(true);
         if (userData?.organizations.id && userData?.id && userData?.role) {
-          const cards = await fetchCards(
-            userData.organizations.id,
-            userData.role,
-            userData.id
-          );
-          console.log(cards, "cards");
-          if (cards) {
-            setCardData(cards);
+          if (
+            roleAccess === "admin" &&
+            (userData?.team === null || !userData?.team_id)
+          ) {
+            setCardData([]);
+          } else {
+            const cards = await fetchCards(
+              userData.organizations.id,
+              userData.role,
+              userData.id
+            );
+            console.log(cards, "cards");
+            if (cards) {
+              setCardData(cards);
+            }
           }
         }
       } catch (error) {

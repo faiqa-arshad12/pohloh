@@ -5,6 +5,7 @@ import {getMonthlyKnowledgeCardStats} from "./analytic.service";
 import {useUserHook} from "@/hooks/useUser";
 import ReusableBarChart from "./BarAnalyticsChart";
 import {generateChartData} from "../../utils/char-helper";
+import {useRole} from "../ui/Context/UserContext";
 
 const CardCreatedOverview = () => {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -12,6 +13,7 @@ const CardCreatedOverview = () => {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [chartData, setChartData] = useState<any[]>([]);
   const {userData} = useUserHook();
+  const {roleAccess} = useRole();
 
   useEffect(() => {
     const today = new Date();
@@ -24,6 +26,10 @@ const CardCreatedOverview = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!userData?.id) return;
+      if (roleAccess === "admin" && !userData?.team_id) {
+        setChartData(generateChartData([], "count"));
+        return;
+      }
       setIsLoadingData(true);
       try {
         const response = await getMonthlyKnowledgeCardStats(userData.id);
@@ -39,17 +45,17 @@ const CardCreatedOverview = () => {
       }
     };
     fetchData();
-  }, [userData]);
+  }, [userData, roleAccess]);
 
   return (
-      <ReusableBarChart
-        chartData={chartData}
-        isLoading={isLoadingData}
-        title="Cards Created Overview"
-        tooltipSuffix="cards"
-        height="h-100"
-        isCard
-      />
+    <ReusableBarChart
+      chartData={chartData}
+      isLoading={isLoadingData}
+      title="Cards Created Overview"
+      tooltipSuffix="cards"
+      height="h-100"
+      isCard
+    />
   );
 };
 

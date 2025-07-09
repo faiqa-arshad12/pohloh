@@ -5,11 +5,32 @@ import {useEffect, useState} from "react";
 import {fetchTutorScore} from "./analytic.service";
 import ScoreProgress from "../shared/score-progress";
 import {Skeleton} from "../ui/skeleton";
+import {useRole} from "../ui/Context/UserContext";
+import {apiUrl} from "@/utils/constant";
 
 export default function TutorScoreCard() {
   const {userData} = useUserHook();
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [data, setData] = useState<any>();
+  const {roleAccess} = useRole();
+  const [team, setTeam] = useState<any>(null);
+  useEffect(() => {
+    const getTeam = async () => {
+      // Find the team this subcategory belongs to
+      const teamResponse = await fetch(`${apiUrl}/teams/${userData?.team_id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (teamResponse.ok) {
+        const teamData = await teamResponse.json();
+        setTeam(teamData?.teams);
+      }
+    };
+    if (userData?.team_id && roleAccess === "admin") getTeam();
+  }, [userData]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -51,18 +72,30 @@ export default function TutorScoreCard() {
             </h2>
             <div className="flex justify-center mb-8">
               <img
-                src={userData?.organizations.org_picture || "/org.png"}
+                src={
+                  roleAccess == "admin"
+                    ? "/org.png"
+                    : userData?.organizations.org_picture || "/org.png"
+                }
                 className="w-[120px] h-[120px] rounded-full"
                 alt="profile"
               />
             </div>
             <p className="text-[24px] text-[#FFFFFF] mb-3 font-bold">
-              {userData?.organizations.name}
+              {roleAccess === "admin"
+                ? team?.name
+                : userData?.organizations.name}
             </p>
-            <p className="text-[15px] text-[#FFFFFF] mb-8 font-medium">
-              {data?.owner?.email}
-            </p>
-            <ScoreProgress score={data?.overall} />
+            {roleAccess == "owner" && (
+              <p className="text-[15px] text-[#FFFFFF] mb-8 font-medium">
+                {data?.owner?.email}
+              </p>
+            )}
+            <ScoreProgress
+              score={
+                !userData?.team_id && roleAccess == "admin" ? 0 : data?.overall
+              }
+            />
           </>
         )}
       </div>

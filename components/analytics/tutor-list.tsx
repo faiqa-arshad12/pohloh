@@ -109,11 +109,17 @@ const TutorList = ({orgId}: TutorListProps) => {
         let filteredTutorList = tutors;
 
         // Apply role-based filtering
-        if (roleAccess === "admin" && userData?.team_id) {
-          // Admin can only see tutors where category matches their team_id
-          filteredTutorList = tutors.filter((tutor: Tutor) => {
-            return tutor.category === userData.team_id;
-          });
+        if (roleAccess === "admin") {
+          if (userData?.team_id) {
+            // Admin can only see tutors where category matches their team_id
+            filteredTutorList = tutors.filter((tutor: Tutor) => {
+              return tutor.category === userData.team_id;
+            });
+          } else {
+            filteredTutorList = tutors.filter((tutor: Tutor) => {
+              return tutor.id === userData.id;
+            });
+          }
         }
         // If roleAccess === "owner", show all tutors (no additional filtering needed)
 
