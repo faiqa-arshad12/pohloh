@@ -36,6 +36,7 @@ const OnboardingPage = () => {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [userDetails, setUserDetails] = useState<User | null>(null);
   const router = useRouter();
+  const {userData: userInfo} = useUserHook();
   const {user, isLoaded} = useUser();
 
   const handleError = (error: unknown) => {
@@ -585,18 +586,13 @@ const OnboardingPage = () => {
 
     loadOnboardingState();
   }, [user, isLoaded]);
-  const {userData} = useUserHook();
-
   useEffect(() => {
-    if (userData && userData?.status === "approved") {
+    console.log("step", currentStep, userOnboarding);
+    if (userInfo && userInfo?.status === "approved") {
       router.replace("/dashboard");
     }
-  }, [userData, router]);
+  }, [currentStep, userOnboarding]);
 
-  // No retry function needed for toast-only approach
-  // if (userData && userData?.status === "approved") {
-  //   router.replace("/dashboard");
-  // }
   return (
     <div className="flex flex-col min-h-screen">
       <div className="absolute top-0 left-0 z-50 flex flex-col w-full">
