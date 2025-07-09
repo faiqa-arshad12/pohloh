@@ -1,6 +1,7 @@
 "use client";
 import {ProfileSetup} from "@/components/onboarding/profile-setup";
 import Loader from "@/components/shared/loader";
+import {useUserHook} from "@/hooks/useUser";
 import {Role, User} from "@/types/types";
 import {apiUrl, users} from "@/utils/constant";
 import {useUser} from "@clerk/nextjs";
@@ -8,53 +9,54 @@ import {useRouter} from "next/navigation";
 import React, {useEffect, useState} from "react";
 
 const OnboardingPage = () => {
-  const [userData, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const {user} = useUser();
+  // const [userData, setUser] = useState<User | null>(null);
+  // const [isLoading, setIsLoadi/ng] = useState(false);
+  // const {user} = useUser();
+  const {userData} = useUserHook();
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!user?.id) return;
+  // useEffect(() => {
+  //   const fetchUserData = async () => {
+  //     if (!user?.id) return;
 
-      setIsLoading(true);
-      try {
-        const response = await fetch(`${apiUrl}/${users}/${user.id}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          // credentials: "include",
-        });
+  //     setIsLoading(true);
+  //     try {
+  //       const response = await fetch(`${apiUrl}/${users}/${user.id}`, {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //         // credentials: "include",
+  //       });
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data");
-        }
+  //       if (!response.ok) {
+  //         throw new Error("Failed to fetch user data");
+  //       }
 
-        const data = await response.json();
-        setUser(data.user);
+  //       const data = await response.json();
+  //       setUser(data.user);
 
-        // Redirect to dashboard if status is approved
-        // if (data.user.status === "approved") {
-        //   router.push("/dashboard");
-        // }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  //       // Redirect to dashboard if status is approved
+  //       // if (data.user.status === "approved") {
+  //       //   router.push("/dashboard");
+  //       // }
+  //     } catch (error) {
+  //       console.error("Error fetching user data:", error);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
 
-    fetchUserData();
-  }, [user, router]);
+  //   fetchUserData();
+  // }, [user, router]);
 
-  if (isLoading) {
-    return (
-      <div className="h-screen w-full flex items-center justify-center">
-        <Loader size={50} />
-      </div>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <div className="h-screen w-full flex items-center justify-center">
+  //       <Loader size={50} />
+  //     </div>
+  //   );
+  // }
   if (userData && userData?.status === "approved") {
     router.replace("/dashboard");
   }
