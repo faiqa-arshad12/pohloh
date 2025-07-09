@@ -589,6 +589,8 @@ const OnboardingPage = () => {
   useEffect(() => {
     console.log("step", currentStep, userOnboarding);
     if (userInfo && userInfo?.status === "approved") {
+      console.log("hello", currentStep, userOnboarding);
+
       router.replace("/dashboard");
     }
   }, [currentStep, userOnboarding]);
