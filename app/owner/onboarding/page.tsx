@@ -6,7 +6,7 @@ import OrganizationSetup from "@/components/onboarding/organizationSetup";
 import {Button} from "@/components/ui/button";
 import {useUser} from "@clerk/nextjs";
 import {useRouter} from "next/navigation";
-import {useEffect, useState} from "react";
+import {useEffect, useState, useRef} from "react";
 import {ShowToast} from "@/components/shared/show-toast";
 import Loader from "@/components/shared/loader";
 import type {
@@ -38,6 +38,7 @@ const OnboardingPage = () => {
   const router = useRouter();
   const {userData: userInfo} = useUserHook();
   const {user, isLoaded} = useUser();
+
 
   const handleError = (error: unknown) => {
     console.error("Onboarding error:", error);
@@ -289,6 +290,9 @@ const OnboardingPage = () => {
           is_subscribed: true,
         },
       });
+      // Option 1: Force reload to get latest user data
+      router.replace("/dashboard");
+      window.location.reload(); // This ensures the new status is loaded
       ShowToast("Onboarding data has been saved successfully!");
       return true;
     } catch (error) {
@@ -587,12 +591,14 @@ const OnboardingPage = () => {
     loadOnboardingState();
   }, [user, isLoaded]);
   useEffect(() => {
-    console.log("step", currentStep, userOnboarding);
-    if (userInfo && userInfo?.status === "approved") {
-      console.log("hello", currentStep, userOnboarding);
+    setTimeout(() => {
+      if (userInfo && userInfo?.status === "approved") {
+        console.log("hello", currentStep, userOnboarding);
 
-      router.replace("/dashboard");
-    }
+        router.replace("/dashboard");
+      }
+    }, 2000);
+    console.log("step", currentStep, userOnboarding);
   }, [currentStep, userOnboarding]);
 
   return (
