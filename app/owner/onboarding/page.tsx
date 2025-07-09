@@ -39,7 +39,6 @@ const OnboardingPage = () => {
   const {userData: userInfo} = useUserHook();
   const {user, isLoaded} = useUser();
 
-
   const handleError = (error: unknown) => {
     console.error("Onboarding error:", error);
     const errorMessage =
@@ -291,8 +290,7 @@ const OnboardingPage = () => {
         },
       });
       // Option 1: Force reload to get latest user data
-      router.replace("/dashboard");
-      window.location.reload(); // This ensures the new status is loaded
+
       ShowToast("Onboarding data has been saved successfully!");
       return true;
     } catch (error) {
@@ -361,7 +359,7 @@ const OnboardingPage = () => {
 
       // Clear onboarding data before redirecting
       router.replace("/dashboard");
-
+      window.location.reload();
       clearOnboardingData(user.id);
 
       ShowToast("Onboarding completed successfully!");
@@ -590,16 +588,16 @@ const OnboardingPage = () => {
 
     loadOnboardingState();
   }, [user, isLoaded]);
-  useEffect(() => {
-    setTimeout(() => {
-      if (userInfo && userInfo?.status === "approved") {
-        console.log("hello", currentStep, userOnboarding);
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     if (userInfo && userInfo?.status === "approved") {
+  //       console.log("hello", currentStep, userOnboarding);
 
-        router.replace("/dashboard");
-      }
-    }, 2000);
-    console.log("step", currentStep, userOnboarding);
-  }, [currentStep, userOnboarding]);
+  //       router.replace("/dashboard");
+  //     }
+  //   }, 2000);
+  //   console.log("step", currentStep, userOnboarding);
+  // }, [currentStep, userOnboarding]);
 
   return (
     <div className="flex flex-col min-h-screen">
