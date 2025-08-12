@@ -152,7 +152,7 @@ const AdminCardCreated = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-ful mb-8">
       {/* Left Section: Daily Completion */}
-      <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-[#191919] rounded-[30px] p-4 space-y-3">
+      <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-[#191919] rounded-[30px] p-4 space-y-3 ">
         <div className="flex justify-between mb-4 flex-wrap">
           <h3 className="text-[24px] p-4 font-semibold">Cards Created</h3>
           <div className="flex gap-2 items-center">
